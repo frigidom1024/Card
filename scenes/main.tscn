@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://cbmxoqgv7eaxp"]
+
+[ext_resource type="PackedScene" uid="uid://c6j6lgcbmdqrv" path="res://scenes/card.tscn" id="1_0wfyh"]
+[ext_resource type="Script" uid="uid://cjrpdllvimwe3" path="res://scripts/main.gd" id="1_sugp2"]
+[ext_resource type="PackedScene" uid="uid://bf2h2gqo4hyjl" path="res://scenes/board.tscn" id="2_sugp2"]
+
+[node name="Main" type="Node2D" unique_id=700708423]
+script = ExtResource("1_sugp2")
+
+[node name="Card" parent="." unique_id=284535836 instance=ExtResource("1_0wfyh")]
+
+[node name="Board" parent="." unique_id=969095891 instance=ExtResource("2_sugp2")]

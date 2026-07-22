@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:skills.sh)",
+      "Bash(npx skills *)"
+    ]
+  }
+}
