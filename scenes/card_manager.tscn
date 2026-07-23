@@ -1,8 +1,23 @@
-[gd_scene format=3 uid="uid://y6k12j6ebldr"]
+[gd_scene format=3 uid="uid://yddvotpojs2x"]
 
 [ext_resource type="Script" uid="uid://b0a180h6kyhgs" path="res://scripts/card_manager.gd" id="1_84bwb"]
-[ext_resource type="PackedScene" uid="uid://d3j24w5qmshj0" path="res://scenes/card_view.tscn" id="2_r4eom"]
+[ext_resource type="Texture2D" uid="uid://cyigw2r5avtnc" path="res://icon.svg" id="2_r4eom"]
+
+[sub_resource type="PackedScene" id="PackedScene_kdemd"]
+_bundled = {
+"conn_count": 0,
+"conns": PackedInt32Array(),
+"editable_instances": [],
+"id_paths": [PackedInt32Array(), PackedInt32Array()],
+"names": PackedStringArray("ColorRect", "ColorRect", "offset_left", "offset_top", "offset_right", "offset_bottom", "pivot_offset_ratio", "mouse_filter", "TextureRect", "TextureRect", "layout_mode", "anchors_preset", "anchor_left", "anchor_top", "anchor_right", "anchor_bottom", "offset_left", "offset_top", "offset_right", "offset_bottom", "grow_horizontal", "grow_vertical", "texture", "expand_mode", "stretch_mode", "Label", "Label", "layout_mode", "anchors_preset", "anchor_left", "anchor_top", "anchor_right", "anchor_bottom", "offset_left", "offset_top", "offset_right", "offset_bottom", "grow_horizontal", "grow_vertical", "theme_override_colors/font_color", "theme_override_font_sizes/font_size", "text", "horizontal_alignment", "vertical_alignment"),
+"node_count": 3,
+"node_ids": PackedInt32Array(1870156130, 1508197979, 1667967314),
+"node_paths": [NodePath("."), NodePath(".")],
+"nodes": PackedInt32Array(-1, -1, 1, 0, -1, 6, 2, 0, 3, 1, 4, 2, 5, 3, 6, 4, 7, 5, 0, 1073741824, 0, 9, 8, -1, 15, 10, 6, 11, 7, 12, 8, 13, 9, 14, 10, 15, 11, 16, 12, 17, 13, 18, 14, 19, 15, 20, 16, 21, 17, 22, 18, 23, 19, 24, 20, 0, 1073741825, 0, 26, 25, -1, 17, 27, 21, 28, 22, 29, 23, 30, 24, 31, 25, 32, 26, 33, 27, 34, 28, 35, 29, 36, 30, 37, 31, 38, 32, 39, 33, 40, 34, 41, 35, 42, 36, 43, 37, 0),
+"variants": [-40.0, -80.0, 40.0, 80.0, Vector2(0.5, 0.5), 1, 1, 8, 0.5, 0.5, 0.5, 0.5, -24.0, -59.0, 23.5, -11.5, 2, 2, ExtResource("2_r4eom"), 1, 4, 1, 8, 0.5, 0.5, 0.5, 0.5, -23.0, -6.0, 23.0, 22.0, 2, 2, Color(0, 0, 0, 1), 20, "Card", 1, 1],
+"version": 3
+}
 
 [node name="CardManager" type="Node2D" unique_id=869829253]
 script = ExtResource("1_84bwb")
-card_scene = ExtResource("2_r4eom")
+card_scene = SubResource("PackedScene_kdemd")

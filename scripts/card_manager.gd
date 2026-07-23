@@ -22,8 +22,6 @@ func create_card(pos:Vector2):
 	add_child(card)
 	card.global_position = pos
 	cards.append(card)
-	if board:
-		card.set_board(board)
 	return card
 
 

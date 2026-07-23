@@ -8,8 +8,9 @@ extends Node2D
 
 
 var highlight_cells: Array[Vector2i] = []
-
 var highlight_color := Color(1, 0.8, 0, 0.3)
+
+var cards: Array[CardEntity] = []
 
 func _draw():
 	# 绘制棋盘
