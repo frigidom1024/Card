@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://c6j6lgcbmdqrv"]
+
+[ext_resource type="Script" uid="uid://ctkwunxu5hwdh" path="res://scripts/card_entity.gd" id="1_6u4wf"]
+[ext_resource type="PackedScene" uid="uid://d3j24w5qmshj0" path="res://scenes/card_view.tscn" id="2_of58k"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_p5p3o"]
+size = Vector2(80, 160)
+
+[node name="CardEntity" type="Area2D" unique_id=225973246]
+position = Vector2(85, 108)
+script = ExtResource("1_6u4wf")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=616528053]
+shape = SubResource("RectangleShape2D_p5p3o")
+
+[node name="ColorRect" parent="." unique_id=1870156130 instance=ExtResource("2_of58k")]
+
+[connection signal="input_event" from="." to="." method="_on_input_event"]
+[connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
+[connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]

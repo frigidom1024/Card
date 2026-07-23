@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://ciyw0gfmhhgap"]
+
+[ext_resource type="Script" uid="uid://bomj50vd3mge5" path="res://scripts/hand_manager.gd" id="1_r7y7m"]
+[ext_resource type="PackedScene" uid="uid://cwxcl184mpdvu" path="res://scenes/card_ui.tscn" id="2_kmpwv"]
+
+[node name="HandManager" type="HBoxContainer" unique_id=1450062830]
+offset_left = 11.0
+offset_right = 1588.0
+offset_bottom = 160.0
+script = ExtResource("1_r7y7m")
+card_ui = ExtResource("2_kmpwv")

@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://cwxcl184mpdvu"]
+
+[ext_resource type="Script" uid="uid://soii7koxbs0j" path="res://scripts/card_ui.gd" id="1_e1hm3"]
+[ext_resource type="PackedScene" uid="uid://d3j24w5qmshj0" path="res://scenes/card_view.tscn" id="2_birkm"]
+
+[node name="card_ui" type="Control" unique_id=517732838]
+custom_minimum_size = Vector2(80, 160)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 80.0
+offset_bottom = 160.0
+script = ExtResource("1_e1hm3")
+
+[node name="ColorRect" parent="." unique_id=1870156130 instance=ExtResource("2_birkm")]
+layout_mode = 0
+offset_left = 0.0
+offset_top = 0.0
+offset_right = 80.0
+offset_bottom = 160.0

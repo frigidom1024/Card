@@ -1,109 +1,228 @@
 extends Node2D
 
-var size = 80
-var width = 8
-var height = 8
+@export var card_entity:Area2D
+@export var cell_size: int = 80
+@export var width: int = 10
+@export var height: int = 8
 
-# 高亮区域（宽>0 时显示）
-var _highlight_rect: Rect2 = Rect2(-1, -1, 0, 0)
-var _highlight_color: Color = Color(1, 0.8, 0, 0.3)
 
+
+var highlight_cells: Array[Vector2i] = []
+
+var highlight_color := Color(1, 0.8, 0, 0.3)
 
 func _draw():
-	# 绘制网格线
+	# 绘制棋盘
 	for x in width:
 		for y in height:
 			draw_rect(
-				Rect2(x * size, y * size, size, size),
+				Rect2(
+					x * cell_size,
+					y * cell_size,
+					cell_size,
+					cell_size
+				),
 				Color.GRAY,
 				false
 			)
 
-	# 绘制高亮区域（卡牌落地预览）
-	if _highlight_rect.size.x > 0 and _highlight_rect.size.y > 0:
-		draw_rect(_highlight_rect, _highlight_color, true)
+
+	# 绘制卡牌预览
+	for cell in highlight_cells:
+
+		draw_rect(
+			Rect2(
+				cell.x * cell_size,
+				cell.y * cell_size,
+				cell_size,
+				cell_size
+			),
+			highlight_color,
+			true
+		)
 
 
-# ----- 格子坐标 -----
-
-## 世界坐标 → 格子坐标 (列, 行)
-func get_grid_pos(world_pos: Vector2) -> Vector2i:
-	var col = floori(world_pos.x / size)
-	var row = floori(world_pos.y / size)
-	col = clampi(col, 0, width - 1)
-	row = clampi(row, 0, height - 1)
-	return Vector2i(col, row)
 
 
-## 格子左上角 → 世界坐标
-func get_cell_topleft(grid_pos: Vector2i) -> Vector2:
-	return Vector2(grid_pos.x * size, grid_pos.y * size)
+
+# =========================
+# 坐标转换
+# =========================
 
 
-## 格子中心 → 世界坐标
-func get_cell_center(grid_pos: Vector2i) -> Vector2:
-	return Vector2(
-		grid_pos.x * size + size * 0.5,
-		grid_pos.y * size + size * 0.5
+# 世界坐标 -> 棋盘坐标
+func world_to_grid(world_pos: Vector2)->Vector2i:
+
+	var local_pos = to_local(world_pos)
+
+	return Vector2i(
+		floori(local_pos.x / cell_size),
+		floori(local_pos.y / cell_size)
 	)
 
 
-## 世界坐标是否在网格范围内
-func is_in_grid(world_pos: Vector2) -> bool:
-	return world_pos.x >= 0 \
-		and world_pos.x < width * size \
-		and world_pos.y >= 0 \
-		and world_pos.y < height * size
 
+# 棋盘坐标 -> 世界中心
+func grid_to_world_center(grid:Vector2i)->Vector2:
 
-# ----- 1×2 卡牌块吸附（两个格子中间）-----
-
-## 世界坐标 → 卡牌占用的顶部格子 (col, top_row)
-## 卡牌占 (col, top_row) 和 (col, top_row+1) 两格
-func get_card_block(world_pos: Vector2) -> Vector2i:
-	var col = roundi(world_pos.x / size - 0.5)
-	var top_row = roundi(world_pos.y / size - 1)
-	col = clampi(col, 0, width - 1)
-	top_row = clampi(top_row, 0, height - 2)
-	return Vector2i(col, top_row)
-
-
-## 1×2 块的中心世界坐标（卡牌中心 = 两格中间）
-func get_block_center(block_pos: Vector2i) -> Vector2:
-	return Vector2(
-		block_pos.x * size + size * 0.5,
-		block_pos.y * size + size
+	var local_pos = Vector2(
+		grid.x * cell_size + cell_size/2,
+		grid.y * cell_size + cell_size/2
 	)
 
-
-## 吸附到最近的 1×2 格块中心
-func snap_to_block_center(world_pos: Vector2) -> Vector2:
-	var block = get_card_block(world_pos)
-	return get_block_center(block)
+	return to_global(local_pos)
 
 
-# ----- 卡牌落地预览高亮 -----
 
-## 高亮卡牌占用的两格区域
-func highlight_card_block(block_pos: Vector2i) -> void:
-	_highlight_rect = Rect2(
-		block_pos.x * size,
-		block_pos.y * size,
-		size,
-		size * 2
+# =========================
+# 卡牌占用格
+# =========================
+
+
+# rotation 只判断方向
+# 0/180 纵向
+# 90/270 横向
+
+func get_card_cells(
+	center: Vector2,
+	rotation: float
+) -> Array[Vector2i]:
+
+
+	var dir = int(round(rotation / 90.0)) % 4
+
+	var local_pos = to_local(center)
+
+	var grid_x = roundi(
+		local_pos.x / cell_size
 	)
+
+	var grid_y = roundi(
+		local_pos.y / cell_size
+	)
+
+	var cells:Array[Vector2i] = []
+
+	# 竖向
+	if dir%2==0:
+		# 中心格
+		grid_x = clampi(
+			grid_x,
+			0,
+			width - 1
+		)
+
+		grid_y = clampi(
+			grid_y,
+			1,
+			height - 1
+		)
+
+		cells.append(
+			Vector2i(
+				grid_x,
+				grid_y - 1
+			)
+		)
+
+		cells.append(
+			Vector2i(
+				grid_x,
+				grid_y
+			)
+		)
+
+	# 横向
+	else:
+
+		grid_x = clampi(
+			grid_x,
+			1,
+			width - 1
+		)
+
+		grid_y = clampi(
+			grid_y,
+			0,
+			height - 1
+		)
+
+		cells.append(
+			Vector2i(
+				grid_x - 1,
+				grid_y
+			)
+		)
+
+		cells.append(
+			Vector2i(
+				grid_x,
+				grid_y
+			)
+		)
+
+	return cells
+
+
+# =========================
+# 卡牌吸附
+# =========================
+func snap_card_position(
+	center:Vector2,
+	rotation:float
+)->Vector2:
+
+	var cells = get_card_cells(
+		center,
+		rotation
+	)
+
+	if cells.is_empty():
+		return center
+
+	var center_pos := Vector2.ZERO
+
+	for c in cells:
+
+		center_pos += grid_to_world_center(c)
+
+	center_pos /= cells.size()
+
+	return center_pos
+# =========================
+# 预览
+# =========================
+func preview_card(
+	center:Vector2,
+	rotation:float
+):
+
+	highlight_cells = get_card_cells(
+		center,
+		rotation
+	)
+
 	queue_redraw()
 
 
-## 清除高亮
-func clear_highlight() -> void:
-	if _highlight_rect.size.x > 0:
-		_highlight_rect = Rect2(-1, -1, 0, 0)
-		queue_redraw()
 
-
-func set_grid(cell_size: int, cols: int, rows: int) -> void:
-	size = cell_size
-	width = cols
-	height = rows
+func clear_preview():
+	highlight_cells.clear()
 	queue_redraw()
+
+# =========================
+# 边界检查
+# =========================
+
+func can_place_card(
+	cells:Array[Vector2i]
+)->bool:
+	for c in cells:
+
+		if c.x < 0 or c.x >= width:
+			return false
+
+		if c.y < 0 or c.y >= height:
+			return false
+
+	return true
