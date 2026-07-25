@@ -2,5 +2,16 @@
 
 [ext_resource type="Script" uid="uid://dh5vjxc0y58eg" path="res://scripts/board.gd" id="1_bw3vb"]
 
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_8ba60"]
+size = Vector2(800, 640)
+
 [node name="Board" type="Node2D" unique_id=969095891]
 script = ExtResource("1_bw3vb")
+
+[node name="DropDetector" type="Area2D" parent="." unique_id=517732839]
+collision_layer = 0
+collision_mask = 0
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="DropDetector" unique_id=616528054]
+position = Vector2(400, 320)
+shape = SubResource("RectangleShape2D_8ba60")

@@ -1,16 +1,19 @@
+class_name Board
 extends Node2D
 
-@export var card_entity:Area2D
 @export var cell_size: int = 80
 @export var width: int = 10
 @export var height: int = 8
 
-
+@export var drop_detector: Area2D
 
 var highlight_cells: Array[Vector2i] = []
 var highlight_color := Color(1, 0.8, 0, 0.3)
 
 var cards: Array[CardEntity] = []
+
+# 格子占用表：Vector2i → CardEntity
+var _grid_owner: Dictionary = {}
 
 func _draw():
 	# 绘制棋盘
@@ -91,9 +94,12 @@ func get_card_cells(
 
 
 	var dir = int(round(rotation / 90.0)) % 4
-
-	var local_pos = to_local(center)
-
+	var local_pos
+	if dir%2==0:
+		local_pos = to_local(center)-Vector2(0.5*cell_size,0)
+	else:
+		local_pos = to_local(center)-Vector2(0,0.5*cell_size)
+		
 	var grid_x = roundi(
 		local_pos.x / cell_size
 	)
@@ -226,4 +232,63 @@ func can_place_card(
 		if c.y < 0 or c.y >= height:
 			return false
 
+	return true
+
+# =========================
+# 卡牌放置 / 移除
+# =========================
+
+# 检查格子是否被占用（可排除指定卡牌，用于卡牌自身移动时检测）
+func has_conflict(cells: Array[Vector2i], exclude: CardEntity = null) -> bool:
+	for c in cells:
+		var key := Vector2i(c.x, c.y)
+		if _grid_owner.has(key) and _grid_owner[key] != exclude:
+			return true
+	return false
+
+func add_card(card: CardEntity) -> bool:
+	if not card or card in cards:
+		return false
+
+	var cells = get_card_cells(
+		card.global_position,
+		card.rotation_degrees
+	)
+
+	if not can_place_card(cells):
+		return false
+
+	if has_conflict(cells):
+		return false
+
+	# 吸附到格子
+	card.global_position = snap_card_position(
+		card.global_position,
+		card.rotation_degrees
+	)
+
+	# 重新父节点到棋盘
+	card.reparent(self)
+	card.z_index = len(cards)
+
+
+	# 记录占用
+	cards.append(card)
+	for c in cells:
+		_grid_owner[Vector2i(c.x, c.y)] = card
+
+	clear_preview()
+	return true
+
+func remove_card(card: CardEntity) -> bool:
+	if card not in cards:
+		return false
+
+	# 释放占用的格子
+	var keys := _grid_owner.keys()
+	for k in keys:
+		if _grid_owner[k] == card:
+			_grid_owner.erase(k)
+
+	cards.erase(card)
 	return true

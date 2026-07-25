@@ -1,19 +1,22 @@
 extends Node2D
 
-@onready var board = $Board
-@onready var cardManager = $CardManager
+@onready var board: Board = $Board
+@onready var card_manager: Node2D = $CardManager
+@onready var hand_area: HandArea = $HandManager
+@onready var drag_layer: DragLayer = $DragLayer
 
 
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
-	cardManager.set_board(board)
-	cardManager.create_card(
-		Vector2(300,300)
-	)
+	# 注入 DragLayer 的区域引用
+	drag_layer.board = board
+	drag_layer.hand_area = hand_area
 
-	cardManager.create_card(
-		Vector2(500,300)
-	)
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+	# 创建测试手牌
+	for i in range(5):
+		var data := CardData.new(i, "卡牌 %d" % i)
+		var inst := CardInstance.new(data)
+		inst.cur_zone = CardInstance.ZONE.HAND
+
+		var card := preload("res://scenes/card_entity.tscn").instantiate() as CardEntity
+		card.bind_instance(inst)
+		hand_area.add_card(card)

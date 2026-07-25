@@ -152,22 +152,24 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 func _start_drag() -> void:
 	_dragging = true
 	state = State.DRAGGING
-	z_index = 100
 	$ColorRect.modulate = Color(1.2, 1.2, 1.0)
 	_show_info(false)
 	set_process(true)
 
+	# reparent 到 DragLayer
+	var drag_layer = get_tree().current_scene.get_node("DragLayer") as DragLayer
+	if drag_layer:
+		drag_layer.on_card_drag_start(self)
+
 func _end_drag() -> void:
 	_dragging = false
 	state = State.NORMAL
-	z_index = 0
-	$ColorRect.modulate = Color.WHITE
 	set_process(false)
 
-	# 如果父节点是 HandArea，让手牌区管理归位
-	var parent = get_parent()
-	if parent is HandArea:
-		parent.rearrange_cards(true)
+	# 让 DragLayer 决定去哪里
+	var drag_layer = get_tree().current_scene.get_node("DragLayer") as DragLayer
+	if drag_layer:
+		drag_layer.on_card_drag_end(self)
 
 func _process(_delta: float) -> void:
 	if _dragging:
