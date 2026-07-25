@@ -20,6 +20,12 @@ signal card_unhovered(card: CardEntity)
 @export var hover_offset: float = -40.0
 @export var animation_duration: float = 0.15
 
+@export_group("视觉效果")
+@export var show_debug: bool = true:
+	set(v):
+		show_debug = v
+		queue_redraw()
+
 # ===== 内部状态 =====
 var cards: Array[CardEntity] = []
 var hovered_card: CardEntity = null
@@ -27,7 +33,27 @@ var selected_card: CardEntity = null
 
 # ===== 生命周期 =====
 func _ready() -> void:
-	pass
+	queue_redraw()
+
+func _draw() -> void:
+	if not show_debug:
+		return
+
+	# 根据最大手牌数计算区域范围
+	var max_count = max_hand_size
+	var total_width = (max_count - 1) * (card_width + card_spacing) + card_width
+	var start_x = -total_width / 2
+	var area_height = 180.0
+	var area_rect = Rect2(start_x, -area_height / 2, total_width, area_height)
+
+	# 半透明背景
+	draw_rect(area_rect, Color(0, 0.5, 1, 0.08), true)
+	# 边框
+	draw_rect(area_rect, Color(0, 0.5, 1, 0.3), false, 1.0)
+
+	# 标签
+	var label_str = "手牌区 [%d/%d]" % [cards.size(), max_hand_size]
+	draw_string(ThemeDB.fallback_font, Vector2(start_x, -area_height / 2 - 6), label_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0, 0.5, 1, 0.6))
 
 # ============================================================
 # 核心方法
@@ -134,6 +160,8 @@ func rearrange_cards(animate: bool = true) -> void:
 			card.position = final_pos
 			card.scale = final_scale
 			card.z_index = final_z
+
+	queue_redraw()
 
 # ============================================================
 # 动画工具

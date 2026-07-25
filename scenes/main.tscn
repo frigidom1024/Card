@@ -5,7 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://bf2h2gqo4hyjl" path="res://scenes/board.tscn" id="2_sugp2"]
 [ext_resource type="PackedScene" uid="uid://ciyw0gfmhhgap" path="res://scenes/hand.tscn" id="2_tbgi4"]
 [ext_resource type="PackedScene" uid="uid://yddvotpojs2x" path="res://scenes/card_manager.tscn" id="3_sugp2"]
-[ext_resource type="Script" uid="uid://dpymbrpv47ngy" path="res://scripts/drag_layer.gd" id="4_tbgi4"]
+[ext_resource type="Script" uid="uid://d4g532r3gevbr" path="res://scripts/drag_layer.gd" id="4_tbgi4"]
 
 [node name="Main" type="Node2D" unique_id=700708423]
 script = ExtResource("1_sugp2")
@@ -16,7 +16,7 @@ position = Vector2(447, 789)
 [node name="CardManager" parent="." unique_id=869829253 instance=ExtResource("3_sugp2")]
 card_scene = ExtResource("1_0wfyh")
 
-[node name="DragLayer" type="Node2D" parent="."]
+[node name="DragLayer" type="Node2D" parent="." unique_id=544115072]
 script = ExtResource("4_tbgi4")
 
 [node name="Board" parent="." unique_id=969095891 instance=ExtResource("2_sugp2")]
