@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+card_id = 26
+card_name = "Miasma Dispelling Gale"
+heal = 4
+description = "Pure woodland wind blows across the field, clear all monster miasma debuffs and provide wide-range ally healing."
+tags = Array[int]([2, 3, 7, 10])
+rarity = 1
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"

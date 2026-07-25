@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+card_id = 21
+card_name = "Clear Spring Wood Vial"
+damage = 1
+defense = 1
+heal = 3
+description = "Wooden container sealed with mountain spring water, slightly raise attack & defense while greatly amplify healing effects."
+tags = Array[int]([0, 1, 2, 3, 6, 10])
+rarity = 1
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"

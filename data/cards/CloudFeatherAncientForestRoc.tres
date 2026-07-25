@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+card_id = 14
+card_name = "Cloud-feather Ancient Forest Roc"
+damage = 9
+defense = 9
+heal = 8
+description = "Ancient rocs soaring above forest clouds, wrapped in mist and vines, instantly restore HP of all player cards when played, heal all forest creatures every turn."
+tags = Array[int]([0, 1, 2, 5, 10])
+rarity = 3
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"

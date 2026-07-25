@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+card_id = 28
+card_name = "All Things Revival"
+heal = 7
+description = "Awaken primal life force of the whole forest, fully restore HP of all player cards on field and grant extra massive natural resources."
+tags = Array[int]([2, 3, 7, 10])
+rarity = 2
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"

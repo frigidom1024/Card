@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+card_id = 15
+card_name = "Vine Shortblade"
+damage = 2
+description = "Blade solidified from tough aged vines, permanently grants +2 attack when equipped."
+tags = Array[int]([0, 6, 10])
+rarity = 0
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"

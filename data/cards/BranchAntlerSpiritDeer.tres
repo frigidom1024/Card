@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+card_id = 5
+card_name = "Branch-antler Spirit Deer"
+damage = 2
+defense = 2
+description = "Pure white deer deep in thick woods, vine-wrapped antlers move nimbly to lay forest roads."
+tags = Array[int]([0, 1, 5, 10])
+rarity = 0
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"

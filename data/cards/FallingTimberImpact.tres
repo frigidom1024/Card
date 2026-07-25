@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+card_id = 27
+card_name = "Falling Timber Impact"
+damage = 5
+description = "Summon giant falling tree branches, deal heavy natural damage to enemy monsters and destroy enemy paths."
+tags = Array[int]([0, 7, 10])
+rarity = 1
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"

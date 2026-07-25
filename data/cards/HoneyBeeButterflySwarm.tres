@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+card_id = 4
+card_name = "Honey Bee & Butterfly Swarm"
+damage = 1
+defense = 2
+description = "Swarm of pollinators gathering nectar, generate steady natural energy resources each turn."
+tags = Array[int]([0, 1, 3, 5, 10])
+rarity = 0
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"

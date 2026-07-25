@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+card_id = 9
+card_name = "Forest Healing Stag"
+damage = 2
+defense = 3
+heal = 4
+description = "Spirit deer born from ancient tree essence, tree sap drips from antlers to massively heal allied creatures."
+tags = Array[int]([0, 1, 2, 5, 10])
+rarity = 1
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"

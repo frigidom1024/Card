@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+card_id = 12
+card_name = "Nine-tailed Forest Spirit Fox"
+damage = 4
+defense = 5
+heal = 6
+description = "Spirit fox condensed from ancient tree essence, purifying wind clears all miasma debuffs and continuously heals all allied forest creatures."
+tags = Array[int]([0, 1, 2, 3, 5, 10])
+rarity = 2
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"

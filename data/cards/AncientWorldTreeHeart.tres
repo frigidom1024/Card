@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+card_id = 30
+card_name = "Ancient World Tree Heart"
+damage = 3
+defense = 3
+heal = 4
+description = "Energy core ancient tree of the entire forest, all player forest creatures gain boosted attack, defense and self-heal, produce large amounts of natural resources each turn."
+tags = Array[int]([0, 1, 2, 3, 4, 10])
+rarity = 1
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"

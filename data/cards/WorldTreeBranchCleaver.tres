@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+card_id = 22
+card_name = "World Tree Branch Cleaver"
+damage = 7
+defense = 2
+heal = 2
+description = "Longsword forged from fresh World Tree branch, wield primal natural power to massively boost attack, plus continuous self-heal and shield effect."
+tags = Array[int]([0, 1, 2, 6, 10])
+rarity = 2
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"
