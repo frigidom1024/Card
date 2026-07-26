@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://yddvotpojs2x"]
 
-[ext_resource type="Script" uid="uid://b0a180h6kyhgs" path="res://scripts/card_manager.gd" id="1_84bwb"]
+[ext_resource type="Script" uid="uid://b0a180h6kyhgs" path="res://scripts/card/card_manager.gd" id="1_84bwb"]
 [ext_resource type="Texture2D" uid="uid://cyigw2r5avtnc" path="res://icon.svg" id="2_r4eom"]
 
 [sub_resource type="PackedScene" id="PackedScene_kdemd"]

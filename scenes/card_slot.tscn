@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://bebyjleeaxnyi"]
+[gd_scene format=3 uid="uid://baiipiqato2ek"]
 
 [node name="CardSlot" type="Control" unique_id=517732838]
 custom_minimum_size = Vector2(80, 160)
