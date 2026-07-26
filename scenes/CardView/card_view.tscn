@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://0t2nmkt0asxh"]
+
+[ext_resource type="Script" uid="uid://bf1npd88cyjge" path="res://scripts/card/card_view.gd" id="1_704m6"]
+[ext_resource type="PackedScene" uid="uid://r1g1iurkuc1x" path="res://scenes/CardView/card_battle_attr_label.tscn" id="2_704m6"]
+
+[node name="CardView" type="ColorRect" unique_id=161638963]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -37.5
+offset_top = -77.0
+offset_right = 36.5
+offset_bottom = 77.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_704m6")
+battle_attr_label = ExtResource("2_704m6")
+
+[node name="LabelContainer" type="HBoxContainer" parent="." unique_id=1403990714]
+layout_mode = 0
+offset_left = 0.5
+offset_top = 131.0
+offset_right = 74.5
+offset_bottom = 154.0
+alignment = 1
