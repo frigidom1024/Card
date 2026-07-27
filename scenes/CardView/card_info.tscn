@@ -1,0 +1,24 @@
+[gd_scene format=3 uid="uid://752y2d1bq6rg"]
+
+[ext_resource type="Script" uid="uid://daxsf2nsa8dmr" path="res://scripts/card/card_info.gd" id="1_eb2q2"]
+
+[node name="CardInfo" type="PanelContainer" unique_id=1809456825]
+offset_left = 80.0
+offset_right = 80.0
+script = ExtResource("1_eb2q2")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=980816024]
+layout_mode = 2
+
+[node name="Header" type="HBoxContainer" parent="VBoxContainer" unique_id=664911171]
+layout_mode = 2
+
+[node name="AttrBox" type="VBoxContainer" parent="VBoxContainer" unique_id=516348023]
+layout_mode = 2
+
+[node name="DescriptionLabel" type="Label" parent="VBoxContainer" unique_id=1669474901]
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="TagContainer" type="FlowContainer" parent="VBoxContainer" unique_id=447242905]
+layout_mode = 2

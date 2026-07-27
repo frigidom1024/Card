@@ -51,9 +51,7 @@ var _dragging: bool = false
 var drag_layer
 
 @onready var _card_view: ColorRect = $CardView
-
-# UI 元素（悬浮提示）
-var _info_panel: Panel = null
+@onready var _card_info: PanelContainer = $CardInfo
 
 # UI 元素（放大）
 var _zoom_overlay: CanvasLayer = null
@@ -74,94 +72,31 @@ func bind_instance(inst: CardInstance) -> void:
 func _ready() -> void:
 	input_pickable = true
 	card_instance=CardInstance.create_debug_card()
-	_build_info_panel()
 
 
 # ============================
 # 信息提示（悬浮）
 # ============================
 
-func _build_info_panel() -> void:
-	_info_panel = Panel.new()
-	_info_panel.name = "InfoPanel"
-	_info_panel.visible = false
-	_info_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_info_panel.size = Vector2(180, 120)
-
-	var bg_style = StyleBoxFlat.new()
-	bg_style.bg_color = Color(0.08, 0.08, 0.12, 0.97)
-	bg_style.set_corner_radius_all(6)
-	bg_style.set_border_width_all(1)
-	bg_style.border_color = Color(0.4, 0.4, 0.6, 1.0)
-	_info_panel.add_theme_stylebox_override("panel", bg_style)
-
-	var info_label = Label.new()
-	info_label.name = "InfoLabel"
-	info_label.position = Vector2(10, 8)
-	info_label.size = Vector2(160, 104)
-	info_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.92))
-	info_label.add_theme_font_size_override("font_size", 11)
-	info_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_info_panel.add_child(info_label)
-
-	add_child(_info_panel)
-
-
 func _show_info(show_info: bool) -> void:
-	if not _info_panel or not card_instance or not card_instance.card_data:
+	if not _card_info or not card_instance or not card_instance.card_data:
+		if not _card_info:
+			print("missing _card_info")
+		if not card_instance:
+			print("missing card_instance")
+		if not card_instance.card_data:
+			print("card_instance.card_data")
 		return
 
-	_info_panel.visible = show_info
 	if show_info:
-		var label = _info_panel.get_node("InfoLabel") as Label
-		if not label:
-			return
-
-		var data: CardData = card_instance.card_data
-		var rarity_name = RARITY_NAMES.get(data.rarity, "COMMON")
-		var rarity_color = RARITY_COLORS.get(data.rarity, RARITY_COLORS[CardData.Rarity.COMMON])
-
-		# 第一行：名称 + 稀有度
-		var text = "[color=#%s]%s[/color] [color=#%s](%s)[/color]\n" % [
-			"ffffff", data.card_name,
-			rarity_color.to_html(false), rarity_name,
-		]
-
-		# 第二行：类型 + ID
-		text += "[color=#888899]ID:%d[/color]\n" % data.card_id
-
-		# 第三行：属性
-		var stats := ""
-		if data.damage > 0:  stats += " ⚔%d" % data.damage
-		if data.defense > 0: stats += " 🛡%d" % data.defense
-		if data.heal > 0:    stats += " 💚%d" % data.heal
-		if stats.length() > 0:
-			text += "[color=#cccccc]%s[/color]\n" % stats
-
-		# 第四行：标签
-		var tag_names := ""
-		for tag in data.tags:
-			tag_names += " [color=#6699cc]%s[/color]" % TAG_NAMES.get(tag, "UNKN")
-		if tag_names.length() > 0:
-			text += tag_names + "\n"
-
-		# 第五行：描述
-		if data.description.length() > 0:
-			text += "\n[color=#999999]%s[/color]" % data.description
-
-		label.text = text
-
-		# 根据内容调整面板高度
-		var line_count = label.get_line_count()
-		var new_height = max(60, line_count * 14 + 16)
-		_info_panel.size.y = new_height
-		label.size.y = new_height - 16
-
-		# 定位到卡牌上方
-		_info_panel.position = Vector2(
-			-_info_panel.size.x / 2 + 5,
-			-_info_panel.size.y - 85
+		# 定位到卡牌右侧，顶部对齐（局部坐标）
+		var offset = Vector2(
+			_card_view.offset_left + _card_view.size.x + 8,
+			_card_view.offset_top - 4
 		)
+		_card_info.show_as_floating(card_instance, offset)
+	else:
+		_card_info.hide_floating()
 
 
 # ============================
@@ -204,6 +139,7 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 
 			MOUSE_BUTTON_RIGHT:
 				if event.pressed:
+					_show_info(false)  # 先关闭信息窗口
 					if _dragging:
 						_rotate_card()
 					elif state != State.ZOOMED and state != State.DRAGGING:
@@ -261,6 +197,7 @@ func _show_zoom() -> void:
 		return
 
 	state = State.ZOOMED
+	_show_info(false)  # 关闭悬浮信息窗口
 
 	# --- 创建覆盖层 ---
 	_zoom_overlay = CanvasLayer.new()
