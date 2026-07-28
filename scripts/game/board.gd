@@ -8,7 +8,9 @@ extends Node2D
 @export var drop_detector: Area2D
 
 var highlight_cells: Array[Vector2i] = []
-var highlight_color := Color(1, 0.8, 0, 0.3)
+var highlight_valid_color := Color(1, 0.8, 0, 0.3)      # 可放置
+var highlight_invalid_color := Color(1, 0.2, 0.2, 0.4)  # 不可放置
+var preview_valid: bool = true
 
 var cards: Array[CardEntity] = []
 
@@ -31,9 +33,9 @@ func _draw():
 			)
 
 
-	# 绘制卡牌预览
+	# 绘制卡牌预览（黄色=可放置  红色=不可放置）
+	var preview_color = highlight_valid_color if preview_valid else highlight_invalid_color
 	for cell in highlight_cells:
-
 		draw_rect(
 			Rect2(
 				cell.x * cell_size,
@@ -41,7 +43,7 @@ func _draw():
 				cell_size,
 				cell_size
 			),
-			highlight_color,
+			preview_color,
 			true
 		)
 
@@ -199,17 +201,36 @@ func snap_card_position(
 # =========================
 # 预览
 # =========================
-func preview_card(
-	center:Vector2,
-	rotation:float
-):
+func preview_card(card: CardEntity):
+	var cells = get_card_cells(card.global_position, card.rotation_degrees)
+	highlight_cells = cells
 
-	highlight_cells = get_card_cells(
-		center,
-		rotation
-	)
+	# 检查是否可放置
+	var cells_in_bounds = true
+	for c in cells:
+		if c.x < 0 or c.x >= width or c.y < 0 or c.y >= height:
+			cells_in_bounds = false
+			break
+	var no_conflict = not has_conflict(cells)
+	var placement_ok = can_place_card(cells, card)
+
+	preview_valid = cells_in_bounds and no_conflict and placement_ok
 
 	queue_redraw()
+
+
+# 获取放置失败的原因文字
+func get_placement_hint(cells: Array[Vector2i], card: CardEntity) -> String:
+	for c in cells:
+		if c.x < 0 or c.x >= width or c.y < 0 or c.y >= height:
+			return "超出棋盘边界"
+	if has_conflict(cells):
+		return "该位置已被占用"
+	if card and not _is_root_card(card):
+		if cards.is_empty():
+			return "棋盘上还没有可连接的卡牌"
+		return "需放置在上一张卡的顶部朝向方向"
+	return ""
 
 
 
@@ -222,17 +243,58 @@ func clear_preview():
 # =========================
 
 func can_place_card(
-	cells:Array[Vector2i]
-)->bool:
+	cells: Array[Vector2i],
+	card: CardEntity = null
+) -> bool:
+	# 边界检查
 	for c in cells:
-
 		if c.x < 0 or c.x >= width:
 			return false
-
 		if c.y < 0 or c.y >= height:
 			return false
 
-	return true
+	# ROOT 类型无其他限制
+	if card and _is_root_card(card):
+		return true
+
+	# 非 ROOT 卡必须相邻上一张卡（无上一张卡则无法放置）
+	if card and not cards.is_empty():
+		var placement_cell = get_placement_cell(cards.back())
+		for c in cells:
+			if c == placement_cell:
+				return true
+
+	return false
+
+# =========================
+# 放置规则
+# =========================
+
+# 判断卡牌是否为 ROOT 类型
+func _is_root_card(card: CardEntity) -> bool:
+	return card.card_instance \
+		and card.card_instance.card_data \
+		and card.card_instance.card_data.card_type == CardData.CardType.ROOT
+
+
+# 获取指定卡牌"顶部朝向"的相邻放置格
+func get_placement_cell(card: CardEntity) -> Vector2i:
+	var dir = int(round(card.rotation_degrees / 90.0)) % 4
+	var cells = get_card_cells(card.global_position, card.rotation_degrees)
+	if cells.is_empty():
+		return Vector2i(-1, -1)
+
+	# 根据方向确定"顶部"的格子
+	# 方向: 0=上, 1=右, 2=下, 3=左
+	var forward_cell: Vector2i
+	match dir:
+		0: forward_cell = cells[0]  # 朝上 → 上方格
+		1: forward_cell = cells[1]  # 朝右 → 右方格
+		2: forward_cell = cells[1]  # 朝下 → 下方格
+		3: forward_cell = cells[0]  # 朝左 → 左方格
+
+	var offsets = [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]
+	return forward_cell + offsets[dir]
 
 # =========================
 # 卡牌放置 / 移除
@@ -255,7 +317,7 @@ func add_card(card: CardEntity) -> bool:
 		card.rotation_degrees
 	)
 
-	if not can_place_card(cells):
+	if not can_place_card(cells, card):
 		return false
 
 	if has_conflict(cells):
@@ -292,3 +354,13 @@ func remove_card(card: CardEntity) -> bool:
 
 	cards.erase(card)
 	return true
+
+
+# 获取某张卡牌之后的所有卡牌（按连接顺序）
+func get_following_cards(card: CardEntity) -> Array[CardEntity]:
+	if card not in cards:
+		return []
+	var idx = cards.find(card)
+	if idx < 0 or idx >= cards.size() - 1:
+		return []
+	return cards.slice(idx + 1, cards.size())

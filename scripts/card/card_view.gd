@@ -5,7 +5,8 @@ extends ColorRect
 var card_inst:CardInstance
 
 func _ready() -> void:
-	card_inst = CardInstance.create_debug_card()
+	if not card_inst:
+		card_inst = CardInstance.create_debug_card()
 	refresh_display()
 
 
