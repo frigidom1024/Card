@@ -17,6 +17,8 @@ var cards: Array[CardEntity] = []
 # 格子占用表：Vector2i → CardEntity
 var _grid_owner: Dictionary = {}
 
+
+
 func _draw():
 	# 绘制棋盘
 	for x in width:
