@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+card_id = 0
+card_name = "生命之根"
+card_type = 0
+defense = 3
+description = "古老森林的生命核心，是你探索的根基。"
+tags = Array[int]([4, 10])
+rarity = 0
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"

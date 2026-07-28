@@ -1,5 +1,6 @@
 [gd_resource type="Resource" script_class="CardLibrary" format=3 uid="uid://o345kvd04ypm"]
 
+[ext_resource type="Resource" path="res://data/cards/PlayerRoot.tres" id="0_plyrk"]
 [ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="1_jq4uj"]
 [ext_resource type="Resource" path="res://data/cards/AllThingsRevival.tres" id="2_vebw0"]
 [ext_resource type="Resource" path="res://data/cards/AncientTreeVineArmor.tres" id="3_aw7v2"]
@@ -35,5 +36,5 @@
 
 [resource]
 script = ExtResource("32_gcepx")
-cards = Array[ExtResource("1_jq4uj")]([ExtResource("2_vebw0"), ExtResource("3_aw7v2"), ExtResource("4_7p8vc"), ExtResource("5_m6rld"), ExtResource("6_ij3q4"), ExtResource("7_hpgjj"), ExtResource("8_0ices"), ExtResource("9_1hqj5"), ExtResource("10_nk8hr"), ExtResource("11_pt0ft"), ExtResource("12_ssqr1"), ExtResource("13_buw7t"), ExtResource("14_v5eyx"), ExtResource("15_2uxwq"), ExtResource("16_4tqhk"), ExtResource("17_liuug"), ExtResource("18_hr32f"), ExtResource("19_igdkq"), ExtResource("20_ubotg"), ExtResource("21_x7230"), ExtResource("22_p4axe"), ExtResource("23_nltjp"), ExtResource("24_q6dd1"), ExtResource("25_rwqgi"), ExtResource("26_0l1l1"), ExtResource("27_2qcpa"), ExtResource("28_agnih"), ExtResource("29_q1h63"), ExtResource("30_lw8s5"), ExtResource("31_g2qyc")])
+cards = Array[ExtResource("1_jq4uj")]([ExtResource("0_plyrk"), ExtResource("2_vebw0"), ExtResource("3_aw7v2"), ExtResource("4_7p8vc"), ExtResource("5_m6rld"), ExtResource("6_ij3q4"), ExtResource("7_hpgjj"), ExtResource("8_0ices"), ExtResource("9_1hqj5"), ExtResource("10_nk8hr"), ExtResource("11_pt0ft"), ExtResource("12_ssqr1"), ExtResource("13_buw7t"), ExtResource("14_v5eyx"), ExtResource("15_2uxwq"), ExtResource("16_4tqhk"), ExtResource("17_liuug"), ExtResource("18_hr32f"), ExtResource("19_igdkq"), ExtResource("20_ubotg"), ExtResource("21_x7230"), ExtResource("22_p4axe"), ExtResource("23_nltjp"), ExtResource("24_q6dd1"), ExtResource("25_rwqgi"), ExtResource("26_0l1l1"), ExtResource("27_2qcpa"), ExtResource("28_agnih"), ExtResource("29_q1h63"), ExtResource("30_lw8s5"), ExtResource("31_g2qyc")])
 metadata/_custom_type_script = "uid://dvynuonkrlj4l"
