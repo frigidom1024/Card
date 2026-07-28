@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://ciyw0gfmhhgap"]
-
-[ext_resource type="Script" uid="uid://bomj50vd3mge5" path="res://scripts/zone/hand.gd" id="1_cmdsa"]
-
-[node name="HandManager" type="Node2D" unique_id=279800638]
-script = ExtResource("1_cmdsa")

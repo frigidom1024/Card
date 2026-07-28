@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://kqfshm560psd"]
+
+[ext_resource type="Script" uid="uid://c43nrejnpugtx" path="res://scripts/game_manager.gd" id="1_q8mjp"]
+[ext_resource type="PackedScene" uid="uid://ciyw0gfmhhgap" path="res://scenes/game/hand.tscn" id="2_jdad8"]
+[ext_resource type="PackedScene" uid="uid://yddvotpojs2x" path="res://scenes/game/card_manager.tscn" id="3_k4jhu"]
+[ext_resource type="PackedScene" uid="uid://c6j6lgcbmdqrv" path="res://scenes/card_view/card_entity.tscn" id="4_frtjd"]
+[ext_resource type="Resource" uid="uid://o345kvd04ypm" path="res://data/card_lib.tres" id="5_0rse5"]
+[ext_resource type="Script" uid="uid://d4g532r3gevbr" path="res://scripts/game/drag_layer.gd" id="6_aonbx"]
+[ext_resource type="PackedScene" uid="uid://bf2h2gqo4hyjl" path="res://scenes/game/board.tscn" id="7_lcbjr"]
+
+[node name="GameManager" type="Node" unique_id=2111395174]
+script = ExtResource("1_q8mjp")
+
+[node name="HandManager" parent="." unique_id=279800638 instance=ExtResource("2_jdad8")]
+position = Vector2(447, 789)
+
+[node name="CardManager" parent="." unique_id=869829253 instance=ExtResource("3_k4jhu")]
+card_scene = ExtResource("4_frtjd")
+card_lib = ExtResource("5_0rse5")
+
+[node name="DragLayer" type="Node2D" parent="." unique_id=1701785958]
+script = ExtResource("6_aonbx")
+
+[node name="Board" parent="." unique_id=969095891 instance=ExtResource("7_lcbjr")]
+position = Vector2(47, 44)
+drop_detector = NodePath("DropDetector")

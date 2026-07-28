@@ -1,26 +1,28 @@
 [gd_scene format=3 uid="uid://c6j6lgcbmdqrv"]
 
-[ext_resource type="Script" uid="uid://ctkwunxu5hwdh" path="res://scripts/card/card_entity.gd" id="1_6u4wf"]
-[ext_resource type="PackedScene" uid="uid://0t2nmkt0asxh" path="res://scenes/CardView/card_view.tscn" id="2_of58k"]
-[ext_resource type="PackedScene" uid="uid://752y2d1bq6rg" path="res://scenes/CardView/card_info.tscn" id="3_0le6d"]
+[ext_resource type="Script" uid="uid://ctkwunxu5hwdh" path="res://scripts/card/card_entity.gd" id="1_vnle4"]
+[ext_resource type="PackedScene" uid="uid://ci3a5pao1bwvx" path="res://scenes/card_view/zoom_view.tscn" id="2_noe1h"]
+[ext_resource type="PackedScene" uid="uid://0t2nmkt0asxh" path="res://scenes/card_view/card_view.tscn" id="3_ltfih"]
+[ext_resource type="PackedScene" uid="uid://752y2d1bq6rg" path="res://scenes/card_view/card_info.tscn" id="4_3qc3j"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_p5p3o"]
 size = Vector2(80, 160)
 
 [node name="CardEntity" type="Area2D" unique_id=225973246]
 position = Vector2(85, 108)
-script = ExtResource("1_6u4wf")
+script = ExtResource("1_vnle4")
+zoom_view_scene = ExtResource("2_noe1h")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=616528053]
 shape = SubResource("RectangleShape2D_p5p3o")
 
-[node name="CardView" parent="." unique_id=161638963 instance=ExtResource("2_of58k")]
+[node name="CardView" parent="." unique_id=161638963 instance=ExtResource("3_ltfih")]
 offset_left = -37.0
 offset_top = -78.0
 offset_right = 37.0
 offset_bottom = 76.0
 
-[node name="CardInfo" parent="." unique_id=1809456825 instance=ExtResource("3_0le6d")]
+[node name="CardInfo" parent="." unique_id=1809456825 instance=ExtResource("4_3qc3j")]
 offset_left = 43.0
 offset_top = -80.0
 offset_right = 44.0

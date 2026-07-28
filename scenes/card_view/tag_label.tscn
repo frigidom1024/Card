@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://b60x80yx6px2r"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_lc6oa"]
+bg_color = Color(0.3242027, 0.32420278, 0.32420263, 1)
+
+[node name="TagLabelTemplate" type="Label" unique_id=741959313]
+theme_override_styles/normal = SubResource("StyleBoxFlat_lc6oa")
+text = "weapon"
