@@ -281,8 +281,46 @@ func _make_event_entry(event_id: String, event_size: Vector2i) -> EventEntry:
 
 
 func _test_random_event_placement() -> void:
-	var unconfigured_lib := EventLib.new()
-	_expect(unconfigured_lib.create_event_scene(null, 80) == null, "unconfigured event factories safely return no scene")
+	var factory_template := EventData.new()
+	factory_template.event_id = "factory_event"
+	var factory_instance := factory_template.create_instance()
+	var unconfigured_scene_lib := EventLib.new()
+	_expect(unconfigured_scene_lib.create_event_scene(factory_instance, 80) == null, "event factories safely return no scene when no event scene is configured")
+	var null_instance_lib := EventLib.new()
+	null_instance_lib.event_scene = BoardEventScene
+	_expect(null_instance_lib.create_event_scene(null, 80) == null, "event factories safely return no scene when no runtime instance is supplied")
+
+	var deterministic_service := EventPlacementService.new()
+	var expected_rng := RandomNumberGenerator.new()
+	expected_rng.seed = 20260729
+	var expected_origin := Vector2i(expected_rng.randi_range(0, 3), 0)
+	var expected_next_random := expected_rng.randi()
+	var first_board := BoardScene.instantiate() as Board
+	first_board.width = 4
+	first_board.height = 1
+	root.add_child(first_board)
+	var first_lib := EventLib.new()
+	first_lib.event_scene = BoardEventScene
+	first_lib.entries = [_make_event_entry("seeded", Vector2i.ONE)]
+	var first_rng := RandomNumberGenerator.new()
+	first_rng.seed = 20260729
+	var first_placed := deterministic_service.place_initial_events(first_lib, first_board, first_rng)
+	var second_board := BoardScene.instantiate() as Board
+	second_board.width = 4
+	second_board.height = 1
+	root.add_child(second_board)
+	var second_lib := EventLib.new()
+	second_lib.event_scene = BoardEventScene
+	second_lib.entries = [_make_event_entry("seeded", Vector2i.ONE)]
+	var second_rng := RandomNumberGenerator.new()
+	second_rng.seed = 20260729
+	var second_placed := deterministic_service.place_initial_events(second_lib, second_board, second_rng)
+	_expect(first_placed.size() == 1 and second_placed.size() == 1, "seeded placement attaches the single event on both boards")
+	if first_placed.size() == 1 and second_placed.size() == 1:
+		_expect(first_placed[0].origin == expected_origin and second_placed[0].origin == expected_origin, "equal RNG seeds select the precomputed same origin")
+	_expect(first_rng.randi() == expected_next_random and second_rng.randi() == expected_next_random, "placement consumes each injected RNG to choose its origin")
+	first_board.queue_free()
+	second_board.queue_free()
 
 	var board := BoardScene.instantiate() as Board
 	board.width = 4
