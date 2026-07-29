@@ -121,13 +121,13 @@ func _init() -> void:
 						_expect(generated_content.mob != null, "%s generated event resolves its mob" % expected_event_id)
 						if generated_content.mob:
 							_expect(generated_content.mob.resource_path == expected_mob_resource_paths[index], "%s generated event maps to the expected mob resource" % expected_event_id)
-	_test_board_event_binding()
+	call_deferred("_test_board_event_binding")
 
 	var card = load("res://data/cards/AllThingsRevival.tres")
 	_expect(card != null, "migrated card resource loads")
 	if card:
 		_expect(int(card.get("card_id")) == 28, "migrated card data preserves its ID")
-	call_deferred("quit", 1 if _failure_count > 0 else 0)
+	call_deferred("_finish_tests")
 
 func _expect_mob(
 	resource_path: String,
@@ -166,10 +166,26 @@ func _test_board_event_binding() -> void:
 	var board_event := BoardEventScene.instantiate() as BoardEvent
 	root.add_child(board_event)
 	board_event.setup(instance, 80)
+	var selected_instances: Array[EventInstance] = []
+	board_event.event_selected.connect(func(selected: EventInstance) -> void:
+		selected_instances.append(selected)
+	)
+	board_event.get_node("SelectButton").pressed.emit()
+	_expect(selected_instances.size() == 1 and selected_instances[0] == instance, "event click emits its runtime instance")
+	instance.resolve()
+	board_event.setup(instance, 80)
+	selected_instances.clear()
+	board_event.get_node("SelectButton").pressed.emit()
+	_expect(selected_instances.is_empty(), "resolved events cannot be selected again")
+	_expect(board_event.get_node("ResolvedOverlay").visible, "resolved events show their completion state")
 	_expect(board_event.position == Vector2(160, 240), "event aligns to its board origin")
 	_expect(board_event.size == Vector2(160, 80), "event spans its configured board cells")
 	_expect(board_event.event_instance == instance, "event keeps the supplied runtime instance")
 	board_event.queue_free()
+
+func _finish_tests() -> void:
+	quit(1 if _failure_count > 0 else 0)
+
 
 func _expect(condition: bool, message: String) -> void:
 	if not condition:
