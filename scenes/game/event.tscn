@@ -21,43 +21,96 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="Icon" type="TextureRect" parent="."]
-layout_mode = 0
-offset_left = 8.0
-offset_top = 8.0
-offset_right = 56.0
-offset_bottom = 56.0
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = 5.0
+offset_right = -6.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="TypeLabel" type="Label" parent="."]
+[node name="TypeBadgeBackground" type="ColorRect" parent="."]
+visible = false
 layout_mode = 0
-offset_left = 8.0
-offset_top = 8.0
-offset_right = 56.0
-offset_bottom = 56.0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = 45.0
+offset_bottom = 23.0
+mouse_filter = 2
+color = Color(0.0352941, 0.0470588, 0.0784314, 0.62)
+
+[node name="TypeBadge" type="Label" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = 45.0
+offset_bottom = 23.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 12
+theme_override_font_sizes/font_size = 8
 text = "?"
 horizontal_alignment = 1
 vertical_alignment = 1
+text_overrun_behavior = 3
 
-[node name="NameLabel" type="Label" parent="."]
+[node name="TypeLabel" type="Label" parent="."]
 layout_mode = 1
-anchors_preset = 10
+anchors_preset = 15
 anchor_right = 1.0
-offset_left = 64.0
-offset_top = 8.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 18.0
 offset_right = -8.0
-offset_bottom = 56.0
+offset_bottom = -26.0
 grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
-text = "Unbound Event"
+text = "?"
+horizontal_alignment = 1
 vertical_alignment = 1
-autowrap_mode = 2
+text_overrun_behavior = 3
+
+[node name="NameBar" type="ColorRect" parent="."]
+layout_mode = 1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = -22.0
+offset_right = -5.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+color = Color(0.0352941, 0.0470588, 0.0784314, 0.72)
+
+[node name="NameLabel" type="Label" parent="."]
+layout_mode = 1
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 7.0
+offset_top = -21.0
+offset_right = -7.0
+offset_bottom = -6.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 10
+text = "Unbound Event"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
 
 [node name="ResolvedOverlay" type="ColorRect" parent="."]
 visible = false

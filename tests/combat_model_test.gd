@@ -171,6 +171,28 @@ func _test_board_event_binding() -> void:
 	_expect(board_event.position == Vector2(80, 80), "preview event has a visible board position")
 	_expect(board_event.size == Vector2(80, 80), "preview event uses one visible board cell")
 
+	var name_bar := board_event.get_node_or_null("NameBar") as ColorRect
+	var type_badge := board_event.get_node_or_null("TypeBadge") as Label
+	var icon := board_event.get_node("Icon") as TextureRect
+	var type_label := board_event.get_node("TypeLabel") as Label
+	var name_label := board_event.get_node("NameLabel") as Label
+	_expect(name_bar != null, "event cards have a bottom name bar")
+	_expect(type_badge != null, "icon-backed event cards have a type badge")
+	_expect(name_label.autowrap_mode == TextServer.AUTOWRAP_OFF, "event names stay on one line")
+	_expect(name_label.text_overrun_behavior == TextServer.OVERRUN_TRIM_ELLIPSIS, "long event names are truncated with an ellipsis")
+
+	template.icon = GradientTexture2D.new()
+	board_event.setup(instance, 80)
+	_expect(icon.visible, "event icons are shown when configured")
+	_expect(type_badge != null and type_badge.visible, "icon-backed events show a compact type badge")
+	_expect(not type_label.visible, "icon-backed events hide the centered fallback marker")
+
+	template.icon = null
+	board_event.setup(instance, 80)
+	_expect(not icon.visible, "events without icons hide the icon region")
+	_expect(type_badge != null and not type_badge.visible, "events without icons hide the compact type badge")
+	_expect(type_label.visible, "events without icons show the centered fallback marker")
+
 	var selected_instances: Array[EventInstance] = []
 	board_event.event_selected.connect(func(selected: EventInstance) -> void:
 		selected_instances.append(selected)

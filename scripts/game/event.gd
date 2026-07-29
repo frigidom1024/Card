@@ -9,6 +9,8 @@ const PREVIEW_CELL_SIZE := 80
 
 @onready var background: Panel = $Background
 @onready var icon: TextureRect = $Icon
+@onready var type_badge_background: ColorRect = $TypeBadgeBackground
+@onready var type_badge: Label = $TypeBadge
 @onready var type_label: Label = $TypeLabel
 @onready var name_label: Label = $NameLabel
 @onready var resolved_overlay: ColorRect = $ResolvedOverlay
@@ -43,9 +45,14 @@ func _refresh() -> void:
 	style.corner_radius_bottom_right = 8
 	background.add_theme_stylebox_override("panel", style)
 	icon.texture = data.icon if data else null
-	icon.visible = icon.texture != null
-	type_label.visible = not icon.visible
-	type_label.text = _get_type_marker(data.event_type) if data else "?"
+	var has_icon := icon.texture != null
+	var type_marker := _get_type_marker(data.event_type) if data else "?"
+	icon.visible = has_icon
+	type_badge_background.visible = has_icon
+	type_badge.visible = has_icon
+	type_badge.text = type_marker
+	type_label.visible = not has_icon
+	type_label.text = type_marker
 	name_label.text = _get_display_name(data)
 	resolved_overlay.visible = is_resolved
 	select_button.disabled = event_instance == null or is_resolved
