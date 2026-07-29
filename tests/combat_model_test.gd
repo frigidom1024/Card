@@ -59,6 +59,27 @@ func _init() -> void:
 		var boss_card = guardian.card_rewards[0] as CardDataScript
 		_expect(boss_card != null and boss_card.card_name == "World Tree Branch Cleaver", "boss reward is WorldTreeBranchCleaver")
 
+	var event_lib = load("res://data/event/event_lib.tres") as EventLib
+	_expect(event_lib != null, "enemy event library loads")
+	if event_lib:
+		var generated_events = event_lib.generate_event_datas()
+		_expect(generated_events.size() == 4, "enemy event library generates four fixed events")
+		var expected_event_types := {
+			"rotwood_gnawer": EventData.EventType.MONSTER,
+			"forest_wolf": EventData.EventType.MONSTER,
+			"miasma_shadow_lizard": EventData.EventType.MONSTER,
+			"miasma_grove_guardian": EventData.EventType.BOSS,
+		}
+		for event in generated_events:
+			_expect(event.event_id in expected_event_types, "generated event has a roster ID")
+			if event.event_id in expected_event_types:
+				_expect(event.event_type == expected_event_types[event.event_id], "%s has correct event type" % event.event_id)
+			var monster_content = event.content as EventMonsterContent
+			_expect(monster_content != null, "%s has monster content" % event.event_id)
+			if monster_content:
+				_expect(monster_content.count == 1, "%s spawns one mob" % event.event_id)
+				_expect(monster_content.mob != null, "%s resolves its mob" % event.event_id)
+
 	var card = load("res://data/cards/AllThingsRevival.tres")
 	if card == null:
 		push_error("migrated card resource loads")

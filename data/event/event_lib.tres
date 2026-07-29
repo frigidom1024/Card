@@ -1,6 +1,36 @@
-[gd_resource type="Resource" format=3 uid="uid://ulqs1hfc6vy3"]
+[gd_resource type="Resource" script_class="EventLib" load_steps=7 format=3 uid="uid://ulqs1hfc6vy3"]
 
-[ext_resource type="Script" uid="uid://cpss1bfonsemn" path="res://scripts/game/event/event_lib.gd" id="1_a8i3a"]
+[ext_resource type="Script" uid="uid://cpss1bfonsemn" path="res://scripts/game/event/event_lib.gd" id="event_lib_script"]
+[ext_resource type="Script" uid="uid://plerpkq2tkrr" path="res://scripts/game/event/event_entry.gd" id="event_entry_script"]
+[ext_resource type="Resource" path="res://data/event/events/rotwood_gnawer_event.tres" id="rotwood_gnawer_event"]
+[ext_resource type="Resource" path="res://data/event/events/forest_wolf_event.tres" id="forest_wolf_event"]
+[ext_resource type="Resource" path="res://data/event/events/miasma_shadow_lizard_event.tres" id="miasma_shadow_lizard_event"]
+[ext_resource type="Resource" path="res://data/event/events/miasma_grove_guardian_boss_event.tres" id="miasma_grove_guardian_event"]
+
+[sub_resource type="Resource" id="EventEntry_rotwood_gnawer"]
+script = ExtResource("event_entry_script")
+event_data = ExtResource("rotwood_gnawer_event")
+min_count = 1
+max_count = 1
+
+[sub_resource type="Resource" id="EventEntry_forest_wolf"]
+script = ExtResource("event_entry_script")
+event_data = ExtResource("forest_wolf_event")
+min_count = 1
+max_count = 1
+
+[sub_resource type="Resource" id="EventEntry_miasma_shadow_lizard"]
+script = ExtResource("event_entry_script")
+event_data = ExtResource("miasma_shadow_lizard_event")
+min_count = 1
+max_count = 1
+
+[sub_resource type="Resource" id="EventEntry_miasma_grove_guardian"]
+script = ExtResource("event_entry_script")
+event_data = ExtResource("miasma_grove_guardian_event")
+min_count = 1
+max_count = 1
 
 [resource]
-script = ExtResource("1_a8i3a")
+script = ExtResource("event_lib_script")
+entries = Array[ExtResource("event_entry_script")]([SubResource("EventEntry_rotwood_gnawer"), SubResource("EventEntry_forest_wolf"), SubResource("EventEntry_miasma_shadow_lizard"), SubResource("EventEntry_miasma_grove_guardian")])
