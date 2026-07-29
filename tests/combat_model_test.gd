@@ -165,10 +165,18 @@ func _test_board_event_binding() -> void:
 	var instance := template.create_instance(Vector2i(2, 3))
 	var board_event := BoardEventScene.instantiate() as BoardEvent
 	root.add_child(board_event)
+	_expect(board_event.event_instance != null, "unconfigured board events bind a preview instance")
+	if board_event.event_instance:
+		_expect(board_event.event_instance.template.event_id == "forest_wolf", "preview instance uses the forest wolf event")
+	_expect(board_event.position == Vector2(80, 80), "preview event has a visible board position")
+	_expect(board_event.size == Vector2(80, 80), "preview event uses one visible board cell")
+
 	var selected_instances: Array[EventInstance] = []
 	board_event.event_selected.connect(func(selected: EventInstance) -> void:
 		selected_instances.append(selected)
 	)
+	board_event.event_instance = null
+	board_event._refresh()
 	board_event.get_node("SelectButton").pressed.emit()
 	_expect(selected_instances.is_empty(), "unbound events cannot be selected")
 	board_event.setup(instance, 80)

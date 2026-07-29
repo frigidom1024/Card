@@ -3,6 +3,10 @@ extends Control
 
 signal event_selected(instance: EventInstance)
 
+const PREVIEW_EVENT: EventData = preload("res://data/event/events/forest_wolf_event.tres")
+const PREVIEW_ORIGIN := Vector2i(1, 1)
+const PREVIEW_CELL_SIZE := 80
+
 @onready var background: Panel = $Background
 @onready var icon: TextureRect = $Icon
 @onready var type_label: Label = $TypeLabel
@@ -23,7 +27,10 @@ func setup(instance: EventInstance, cell_size: int) -> void:
 		_refresh()
 
 func _ready() -> void:
-	_refresh()
+	if event_instance == null:
+		setup(PREVIEW_EVENT.create_instance(PREVIEW_ORIGIN), PREVIEW_CELL_SIZE)
+	else:
+		_refresh()
 
 func _refresh() -> void:
 	var data := event_instance.template if event_instance else null
