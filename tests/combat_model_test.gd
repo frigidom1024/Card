@@ -108,19 +108,22 @@ func _init() -> void:
 		_expect(generated_events.size() == expected_event_ids.size(), "enemy event library generates four fixed events")
 		if generated_events.size() == expected_event_ids.size():
 			for index in range(expected_event_ids.size()):
-				var generated_event: EventData = generated_events[index]
+				var generated_event: EventInstance = generated_events[index]
 				var expected_event_id: String = expected_event_ids[index]
 				_expect(generated_event != null, "generated event %d is present" % (index + 1))
 				if generated_event:
-					_expect(generated_event.event_id == expected_event_id, "generated event %d has expected roster ID" % (index + 1))
-					_expect(generated_event.event_type == expected_event_types[index], "%s generated event has correct type" % expected_event_id)
-					var generated_content = generated_event.content as EventMonsterContent
-					_expect(generated_content != null, "%s generated event has monster content" % expected_event_id)
-					if generated_content:
-						_expect(generated_content.count == 1, "%s generated event spawns one mob" % expected_event_id)
-						_expect(generated_content.mob != null, "%s generated event resolves its mob" % expected_event_id)
-						if generated_content.mob:
-							_expect(generated_content.mob.resource_path == expected_mob_resource_paths[index], "%s generated event maps to the expected mob resource" % expected_event_id)
+					var generated_template := generated_event.template
+					_expect(generated_template != null, "generated event %d has template data" % (index + 1))
+					if generated_template:
+						_expect(generated_template.event_id == expected_event_id, "generated event %d has expected roster ID" % (index + 1))
+						_expect(generated_template.event_type == expected_event_types[index], "%s generated event has correct type" % expected_event_id)
+						var generated_content = generated_template.content as EventMonsterContent
+						_expect(generated_content != null, "%s generated event has monster content" % expected_event_id)
+						if generated_content:
+							_expect(generated_content.count == 1, "%s generated event spawns one mob" % expected_event_id)
+							_expect(generated_content.mob != null, "%s generated event resolves its mob" % expected_event_id)
+							if generated_content.mob:
+								_expect(generated_content.mob.resource_path == expected_mob_resource_paths[index], "%s generated event maps to the expected mob resource" % expected_event_id)
 	call_deferred("_run_deferred_tests")
 
 	var card = load("res://data/cards/AllThingsRevival.tres")
@@ -166,20 +169,19 @@ func _test_board_event_binding() -> void:
 	template.event_id = "forest_wolf"
 	template.event_type = EventData.EventType.MONSTER
 	template.size = Vector2i(2, 1)
-	var instance := template.create_instance(Vector2i(2, 3))
+	var instance := template.create_instance()
+	instance.origin = Vector2i(2, 3)
 	var board_event := BoardEventScene.instantiate() as BoardEvent
 	root.add_child(board_event)
 	_expect(board_event.event_instance != null, "unconfigured board events bind a preview instance")
 	if board_event.event_instance:
 		_expect(board_event.event_instance.template.event_id == "forest_wolf", "preview instance uses the forest wolf event")
-	_expect(board_event.position == Vector2(160, 160), "preview event honors its configured board origin")
 	_expect(board_event.size == Vector2(80, 80), "preview event uses one visible board cell")
 
 	var preview_property_names: Array[StringName] = []
 	for property in board_event.get_property_list():
 		preview_property_names.append(property.name)
 	_expect(&"preview_event" in preview_property_names, "scene preview event can be selected in the inspector")
-	_expect(&"preview_origin" in preview_property_names, "scene preview origin can be adjusted in the inspector")
 	_expect(&"preview_cell_size" in preview_property_names, "scene preview cell size can be adjusted in the inspector")
 
 	var configured_preview := BoardEventScene.instantiate() as BoardEvent
@@ -187,11 +189,9 @@ func _test_board_event_binding() -> void:
 	configured_preview_data.event_id = "wide_preview"
 	configured_preview_data.size = Vector2i(2, 1)
 	configured_preview.set("preview_event", configured_preview_data)
-	configured_preview.set("preview_origin", Vector2i(3, 1))
 	configured_preview.set("preview_cell_size", 64)
 	root.add_child(configured_preview)
 	_expect(configured_preview.event_instance != null and configured_preview.event_instance.template == configured_preview_data, "scene preview uses its selected event data")
-	_expect(configured_preview.position == Vector2(192, 64), "scene preview honors its configured origin and cell size")
 	_expect(configured_preview.size == Vector2(128, 64), "scene preview size follows the selected event data")
 	configured_preview.queue_free()
 
