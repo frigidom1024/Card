@@ -8,6 +8,7 @@ const MobActionScript = preload("res://scripts/game/event/mob_action.gd")
 const CardDataScript = preload("res://scripts/card/card_data.gd")
 const BoardEventScene = preload("res://scenes/game/event.tscn")
 const BoardScene = preload("res://scenes/game/board.tscn")
+const GameManagerScene = preload("res://scenes/game/game_manager.tscn")
 
 var _failure_count := 0
 
@@ -164,6 +165,7 @@ func _run_deferred_tests() -> void:
 	_test_board_event_binding()
 	_test_board_event_lifecycle()
 	_test_random_event_placement()
+	_test_game_manager_initial_events()
 	_finish_tests()
 
 
@@ -358,6 +360,15 @@ func _test_random_event_placement() -> void:
 	_expect(cramped_placed.size() == 1 and cramped_board.events.size() == 1, "placement service skips events when the board has no valid space")
 	cramped_board.queue_free()
 
+
+func _test_game_manager_initial_events() -> void:
+	var game_manager := GameManagerScene.instantiate()
+	root.add_child(game_manager)
+	_expect(game_manager.event_lib != null, "game manager scene supplies an event library")
+	_expect(not game_manager.board.events.is_empty(), "game manager creates initial board events during startup")
+	for event_node in game_manager.board.events:
+		_expect(event_node.event_instance != null and event_node.get_parent() == game_manager.board, "initial events keep their runtime instance and board parent")
+	game_manager.queue_free()
 
 func _finish_tests() -> void:
 	quit(1 if _failure_count > 0 else 0)

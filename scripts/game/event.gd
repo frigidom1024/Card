@@ -32,7 +32,9 @@ func setup(instance: EventInstance, cell_size: int) -> void:
 
 func _ready() -> void:
 	if event_instance == null and preview_event:
-		setup(preview_event.create_instance(preview_origin), preview_cell_size)
+		var preview_instance := preview_event.create_instance()
+		preview_instance.origin = preview_origin
+		setup(preview_instance, preview_cell_size)
 	else:
 		_refresh()
 

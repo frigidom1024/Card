@@ -6,7 +6,9 @@ extends Node
 @onready var drag_layer: DragLayer = $DragLayer
 
 @export var player_data: PlayerData
+@export var event_lib: EventLib
 var player_stats: CombatStats
+var _event_placement_service := EventPlacementService.new()
 
 # 所有玩家相关卡牌数据引用
 var cards_inst: Array[CardInstance]
@@ -24,6 +26,7 @@ func _ready() -> void:
 	drag_layer.hand_area = hand_area
 
 	init_player_cards()
+	init_events()
 
 
 # 初始化玩家卡牌：创建初始卡牌并全部发到手牌区
@@ -39,3 +42,9 @@ func init_player_cards() -> void:
 		entity.drag_layer = drag_layer
 		card_entities.append(entity)
 		hand_area.add_card(entity)
+
+func init_events() -> void:
+	if event_lib == null:
+		push_warning("GameManager is missing EventLib")
+		return
+	_event_placement_service.place_initial_events(event_lib, board)
