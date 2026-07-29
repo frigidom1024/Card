@@ -7,6 +7,8 @@ const PlayerDataScript = preload("res://scripts/player/player_data.gd")
 const MobActionScript = preload("res://scripts/game/event/mob_action.gd")
 const CardDataScript = preload("res://scripts/card/card_data.gd")
 
+var _failure_count := 0
+
 func _init() -> void:
 	var data = CombatStatsDataScript.new()
 	data.max_hp = 10
@@ -42,13 +44,11 @@ func _init() -> void:
 	_expect(player_stats.take_damage(2) == 0, "player stats use the same defense rule as monsters")
 	_expect(player_stats.is_alive(), "player stats use the same alive-state API as monsters")
 
-	var wolf = load("res://data/event/mobs/wolf_mob.tres")
-	if wolf == null:
-		push_error("wolf resource loads")
-		quit(1)
-		return
-	_expect(wolf.base_stats != null, "wolf resource includes inline base stats")
-	_expect(wolf.create_instance().is_alive(), "loaded wolf creates a valid encounter")
+	var wolf = load("res://data/event/mobs/wolf_mob.tres") as MobData
+	_expect(wolf != null, "wolf resource loads")
+	if wolf:
+		_expect(wolf.base_stats != null, "wolf resource includes inline base stats")
+		_expect(wolf.create_instance().is_alive(), "loaded wolf creates a valid encounter")
 
 	_expect_mob("res://data/event/mobs/rotwood_gnawer_mob.tres", "Rotwood Gnawer", 8, 2, 0, 1, 0)
 	_expect_mob("res://data/event/mobs/wolf_mob.tres", "Forest Wolf", 12, 3, 1, 2, 0)
@@ -62,7 +62,6 @@ func _init() -> void:
 	var event_lib = load("res://data/event/event_lib.tres") as EventLib
 	_expect(event_lib != null, "enemy event library loads")
 	if event_lib:
-		var generated_events = event_lib.generate_event_datas()
 		var expected_event_ids := [
 			"rotwood_gnawer",
 			"forest_wolf",
@@ -75,26 +74,57 @@ func _init() -> void:
 			EventData.EventType.MONSTER,
 			EventData.EventType.BOSS,
 		]
+		var expected_mob_resource_paths := [
+			"res://data/event/mobs/rotwood_gnawer_mob.tres",
+			"res://data/event/mobs/wolf_mob.tres",
+			"res://data/event/mobs/miasma_shadow_lizard_mob.tres",
+			"res://data/event/mobs/miasma_grove_guardian_boss.tres",
+		]
+		_expect(event_lib.entries.size() == expected_event_ids.size(), "enemy event library configures four fixed roster entries")
+		if event_lib.entries.size() == expected_event_ids.size():
+			for index in range(expected_event_ids.size()):
+				var entry: EventEntry = event_lib.entries[index]
+				var expected_event_id: String = expected_event_ids[index]
+				_expect(entry != null, "configured roster entry %d is present" % (index + 1))
+				if entry:
+					_expect(entry.min_count == 1, "%s entry has a minimum count of one" % expected_event_id)
+					_expect(entry.max_count == 1, "%s entry has a maximum count of one" % expected_event_id)
+					var configured_event: EventData = entry.event_data
+					_expect(configured_event != null, "%s entry has event data" % expected_event_id)
+					if configured_event:
+						_expect(configured_event.event_id == expected_event_id, "%s configured event has expected roster ID" % expected_event_id)
+						_expect(configured_event.event_type == expected_event_types[index], "%s configured event has correct type" % expected_event_id)
+						_expect(configured_event.size == Vector2i.ONE, "%s configured event uses default one-cell size" % expected_event_id)
+						var configured_content = configured_event.content as EventMonsterContent
+						_expect(configured_content != null, "%s configured event has monster content" % expected_event_id)
+						if configured_content:
+							_expect(configured_content.count == 1, "%s configured content spawns one mob" % expected_event_id)
+							_expect(configured_content.mob != null, "%s configured content resolves its mob" % expected_event_id)
+							if configured_content.mob:
+								_expect(configured_content.mob.resource_path == expected_mob_resource_paths[index], "%s configured content maps to the expected mob resource" % expected_event_id)
+
+		var generated_events = event_lib.generate_event_datas()
 		_expect(generated_events.size() == expected_event_ids.size(), "enemy event library generates four fixed events")
 		if generated_events.size() == expected_event_ids.size():
 			for index in range(expected_event_ids.size()):
-				var event = generated_events[index]
+				var generated_event: EventData = generated_events[index]
 				var expected_event_id: String = expected_event_ids[index]
-				_expect(event.event_id == expected_event_id, "generated event %d has expected roster ID" % (index + 1))
-				_expect(event.event_type == expected_event_types[index], "%s has correct event type" % expected_event_id)
-				var monster_content = event.content as EventMonsterContent
-				_expect(monster_content != null, "%s has monster content" % expected_event_id)
-				if monster_content:
-					_expect(monster_content.count == 1, "%s spawns one mob" % expected_event_id)
-					_expect(monster_content.mob != null, "%s resolves its mob" % expected_event_id)
-
+				_expect(generated_event != null, "generated event %d is present" % (index + 1))
+				if generated_event:
+					_expect(generated_event.event_id == expected_event_id, "generated event %d has expected roster ID" % (index + 1))
+					_expect(generated_event.event_type == expected_event_types[index], "%s generated event has correct type" % expected_event_id)
+					var generated_content = generated_event.content as EventMonsterContent
+					_expect(generated_content != null, "%s generated event has monster content" % expected_event_id)
+					if generated_content:
+						_expect(generated_content.count == 1, "%s generated event spawns one mob" % expected_event_id)
+						_expect(generated_content.mob != null, "%s generated event resolves its mob" % expected_event_id)
+						if generated_content.mob:
+							_expect(generated_content.mob.resource_path == expected_mob_resource_paths[index], "%s generated event maps to the expected mob resource" % expected_event_id)
 	var card = load("res://data/cards/AllThingsRevival.tres")
-	if card == null:
-		push_error("migrated card resource loads")
-		quit(1)
-		return
-	_expect(int(card.get("card_id")) == 28, "migrated card data preserves its ID")
-	quit(0)
+	_expect(card != null, "migrated card resource loads")
+	if card:
+		_expect(int(card.get("card_id")) == 28, "migrated card data preserves its ID")
+	call_deferred("quit", 1 if _failure_count > 0 else 0)
 
 func _expect_mob(
 	resource_path: String,
@@ -126,5 +156,5 @@ func _expect_mob(
 
 func _expect(condition: bool, message: String) -> void:
 	if not condition:
+		_failure_count += 1
 		push_error(message)
-		quit(1)
