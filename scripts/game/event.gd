@@ -3,9 +3,11 @@ extends Control
 
 signal event_selected(instance: EventInstance)
 
-const PREVIEW_EVENT: EventData = preload("res://data/event/events/forest_wolf_event.tres")
-const PREVIEW_ORIGIN := Vector2i(1, 1)
-const PREVIEW_CELL_SIZE := 80
+@export_category("Scene Preview")
+## 编辑此资源的 size 可调整预览事件占用的棋盘格数。
+@export var preview_event: EventData = preload("res://data/event/events/forest_wolf_event.tres")
+@export var preview_origin := Vector2i(2, 2)
+@export_range(16, 256, 1) var preview_cell_size := 80
 
 @onready var background: Panel = $Background
 @onready var icon: TextureRect = $Icon
@@ -29,8 +31,8 @@ func setup(instance: EventInstance, cell_size: int) -> void:
 		_refresh()
 
 func _ready() -> void:
-	if event_instance == null:
-		setup(PREVIEW_EVENT.create_instance(PREVIEW_ORIGIN), PREVIEW_CELL_SIZE)
+	if event_instance == null and preview_event:
+		setup(preview_event.create_instance(preview_origin), preview_cell_size)
 	else:
 		_refresh()
 

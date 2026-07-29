@@ -121,13 +121,12 @@ func _init() -> void:
 						_expect(generated_content.mob != null, "%s generated event resolves its mob" % expected_event_id)
 						if generated_content.mob:
 							_expect(generated_content.mob.resource_path == expected_mob_resource_paths[index], "%s generated event maps to the expected mob resource" % expected_event_id)
-	call_deferred("_test_board_event_binding")
+	call_deferred("_run_deferred_tests")
 
 	var card = load("res://data/cards/AllThingsRevival.tres")
 	_expect(card != null, "migrated card resource loads")
 	if card:
 		_expect(int(card.get("card_id")) == 28, "migrated card data preserves its ID")
-	call_deferred("_finish_tests")
 
 func _expect_mob(
 	resource_path: String,
@@ -157,6 +156,11 @@ func _expect_mob(
 	_expect(mob.create_instance().is_alive(), "%s creates a live encounter" % resource_path)
 
 
+func _run_deferred_tests() -> void:
+	_test_board_event_binding()
+	_finish_tests()
+
+
 func _test_board_event_binding() -> void:
 	var template := EventData.new()
 	template.event_id = "forest_wolf"
@@ -168,8 +172,28 @@ func _test_board_event_binding() -> void:
 	_expect(board_event.event_instance != null, "unconfigured board events bind a preview instance")
 	if board_event.event_instance:
 		_expect(board_event.event_instance.template.event_id == "forest_wolf", "preview instance uses the forest wolf event")
-	_expect(board_event.position == Vector2(80, 80), "preview event has a visible board position")
+	_expect(board_event.position == Vector2(160, 160), "preview event honors its configured board origin")
 	_expect(board_event.size == Vector2(80, 80), "preview event uses one visible board cell")
+
+	var preview_property_names: Array[StringName] = []
+	for property in board_event.get_property_list():
+		preview_property_names.append(property.name)
+	_expect(&"preview_event" in preview_property_names, "scene preview event can be selected in the inspector")
+	_expect(&"preview_origin" in preview_property_names, "scene preview origin can be adjusted in the inspector")
+	_expect(&"preview_cell_size" in preview_property_names, "scene preview cell size can be adjusted in the inspector")
+
+	var configured_preview := BoardEventScene.instantiate() as BoardEvent
+	var configured_preview_data := EventData.new()
+	configured_preview_data.event_id = "wide_preview"
+	configured_preview_data.size = Vector2i(2, 1)
+	configured_preview.set("preview_event", configured_preview_data)
+	configured_preview.set("preview_origin", Vector2i(3, 1))
+	configured_preview.set("preview_cell_size", 64)
+	root.add_child(configured_preview)
+	_expect(configured_preview.event_instance != null and configured_preview.event_instance.template == configured_preview_data, "scene preview uses its selected event data")
+	_expect(configured_preview.position == Vector2(192, 64), "scene preview honors its configured origin and cell size")
+	_expect(configured_preview.size == Vector2(128, 64), "scene preview size follows the selected event data")
+	configured_preview.queue_free()
 
 	var name_bar := board_event.get_node_or_null("NameBar") as ColorRect
 	var type_badge := board_event.get_node_or_null("TypeBadge") as Label
