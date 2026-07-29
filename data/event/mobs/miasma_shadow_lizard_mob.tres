@@ -4,21 +4,21 @@
 [ext_resource type="Script" path="res://scripts/combat/combat_stats_data.gd" id="2_stats"]
 [ext_resource type="Script" path="res://scripts/game/event/mob_action.gd" id="3_action"]
 
-[sub_resource type="Resource" id="CombatStatsData_wolf"]
+[sub_resource type="Resource" id="CombatStatsData_miasma_shadow_lizard"]
 script = ExtResource("2_stats")
-max_hp = 12
-attack = 3
+max_hp = 16
+attack = 4
 defense = 1
 
-[sub_resource type="Resource" id="MobAction_wolf"]
+[sub_resource type="Resource" id="MobAction_miasma_shadow_lizard"]
 script = ExtResource("3_action")
 type = 0
-value = 3
-description = "Bite"
+value = 4
+description = "Miasma Bite"
 
 [resource]
 script = ExtResource("1_mob")
-mob_name = "Forest Wolf"
-base_stats = SubResource("CombatStatsData_wolf")
-actions = Array[ExtResource("3_action")]([SubResource("MobAction_wolf")])
-gold_reward = 2
+mob_name = "Miasma Shadow Lizard"
+base_stats = SubResource("CombatStatsData_miasma_shadow_lizard")
+actions = Array[ExtResource("3_action")]([SubResource("MobAction_miasma_shadow_lizard")])
+gold_reward = 4

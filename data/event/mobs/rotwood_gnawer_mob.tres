@@ -4,21 +4,21 @@
 [ext_resource type="Script" path="res://scripts/combat/combat_stats_data.gd" id="2_stats"]
 [ext_resource type="Script" path="res://scripts/game/event/mob_action.gd" id="3_action"]
 
-[sub_resource type="Resource" id="CombatStatsData_wolf"]
+[sub_resource type="Resource" id="CombatStatsData_rotwood_gnawer"]
 script = ExtResource("2_stats")
-max_hp = 12
-attack = 3
-defense = 1
+max_hp = 8
+attack = 2
+defense = 0
 
-[sub_resource type="Resource" id="MobAction_wolf"]
+[sub_resource type="Resource" id="MobAction_rotwood_gnawer"]
 script = ExtResource("3_action")
 type = 0
-value = 3
-description = "Bite"
+value = 2
+description = "Gnaw"
 
 [resource]
 script = ExtResource("1_mob")
-mob_name = "Forest Wolf"
-base_stats = SubResource("CombatStatsData_wolf")
-actions = Array[ExtResource("3_action")]([SubResource("MobAction_wolf")])
-gold_reward = 2
+mob_name = "Rotwood Gnawer"
+base_stats = SubResource("CombatStatsData_rotwood_gnawer")
+actions = Array[ExtResource("3_action")]([SubResource("MobAction_rotwood_gnawer")])
+gold_reward = 1

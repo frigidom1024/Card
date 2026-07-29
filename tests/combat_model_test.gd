@@ -4,6 +4,8 @@ const CombatStatsDataScript = preload("res://scripts/combat/combat_stats_data.gd
 const CombatStatsScript = preload("res://scripts/combat/combat_stats.gd")
 const MobDataScript = preload("res://scripts/game/event/mob_data.gd")
 const PlayerDataScript = preload("res://scripts/player/player_data.gd")
+const MobActionScript = preload("res://scripts/game/event/mob_action.gd")
+const CardDataScript = preload("res://scripts/card/card_data.gd")
 
 func _init() -> void:
 	var data = CombatStatsDataScript.new()
@@ -48,6 +50,15 @@ func _init() -> void:
 	_expect(wolf.base_stats != null, "wolf resource includes inline base stats")
 	_expect(wolf.create_instance().is_alive(), "loaded wolf creates a valid encounter")
 
+	_expect_mob("res://data/event/mobs/rotwood_gnawer_mob.tres", "Rotwood Gnawer", 8, 2, 0, 1, 0)
+	_expect_mob("res://data/event/mobs/wolf_mob.tres", "Forest Wolf", 12, 3, 1, 2, 0)
+	_expect_mob("res://data/event/mobs/miasma_shadow_lizard_mob.tres", "Miasma Shadow Lizard", 16, 4, 1, 4, 0)
+	_expect_mob("res://data/event/mobs/miasma_grove_guardian_boss.tres", "Miasma Grove Guardian", 30, 5, 2, 16, 1)
+	var guardian = load("res://data/event/mobs/miasma_grove_guardian_boss.tres") as MobData
+	if guardian and guardian.card_rewards.size() == 1:
+		var boss_card = guardian.card_rewards[0] as CardDataScript
+		_expect(boss_card != null and boss_card.card_name == "World Tree Branch Cleaver", "boss reward is WorldTreeBranchCleaver")
+
 	var card = load("res://data/cards/AllThingsRevival.tres")
 	if card == null:
 		push_error("migrated card resource loads")
@@ -55,6 +66,34 @@ func _init() -> void:
 		return
 	_expect(int(card.get("card_id")) == 28, "migrated card data preserves its ID")
 	quit(0)
+
+func _expect_mob(
+	resource_path: String,
+	expected_name: String,
+	expected_hp: int,
+	expected_attack: int,
+	expected_defense: int,
+	expected_gold: int,
+	expected_reward_count: int
+) -> void:
+	var mob = load(resource_path) as MobData
+	_expect(mob != null, "%s loads" % resource_path)
+	if mob == null:
+		return
+	_expect(mob.mob_name == expected_name, "%s keeps its display name" % resource_path)
+	_expect(mob.base_stats != null, "%s has inline base stats" % resource_path)
+	if mob.base_stats:
+		_expect(mob.base_stats.max_hp == expected_hp, "%s has expected HP" % resource_path)
+		_expect(mob.base_stats.attack == expected_attack, "%s has expected attack" % resource_path)
+		_expect(mob.base_stats.defense == expected_defense, "%s has expected defense" % resource_path)
+	_expect(mob.gold_reward == expected_gold, "%s has expected gold reward" % resource_path)
+	_expect(mob.actions.size() == 1, "%s has one action" % resource_path)
+	if mob.actions.size() == 1:
+		_expect(mob.actions[0].type == MobActionScript.Type.ATTACK, "%s action is attack" % resource_path)
+		_expect(mob.actions[0].value == expected_attack, "%s action value matches attack" % resource_path)
+	_expect(mob.card_rewards.size() == expected_reward_count, "%s has expected fixed reward count" % resource_path)
+	_expect(mob.create_instance().is_alive(), "%s creates a live encounter" % resource_path)
+
 
 func _expect(condition: bool, message: String) -> void:
 	if not condition:
