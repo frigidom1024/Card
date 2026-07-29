@@ -165,11 +165,13 @@ func _test_board_event_binding() -> void:
 	var instance := template.create_instance(Vector2i(2, 3))
 	var board_event := BoardEventScene.instantiate() as BoardEvent
 	root.add_child(board_event)
-	board_event.setup(instance, 80)
 	var selected_instances: Array[EventInstance] = []
 	board_event.event_selected.connect(func(selected: EventInstance) -> void:
 		selected_instances.append(selected)
 	)
+	board_event.get_node("SelectButton").pressed.emit()
+	_expect(selected_instances.is_empty(), "unbound events cannot be selected")
+	board_event.setup(instance, 80)
 	board_event.get_node("SelectButton").pressed.emit()
 	_expect(selected_instances.size() == 1 and selected_instances[0] == instance, "event click emits its runtime instance")
 	instance.resolve()
