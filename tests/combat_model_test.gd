@@ -163,6 +163,7 @@ func _expect_mob(
 func _run_deferred_tests() -> void:
 	_test_board_event_binding()
 	_test_board_event_lifecycle()
+	_test_random_event_placement()
 	_finish_tests()
 
 
@@ -266,6 +267,59 @@ func _test_board_event_lifecycle() -> void:
 	_expect(board.remove_event(event_node), "board removes an attached event")
 	_expect(board.events.is_empty() and not board.has_conflict([Vector2i(1, 1)]), "removing an event releases its occupied cells")
 	board.queue_free()
+
+
+func _make_event_entry(event_id: String, event_size: Vector2i) -> EventEntry:
+	var data := EventData.new()
+	data.event_id = event_id
+	data.size = event_size
+	var entry := EventEntry.new()
+	entry.event_data = data
+	entry.min_count = 1
+	entry.max_count = 1
+	return entry
+
+
+func _test_random_event_placement() -> void:
+	var unconfigured_lib := EventLib.new()
+	_expect(unconfigured_lib.create_event_scene(null, 80) == null, "unconfigured event factories safely return no scene")
+
+	var board := BoardScene.instantiate() as Board
+	board.width = 4
+	board.height = 3
+	board.cell_size = 80
+	root.add_child(board)
+	var event_lib := EventLib.new()
+	event_lib.event_scene = BoardEventScene
+	event_lib.entries = [_make_event_entry("wide", Vector2i(2, 1)), _make_event_entry("tall", Vector2i(1, 2)), _make_event_entry("small", Vector2i.ONE)]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 20260729
+	var service := EventPlacementService.new()
+	var placed := service.place_initial_events(event_lib, board, rng)
+
+	_expect(placed.size() == 3 and board.events.size() == 3, "placement service attaches every event that fits")
+	var occupied: Dictionary[Vector2i, bool] = {}
+	for event_node in board.events:
+		_expect(event_node.get_parent() == board, "placement service renders events under the board")
+		for cell in board.get_event_cells(event_node.event_instance.origin, event_node.event_instance.get_size()):
+			_expect(cell.x >= 0 and cell.x < board.width and cell.y >= 0 and cell.y < board.height, "placed event cells stay in bounds")
+			_expect(not occupied.has(cell), "randomly placed events do not overlap")
+			occupied[cell] = true
+	board.queue_free()
+
+	var cramped_board := BoardScene.instantiate() as Board
+	cramped_board.width = 1
+	cramped_board.height = 1
+	root.add_child(cramped_board)
+	var cramped_lib := EventLib.new()
+	cramped_lib.event_scene = BoardEventScene
+	cramped_lib.entries = [_make_event_entry("first", Vector2i.ONE), _make_event_entry("second", Vector2i.ONE)]
+	var cramped_rng := RandomNumberGenerator.new()
+	cramped_rng.seed = 7
+	var cramped_placed := service.place_initial_events(cramped_lib, cramped_board, cramped_rng)
+	_expect(cramped_placed.size() == 1 and cramped_board.events.size() == 1, "placement service skips events when the board has no valid space")
+	cramped_board.queue_free()
+
 
 func _finish_tests() -> void:
 	quit(1 if _failure_count > 0 else 0)
