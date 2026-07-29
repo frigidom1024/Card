@@ -63,22 +63,30 @@ func _init() -> void:
 	_expect(event_lib != null, "enemy event library loads")
 	if event_lib:
 		var generated_events = event_lib.generate_event_datas()
-		_expect(generated_events.size() == 4, "enemy event library generates four fixed events")
-		var expected_event_types := {
-			"rotwood_gnawer": EventData.EventType.MONSTER,
-			"forest_wolf": EventData.EventType.MONSTER,
-			"miasma_shadow_lizard": EventData.EventType.MONSTER,
-			"miasma_grove_guardian": EventData.EventType.BOSS,
-		}
-		for event in generated_events:
-			_expect(event.event_id in expected_event_types, "generated event has a roster ID")
-			if event.event_id in expected_event_types:
-				_expect(event.event_type == expected_event_types[event.event_id], "%s has correct event type" % event.event_id)
-			var monster_content = event.content as EventMonsterContent
-			_expect(monster_content != null, "%s has monster content" % event.event_id)
-			if monster_content:
-				_expect(monster_content.count == 1, "%s spawns one mob" % event.event_id)
-				_expect(monster_content.mob != null, "%s resolves its mob" % event.event_id)
+		var expected_event_ids := [
+			"rotwood_gnawer",
+			"forest_wolf",
+			"miasma_shadow_lizard",
+			"miasma_grove_guardian",
+		]
+		var expected_event_types := [
+			EventData.EventType.MONSTER,
+			EventData.EventType.MONSTER,
+			EventData.EventType.MONSTER,
+			EventData.EventType.BOSS,
+		]
+		_expect(generated_events.size() == expected_event_ids.size(), "enemy event library generates four fixed events")
+		if generated_events.size() == expected_event_ids.size():
+			for index in range(expected_event_ids.size()):
+				var event = generated_events[index]
+				var expected_event_id: String = expected_event_ids[index]
+				_expect(event.event_id == expected_event_id, "generated event %d has expected roster ID" % (index + 1))
+				_expect(event.event_type == expected_event_types[index], "%s has correct event type" % expected_event_id)
+				var monster_content = event.content as EventMonsterContent
+				_expect(monster_content != null, "%s has monster content" % expected_event_id)
+				if monster_content:
+					_expect(monster_content.count == 1, "%s spawns one mob" % expected_event_id)
+					_expect(monster_content.mob != null, "%s resolves its mob" % expected_event_id)
 
 	var card = load("res://data/cards/AllThingsRevival.tres")
 	if card == null:
