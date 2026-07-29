@@ -6,6 +6,7 @@ const MobDataScript = preload("res://scripts/game/event/mob_data.gd")
 const PlayerDataScript = preload("res://scripts/player/player_data.gd")
 const MobActionScript = preload("res://scripts/game/event/mob_action.gd")
 const CardDataScript = preload("res://scripts/card/card_data.gd")
+const BoardEventScene = preload("res://scenes/game/event.tscn")
 
 var _failure_count := 0
 
@@ -120,6 +121,8 @@ func _init() -> void:
 						_expect(generated_content.mob != null, "%s generated event resolves its mob" % expected_event_id)
 						if generated_content.mob:
 							_expect(generated_content.mob.resource_path == expected_mob_resource_paths[index], "%s generated event maps to the expected mob resource" % expected_event_id)
+	_test_board_event_binding()
+
 	var card = load("res://data/cards/AllThingsRevival.tres")
 	_expect(card != null, "migrated card resource loads")
 	if card:
@@ -153,6 +156,20 @@ func _expect_mob(
 	_expect(mob.card_rewards.size() == expected_reward_count, "%s has expected fixed reward count" % resource_path)
 	_expect(mob.create_instance().is_alive(), "%s creates a live encounter" % resource_path)
 
+
+func _test_board_event_binding() -> void:
+	var template := EventData.new()
+	template.event_id = "forest_wolf"
+	template.event_type = EventData.EventType.MONSTER
+	template.size = Vector2i(2, 1)
+	var instance := template.create_instance(Vector2i(2, 3))
+	var board_event := BoardEventScene.instantiate() as BoardEvent
+	root.add_child(board_event)
+	board_event.setup(instance, 80)
+	_expect(board_event.position == Vector2(160, 240), "event aligns to its board origin")
+	_expect(board_event.size == Vector2(160, 80), "event spans its configured board cells")
+	_expect(board_event.event_instance == instance, "event keeps the supplied runtime instance")
+	board_event.queue_free()
 
 func _expect(condition: bool, message: String) -> void:
 	if not condition:
