@@ -7,6 +7,7 @@ const PlayerDataScript = preload("res://scripts/player/player_data.gd")
 const MobActionScript = preload("res://scripts/game/event/mob_action.gd")
 const CardDataScript = preload("res://scripts/card/card_data.gd")
 const BoardEventScene = preload("res://scenes/game/event.tscn")
+const BoardScene = preload("res://scenes/game/board.tscn")
 
 var _failure_count := 0
 
@@ -161,6 +162,7 @@ func _expect_mob(
 
 func _run_deferred_tests() -> void:
 	_test_board_event_binding()
+	_test_board_event_lifecycle()
 	_finish_tests()
 
 
@@ -238,6 +240,32 @@ func _test_board_event_binding() -> void:
 	_expect(board_event.size == Vector2(160, 80), "event spans its configured board cells")
 	_expect(board_event.event_instance == instance, "event keeps the supplied runtime instance")
 	board_event.queue_free()
+
+
+func _test_board_event_lifecycle() -> void:
+	var board := BoardScene.instantiate() as Board
+	board.width = 3
+	board.height = 2
+	board.cell_size = 80
+	root.add_child(board)
+
+	var template := EventData.new()
+	template.event_id = "wide_event"
+	template.size = Vector2i(2, 1)
+	var instance := template.create_instance()
+	instance.origin = Vector2i(1, 1)
+	var event_node := BoardEventScene.instantiate() as BoardEvent
+	event_node.setup(instance, board.cell_size)
+
+	_expect(board.get_event_cells(instance.origin, instance.get_size()) == [Vector2i(1, 1), Vector2i(2, 1)], "board calculates every cell occupied by a wide event")
+	_expect(board.can_attach_event(instance), "in-bounds event can be attached to an empty board")
+	_expect(board.attach_event(event_node), "board attaches a valid event node")
+	_expect(event_node.get_parent() == board and board.events.size() == 1, "board owns the attached event node")
+	_expect(board.has_conflict([Vector2i(1, 1)]), "event-occupied cells conflict with card placement")
+	_expect(not board.can_attach_event(instance), "board rejects a second event on occupied cells")
+	_expect(board.remove_event(event_node), "board removes an attached event")
+	_expect(board.events.is_empty() and not board.has_conflict([Vector2i(1, 1)]), "removing an event releases its occupied cells")
+	board.queue_free()
 
 func _finish_tests() -> void:
 	quit(1 if _failure_count > 0 else 0)

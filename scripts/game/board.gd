@@ -13,11 +13,12 @@ var highlight_invalid_color := Color(1, 0.2, 0.2, 0.4)  # 不可放置
 var preview_valid: bool = true
 
 var cards: Array[CardEntity] = []
+var events: Array[BoardEvent] = []
 
 # 格子占用表：Vector2i → CardEntity
 var _grid_owner: Dictionary = {}
-
-
+# 事件占用表：Vector2i → BoardEvent
+var _event_grid_owner: Dictionary[Vector2i, BoardEvent] = {}
 
 func _draw():
 	# 绘制棋盘
@@ -200,6 +201,61 @@ func snap_card_position(
 	center_pos /= cells.size()
 
 	return center_pos
+
+
+# =========================
+# 事件占格 / 挂载
+# =========================
+func get_event_cells(origin: Vector2i, event_size: Vector2i) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for x in event_size.x:
+		for y in event_size.y:
+			cells.append(origin + Vector2i(x, y))
+	return cells
+
+
+func _are_cells_in_bounds(cells: Array[Vector2i]) -> bool:
+	for cell in cells:
+		if cell.x < 0 or cell.x >= width or cell.y < 0 or cell.y >= height:
+			return false
+	return true
+
+
+func can_attach_event(instance: EventInstance) -> bool:
+	if instance == null or instance.template == null:
+		return false
+	var cells := get_event_cells(instance.origin, instance.get_size())
+	if cells.is_empty() or not _are_cells_in_bounds(cells):
+		return false
+	for cell in cells:
+		if _grid_owner.has(cell) or _event_grid_owner.has(cell):
+			return false
+	return true
+
+
+func attach_event(event_node: BoardEvent) -> bool:
+	if event_node == null or not can_attach_event(event_node.event_instance):
+		return false
+	var cells := get_event_cells(event_node.event_instance.origin, event_node.event_instance.get_size())
+	for cell in cells:
+		_event_grid_owner[cell] = event_node
+	events.append(event_node)
+	add_child(event_node)
+	return true
+
+
+func remove_event(event_node: BoardEvent) -> bool:
+	if event_node == null or event_node not in events:
+		return false
+	var cells := get_event_cells(event_node.event_instance.origin, event_node.event_instance.get_size())
+	for cell in cells:
+		if _event_grid_owner.get(cell) == event_node:
+			_event_grid_owner.erase(cell)
+	events.erase(event_node)
+	event_node.queue_free()
+	return true
+
+
 # =========================
 # 预览
 # =========================
@@ -208,11 +264,7 @@ func preview_card(card: CardEntity):
 	highlight_cells = cells
 
 	# 检查是否可放置
-	var cells_in_bounds = true
-	for c in cells:
-		if c.x < 0 or c.x >= width or c.y < 0 or c.y >= height:
-			cells_in_bounds = false
-			break
+	var cells_in_bounds = _are_cells_in_bounds(cells)
 	var no_conflict = not has_conflict(cells)
 	var placement_ok = can_place_card(cells, card)
 
@@ -249,11 +301,8 @@ func can_place_card(
 	card: CardEntity = null
 ) -> bool:
 	# 边界检查
-	for c in cells:
-		if c.x < 0 or c.x >= width:
-			return false
-		if c.y < 0 or c.y >= height:
-			return false
+	if not _are_cells_in_bounds(cells):
+		return false
 
 	# ROOT 类型无其他限制
 	if card and _is_root_card(card):
@@ -307,6 +356,8 @@ func has_conflict(cells: Array[Vector2i], exclude: CardEntity = null) -> bool:
 	for c in cells:
 		var key := Vector2i(c.x, c.y)
 		if _grid_owner.has(key) and _grid_owner[key] != exclude:
+			return true
+		if _event_grid_owner.has(key):
 			return true
 	return false
 
