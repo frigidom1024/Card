@@ -1,6 +1,7 @@
 [gd_resource type="Resource" script_class="EventLib" load_steps=7 format=3 uid="uid://ulqs1hfc6vy3"]
 
 [ext_resource type="Script" uid="uid://cpss1bfonsemn" path="res://scripts/game/event/event_lib.gd" id="event_lib_script"]
+[ext_resource type="PackedScene" uid="uid://cc6i15eoybvik" path="res://scenes/game/event.tscn" id="6_hsfsu"]
 [ext_resource type="Script" uid="uid://plerpkq2tkrr" path="res://scripts/game/event/event_entry.gd" id="event_entry_script"]
 [ext_resource type="Resource" path="res://data/event/events/rotwood_gnawer_event.tres" id="rotwood_gnawer_event"]
 [ext_resource type="Resource" path="res://data/event/events/forest_wolf_event.tres" id="forest_wolf_event"]
@@ -34,3 +35,4 @@ max_count = 1
 [resource]
 script = ExtResource("event_lib_script")
 entries = Array[ExtResource("event_entry_script")]([SubResource("EventEntry_rotwood_gnawer"), SubResource("EventEntry_forest_wolf"), SubResource("EventEntry_miasma_shadow_lizard"), SubResource("EventEntry_miasma_grove_guardian")])
+event_scene = ExtResource("6_hsfsu")

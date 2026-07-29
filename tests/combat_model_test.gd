@@ -163,7 +163,9 @@ func _expect_mob(
 
 func _run_deferred_tests() -> void:
 	_test_board_event_binding()
+	_test_event_lib_resource_binding()
 	_test_board_event_lifecycle()
+	_test_event_lib_invalid_entries()
 	_test_random_event_placement()
 	_test_game_manager_initial_events()
 	_finish_tests()
@@ -245,6 +247,21 @@ func _test_board_event_binding() -> void:
 	board_event.queue_free()
 
 
+func _test_event_lib_resource_binding() -> void:
+	var event_lib := load("res://data/event/event_lib.tres") as EventLib
+	_expect(event_lib != null, "event library resource loads for scene binding")
+	if event_lib == null:
+		return
+	_expect(event_lib.event_scene != null, "event library resource binds the BoardEvent scene")
+	if event_lib.event_scene == null or event_lib.entries.is_empty() or event_lib.entries[0] == null or event_lib.entries[0].event_data == null:
+		return
+	var instance := event_lib.entries[0].event_data.create_instance()
+	var event_node := event_lib.create_event_scene(instance, 80)
+	_expect(event_node is BoardEvent, "resource-bound event library creates a BoardEvent scene")
+	if event_node:
+		event_node.queue_free()
+
+
 func _test_board_event_lifecycle() -> void:
 	var board := BoardScene.instantiate() as Board
 	board.width = 3
@@ -268,7 +285,38 @@ func _test_board_event_lifecycle() -> void:
 	_expect(not board.can_attach_event(instance), "board rejects a second event on occupied cells")
 	_expect(board.remove_event(event_node), "board removes an attached event")
 	_expect(board.events.is_empty() and not board.has_conflict([Vector2i(1, 1)]), "removing an event releases its occupied cells")
+
+	var other_parent := Node.new()
+	root.add_child(other_parent)
+	var parented_instance := template.create_instance()
+	parented_instance.origin = Vector2i(0, 0)
+	var parented_event := BoardEventScene.instantiate() as BoardEvent
+	parented_event.setup(parented_instance, board.cell_size)
+	other_parent.add_child(parented_event)
+	_expect(not board.attach_event(parented_event), "board rejects an event node that already has a parent")
+	_expect(parented_event.get_parent() == other_parent, "rejected event node keeps its original parent")
+	_expect(board.events.is_empty(), "rejected parented event is not registered on the board")
+	_expect(not board.has_conflict([Vector2i(0, 0)]), "rejected parented event does not occupy board cells")
+	other_parent.queue_free()
 	board.queue_free()
+
+
+func _test_event_lib_invalid_entries() -> void:
+	var invalid_lib := EventLib.new()
+	var empty_data_entry := EventEntry.new()
+	var negative_count_entry := _make_event_entry("negative", Vector2i.ONE)
+	negative_count_entry.min_count = -1
+	negative_count_entry.max_count = 1
+	var inverted_count_entry := _make_event_entry("inverted", Vector2i.ONE)
+	inverted_count_entry.min_count = 2
+	inverted_count_entry.max_count = 1
+	var valid_entry := _make_event_entry("valid", Vector2i.ONE)
+	invalid_lib.entries = [null, empty_data_entry, negative_count_entry, inverted_count_entry, valid_entry]
+
+	var generated := invalid_lib.generate_event_datas()
+	_expect(generated.size() == 1, "event library skips invalid entries and keeps valid entries")
+	if generated.size() == 1:
+		_expect(generated[0].template == valid_entry.event_data, "event library generates the valid entry after invalid entries")
 
 
 func _make_event_entry(event_id: String, event_size: Vector2i) -> EventEntry:

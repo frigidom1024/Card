@@ -7,6 +7,18 @@ extends Resource
 func generate_event_datas() -> Array[EventInstance]:
 	var datas: Array[EventInstance] = []
 	for entry in entries:
+		if entry == null:
+			push_warning("Skipping invalid event entry: entry is null")
+			continue
+		if entry.event_data == null:
+			push_warning("Skipping invalid event entry: event_data is null")
+			continue
+		if entry.min_count < 0:
+			push_warning("Skipping invalid event entry: min_count is negative")
+			continue
+		if entry.max_count < entry.min_count:
+			push_warning("Skipping invalid event entry: max_count is less than min_count")
+			continue
 		var count = randi_range(entry.min_count, entry.max_count)
 		for i in count:
 			datas.append(entry.event_data.create_instance())

@@ -234,13 +234,20 @@ func can_attach_event(instance: EventInstance) -> bool:
 
 
 func attach_event(event_node: BoardEvent) -> bool:
-	if event_node == null or not can_attach_event(event_node.event_instance):
+	if event_node == null or not is_instance_valid(event_node):
 		return false
-	var cells := get_event_cells(event_node.event_instance.origin, event_node.event_instance.get_size())
+	if event_node.get_parent() != null:
+		return false
+	var instance := event_node.event_instance
+	if instance == null or not is_instance_valid(instance) or not can_attach_event(instance):
+		return false
+	var cells := get_event_cells(instance.origin, instance.get_size())
+	add_child(event_node)
+	if event_node.get_parent() != self:
+		return false
 	for cell in cells:
 		_event_grid_owner[cell] = event_node
 	events.append(event_node)
-	add_child(event_node)
 	return true
 
 
