@@ -5,8 +5,8 @@ extends Node
 @onready var hand_area: HandArea = $HandManager
 @onready var drag_layer: DragLayer = $DragLayer
 
-# 当前玩家基础状态
-var character_stats: CharacterStats
+@export var player_data: PlayerData
+var player_stats: CombatStats
 
 # 所有玩家相关卡牌数据引用
 var cards_inst: Array[CardInstance]
@@ -14,6 +14,11 @@ var card_entities: Array[CardEntity]
 
 
 func _ready() -> void:
+	if player_data and player_data.base_stats:
+		player_stats = CombatStats.from_data(player_data.base_stats)
+	else:
+		push_error("GameManager is missing PlayerData.base_stats")
+
 	# 注入 DragLayer 的区域引用
 	drag_layer.board = board
 	drag_layer.hand_area = hand_area

@@ -6,7 +6,8 @@
       "Bash(git add *)",
       "Bash(git commit -m 'feat: 简化手牌区布局为横向排列 *)",
       "Read(//c/Users/35009/.claude/skills/godot-gdscript-patterns/references/**)",
-      "Read(//c/Users/35009/.agents/skills/godot-gdscript-patterns/references/**)"
+      "Read(//c/Users/35009/.agents/skills/godot-gdscript-patterns/references/**)",
+      "Bash(git commit -m '调整board.gd代码格式 *)"
     ]
   }
 }

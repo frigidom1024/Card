@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="MobData" format=3]
+
+[ext_resource type="Script" path="res://scripts/game/event/mob_data.gd" id="1_mob"]
+[ext_resource type="Script" path="res://scripts/combat/combat_stats_data.gd" id="2_stats"]
+
+[sub_resource type="Resource" id="CombatStatsData_wolf"]
+script = ExtResource("2_stats")
+max_hp = 12
+attack = 3
+defense = 1
+
+[resource]
+script = ExtResource("1_mob")
+mob_name = "Forest Wolf"
+base_stats = SubResource("CombatStatsData_wolf")
+gold_reward = 3

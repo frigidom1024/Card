@@ -1,0 +1,27 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+TextServer: Added interface "Dummy"
+TextServer: Added interface "ICU / HarfBuzz / Graphite (Built-in)"
+Using "default" pen tablet driver...
+
+TextServer: Primary interface set to: "ICU / HarfBuzz / Graphite (Built-in)".
+CORE API HASH: 3472268009
+EDITOR API HASH: 2212757246
+Loading resource: res://tests/combat_model_test.gd remapped: res://tests/combat_model_test.gd
+Completed load for: 'res://tests/combat_model_test.gd' remapped 'res://tests/combat_model_test.gd' at thread -1
+SceneTreeFTI: traversal method DEFAULT
+Loading resource: res://data/event/mobs/wolf_mob.tres remapped: res://data/event/mobs/wolf_mob.tres
+ERROR: Cannot open file 'res://data/event/mobs/wolf_mob.tres'.
+   at: load (scene/resources/resource_format_text.cpp:1442)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://tests/combat_model_test.gd:43)
+Failed loading resource: res://data/event/mobs/wolf_mob.tres
+ERROR: Failed loading resource: res://data/event/mobs/wolf_mob.tres.
+   at: _load (core/io/resource_loader.cpp:317)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://tests/combat_model_test.gd:43)
+Completed load for: 'res://data/event/mobs/wolf_mob.tres' remapped 'res://data/event/mobs/wolf_mob.tres' at thread -1
+ERROR: wolf resource loads
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _init (res://tests/combat_model_test.gd:45)
+Loaded system CA certificates
