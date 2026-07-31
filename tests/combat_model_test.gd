@@ -33,12 +33,53 @@ func _init() -> void:
 
 	var mob_data = MobDataScript.new()
 	mob_data.base_stats = data
+	var first_action := MobActionScript.new()
+	first_action.type = MobActionScript.Type.ATTACK
+	first_action.value = 3
+	var second_action := MobActionScript.new()
+	second_action.type = MobActionScript.Type.DEFEND
+	second_action.value = 2
+	var action_sequence: Array[MobAction] = [first_action, second_action]
+	mob_data.actions = action_sequence
 	var first = mob_data.create_instance()
 	var second = mob_data.create_instance()
 	first.take_damage(12)
 	_expect(not first.is_alive(), "first encounter can be defeated")
 	_expect(second.is_alive(), "second encounter has independent runtime HP")
 	_expect(second.stats.hp == 10, "definition resources are not mutated by encounters")
+
+	var action_mob = mob_data.create_instance()
+	_expect(
+		action_mob.next_action() == first_action,
+		"next action starts with the first configured action"
+	)
+	_expect(
+		action_mob.next_action() == second_action, "next action advances through configured actions"
+	)
+	_expect(
+		action_mob.get_next_action() == first_action,
+		"legacy action wrapper delegates to next action"
+	)
+	action_mob.take_damage(6)
+	action_mob.action_index = 1
+	var encounter_copy := action_mob.duplicate_for_encounter()
+	_expect(encounter_copy != action_mob, "encounter duplication creates a distinct mob instance")
+	_expect(encounter_copy.data == mob_data, "encounter duplication keeps the immutable mob data")
+	_expect(encounter_copy.stats != action_mob.stats, "encounter duplication copies runtime stats")
+	_expect(
+		(
+			encounter_copy.stats.max_hp == 10
+			and encounter_copy.stats.hp == 6
+			and encounter_copy.stats.attack == 3
+			and encounter_copy.stats.defense == 0
+		),
+		"encounter duplication preserves current runtime stats"
+	)
+	_expect(encounter_copy.action_index == 0, "encounter duplication resets the action index")
+	encounter_copy.stats.take_damage(2)
+	_expect(
+		action_mob.stats.hp == 6, "encounter runtime stats remain independent after duplication"
+	)
 
 	var player_data = PlayerDataScript.new()
 	player_data.base_stats = data

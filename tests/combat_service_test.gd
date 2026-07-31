@@ -1,6 +1,8 @@
 extends SceneTree
 
 const CombatEffectScript = preload("res://scripts/combat/combat_effect.gd")
+const MobActionResolverScript = preload("res://scripts/combat/mob_action_resolver.gd")
+const MobActionScript = preload("res://scripts/game/event/mob_action.gd")
 const CombatPenaltyScript = preload("res://scripts/combat/combat_penalty.gd")
 const CombatResultScript = preload("res://scripts/combat/combat_result.gd")
 const CombatStateScript = preload("res://scripts/combat/combat_state.gd")
@@ -60,6 +62,7 @@ var _failure_count := 0
 
 func _init() -> void:
 	_test_combat_effect()
+	_test_mob_action_resolver()
 	_test_combat_stats_runtime_copy()
 	_test_combat_penalty()
 	_test_combat_step_snapshots()
@@ -105,6 +108,59 @@ func _test_combat_effect() -> void:
 		_expect(
 			copy.value == 4 and copy.source_name == "Test Card",
 			"runtime effect copies preserve their original values"
+		)
+
+
+func _test_mob_action_resolver() -> void:
+	var attack := MobActionScript.new()
+	attack.type = MobActionScript.Type.ATTACK
+	attack.value = 4
+	var attack_effects := MobActionResolverScript.to_effects(attack, "Test Mob")
+	_expect(attack_effects.size() == 1, "attack action emits one effect")
+	if attack_effects.size() == 1:
+		var attack_effect: CombatEffect = attack_effects[0]
+		_expect(attack_effect.type == CombatEffectScript.Type.DAMAGE, "attack maps to damage")
+		_expect(attack_effect.target == CombatEffectScript.Target.PLAYER, "attack targets player")
+		_expect(attack_effect.value == 4, "attack preserves its configured value")
+		_expect(
+			attack_effect.source_type == CombatEffectScript.SourceType.MONSTER_ACTION,
+			"attack effects identify the monster-action source"
+		)
+		_expect(attack_effect.source_name == "Test Mob", "attack effects preserve the source name")
+
+	var defend := MobActionScript.new()
+	defend.type = MobActionScript.Type.DEFEND
+	defend.value = 2
+	var defend_effects := MobActionResolverScript.to_effects(defend, "Test Mob")
+	_expect(defend_effects.size() == 1, "defend action emits one effect")
+	if defend_effects.size() == 1:
+		var defend_effect: CombatEffect = defend_effects[0]
+		_expect(
+			defend_effect.type == CombatEffectScript.Type.ADD_DEFENSE, "defend maps to add defense"
+		)
+		_expect(defend_effect.target == CombatEffectScript.Target.MONSTER, "defend targets monster")
+
+	var heal := MobActionScript.new()
+	heal.type = MobActionScript.Type.HEAL
+	heal.value = -2
+	var heal_effects := MobActionResolverScript.to_effects(heal, "Test Mob")
+	_expect(heal_effects.size() == 1, "heal action emits one effect")
+	if heal_effects.size() == 1:
+		var heal_effect: CombatEffect = heal_effects[0]
+		_expect(heal_effect.type == CombatEffectScript.Type.HEAL, "heal maps to heal")
+		_expect(heal_effect.target == CombatEffectScript.Target.MONSTER, "heal targets monster")
+		_expect(heal_effect.value == 0, "heal delegates negative-value clamping to combat effects")
+
+	for unsupported_type in [
+		MobActionScript.Type.BUFF,
+		MobActionScript.Type.DEBUFF,
+		MobActionScript.Type.SPECIAL,
+	]:
+		var unsupported := MobActionScript.new()
+		unsupported.type = unsupported_type
+		_expect(
+			MobActionResolverScript.to_effects(unsupported, "Test Mob").is_empty(),
+			"unsupported demo action types produce no effects"
 		)
 
 
