@@ -9,6 +9,46 @@ const CombatStepScript = preload("res://scripts/combat/combat_step.gd")
 const MobDataScript = preload("res://scripts/game/event/mob_data.gd")
 const CombatStatsDataScript = preload("res://scripts/combat/combat_stats_data.gd")
 const CardInstanceScript = preload("res://scripts/card/card_instance.gd")
+const CardDataScript = preload("res://scripts/card/card_data.gd")
+const CardConditionScript = preload("res://scripts/combat/card_condition.gd")
+const CardResolutionContextScript = preload("res://scripts/combat/card_resolution_context.gd")
+const CardResolutionDraftScript = preload("res://scripts/combat/card_resolution_draft.gd")
+const CardRuleScript = preload("res://scripts/combat/card_rule.gd")
+const PreviousCardHasTagConditionScript = preload(
+	"res://scripts/combat/conditions/previous_card_has_tag_condition.gd"
+)
+const PreviousCardHasTypeConditionScript = preload(
+	"res://scripts/combat/conditions/previous_card_has_type_condition.gd"
+)
+const HasResolvedCardWithTagConditionScript = preload(
+	"res://scripts/combat/conditions/has_resolved_card_with_tag_condition.gd"
+)
+const ResolvedCardCountConditionScript = preload(
+	"res://scripts/combat/conditions/resolved_card_count_condition.gd"
+)
+const PlayerHpRatioConditionScript = preload(
+	"res://scripts/combat/conditions/player_hp_ratio_condition.gd"
+)
+const MonsterHpRatioConditionScript = preload(
+	"res://scripts/combat/conditions/monster_hp_ratio_condition.gd"
+)
+const IsFirstCardConditionScript = preload(
+	"res://scripts/combat/conditions/is_first_card_condition.gd"
+)
+const IsLastCardConditionScript = preload(
+	"res://scripts/combat/conditions/is_last_card_condition.gd"
+)
+const AddDamageOperationScript = preload("res://scripts/combat/operations/add_damage_operation.gd")
+const MultiplyDamageOperationScript = preload(
+	"res://scripts/combat/operations/multiply_damage_operation.gd"
+)
+const AddDefenseOperationScript = preload(
+	"res://scripts/combat/operations/add_defense_operation.gd"
+)
+const AddHealOperationScript = preload("res://scripts/combat/operations/add_heal_operation.gd")
+const AddCombatEffectOperationScript = preload(
+	"res://scripts/combat/operations/add_combat_effect_operation.gd"
+)
 
 var _failure_count := 0
 
@@ -20,6 +60,8 @@ func _init() -> void:
 	_test_combat_step_snapshots()
 	_test_combat_result_ownership()
 	_test_combat_state_foundation()
+	_test_existing_card_resource_stays_loadable()
+	_test_card_effect_rules_use_pre_card_snapshot_and_ordered_draft()
 	call_deferred("_finish_tests")
 
 
@@ -238,6 +280,21 @@ func _test_combat_result_ownership() -> void:
 	_expect(result.processed_card_count == 1, "combat result counts the resolved root card")
 
 
+func _test_existing_card_resource_stays_loadable() -> void:
+	var legacy_card := load("res://data/cards/AllThingsRevival.tres") as CardData
+	_expect(legacy_card != null, "existing CardData resources load after adding effect rules")
+	if legacy_card == null:
+		return
+	_expect(
+		(
+			legacy_card.card_name == "All Things Revival"
+			and legacy_card.heal == 7
+			and legacy_card.effect_rules.is_empty()
+		),
+		"existing CardData fields retain their serialized values and default new rules"
+	)
+
+
 func _test_combat_state_foundation() -> void:
 	var player_stats := _make_stats(20, 9, 5, 3)
 	var monster_stats_data := CombatStatsDataScript.new()
@@ -274,6 +331,220 @@ func _test_combat_state_foundation() -> void:
 	_expect(
 		state.resolved_cards.is_empty() and state.steps.is_empty(),
 		"combat state starts with empty resolution history"
+	)
+
+
+func _test_card_effect_rules_use_pre_card_snapshot_and_ordered_draft() -> void:
+	var previous_data := CardDataScript.new()
+	previous_data.card_type = CardDataScript.CardType.ROOT
+	previous_data.tags = [CardDataScript.CardTag.WEAPON]
+	var current_data := CardDataScript.new()
+	current_data.card_name = "Test Card"
+	current_data.damage = 5
+	var last_data := CardDataScript.new()
+	var previous_card := CardInstanceScript.new(previous_data)
+	var current_card := CardInstanceScript.new(current_data)
+	var last_card := CardInstanceScript.new(last_data)
+	var cards: Array[CardInstance] = [previous_card, current_card, last_card]
+	var player_stats := _make_stats(20, 8, 5, 3)
+	var monster_data := MobDataScript.new()
+	monster_data.base_stats = CombatStatsDataScript.new()
+	monster_data.base_stats.max_hp = 16
+	monster_data.base_stats.attack = 4
+	monster_data.base_stats.defense = 2
+	var monster := monster_data.create_instance()
+	monster.stats.hp = 4
+	var state := CombatStateScript.new(player_stats, monster, cards)
+	state.resolved_cards = [previous_card]
+	var remaining_cards: Array[CardInstance] = [current_card, last_card]
+	state.remaining_cards = remaining_cards
+
+	var context := CardResolutionContextScript.new(state, current_card, 1)
+	var first_context := CardResolutionContextScript.new(state, previous_card, 0)
+	var last_context := CardResolutionContextScript.new(state, last_card, 2)
+	player_stats.hp = 1
+	player_stats.defense = 0
+	state.monster.stats.hp = 15
+	state.monster.stats.defense = 0
+	state.resolved_cards.clear()
+	state.remaining_cards.clear()
+	state.cards.clear()
+
+	_expect(
+		context.get_player_hp() == 8 and context.get_player_defense() == 3,
+		"card resolution context keeps pre-card player values"
+	)
+	_expect(
+		context.get_monster_hp() == 4 and context.get_monster_defense() == 2,
+		"card resolution context keeps pre-card monster values"
+	)
+	_expect(
+		(
+			context.get_previous_resolved_card() != previous_card
+			and (
+				context.get_previous_resolved_card().card_data.card_type
+				== CardDataScript.CardType.ROOT
+			)
+		),
+		"card resolution context exposes an isolated previous-card snapshot"
+	)
+	var exposed_current_card := context.get_current_card()
+	exposed_current_card.card_data.damage = 99
+	_expect(
+		context.get_current_card().card_data.damage == 5,
+		"card resolution context returns read-only card snapshots"
+	)
+
+	_expect(
+		context.get_resolved_cards().size() == 1 and context.get_remaining_cards().size() == 2,
+		"card resolution context keeps resolution history and remaining cards"
+	)
+
+	var previous_tag_condition := PreviousCardHasTagConditionScript.new()
+	previous_tag_condition.required_tag = CardDataScript.CardTag.WEAPON
+	var previous_type_condition := PreviousCardHasTypeConditionScript.new()
+	previous_type_condition.required_type = CardDataScript.CardType.ROOT
+	var history_tag_condition := HasResolvedCardWithTagConditionScript.new()
+	history_tag_condition.required_tag = CardDataScript.CardTag.WEAPON
+	_expect(previous_tag_condition.evaluate(context), "previous-tag condition reads the snapshot")
+	_expect(previous_type_condition.evaluate(context), "previous-type condition reads the snapshot")
+	_expect(
+		history_tag_condition.evaluate(context), "resolved-history condition reads the snapshot"
+	)
+
+	var count_condition := ResolvedCardCountConditionScript.new()
+	count_condition.expected_count = 1
+	count_condition.comparison = CardConditionScript.Comparison.EQUAL
+	_expect(count_condition.evaluate(context), "resolved-card count supports equality")
+	count_condition.expected_count = 0
+	count_condition.comparison = CardConditionScript.Comparison.GREATER_THAN
+	_expect(count_condition.evaluate(context), "resolved-card count supports greater-than")
+	count_condition.expected_count = 1
+	count_condition.comparison = CardConditionScript.Comparison.GREATER_OR_EQUAL
+	_expect(count_condition.evaluate(context), "resolved-card count supports greater-or-equal")
+	count_condition.expected_count = 2
+	count_condition.comparison = CardConditionScript.Comparison.LESS_THAN
+	_expect(count_condition.evaluate(context), "resolved-card count supports less-than")
+	count_condition.expected_count = 1
+	count_condition.comparison = CardConditionScript.Comparison.LESS_OR_EQUAL
+	_expect(count_condition.evaluate(context), "resolved-card count supports less-or-equal")
+
+	var player_hp_condition := PlayerHpRatioConditionScript.new()
+	player_hp_condition.threshold = 0.5
+	player_hp_condition.comparison = CardConditionScript.Comparison.LESS_THAN
+	var monster_hp_condition := MonsterHpRatioConditionScript.new()
+	monster_hp_condition.threshold = 0.5
+	monster_hp_condition.comparison = CardConditionScript.Comparison.LESS_THAN
+	_expect(player_hp_condition.evaluate(context), "player HP-ratio condition reads pre-card HP")
+	_expect(monster_hp_condition.evaluate(context), "monster HP-ratio condition reads pre-card HP")
+	_expect(
+		IsFirstCardConditionScript.new().evaluate(first_context),
+		"first-card condition uses the full chain position"
+	)
+	_expect(
+		not IsFirstCardConditionScript.new().evaluate(context), "middle card is not the first card"
+	)
+	_expect(
+		IsLastCardConditionScript.new().evaluate(last_context),
+		"last-card condition uses the full chain position"
+	)
+	_expect(
+		not IsLastCardConditionScript.new().evaluate(context), "middle card is not the last card"
+	)
+
+	var double_damage := MultiplyDamageOperationScript.new()
+	double_damage.multiplier = 2.0
+	var weapon_rule := CardRuleScript.new()
+	weapon_rule.condition = previous_tag_condition
+	weapon_rule.operation = double_damage
+	var weapon_draft := CardResolutionDraftScript.from_card(current_data)
+	weapon_rule.apply(context, weapon_draft)
+	var weapon_effects := weapon_draft.to_effects(
+		CombatEffectScript.SourceType.PLAYER_CARD, "Test Card"
+	)
+	_expect(weapon_effects.size() == 1, "damage-only draft emits one effect")
+	_expect(weapon_effects[0].value == 10, "previous weapon rule doubles current damage")
+
+	var effect_data := CardDataScript.new()
+	effect_data.damage = 5
+	effect_data.defense = 2
+	effect_data.heal = 1
+	var effect_draft := CardResolutionDraftScript.from_card(effect_data)
+	var add_damage := AddDamageOperationScript.new()
+	add_damage.amount = 3
+	var add_damage_rule := CardRuleScript.new()
+	add_damage_rule.operation = add_damage
+	add_damage_rule.apply(context, effect_draft)
+	var non_matching_type := PreviousCardHasTypeConditionScript.new()
+	non_matching_type.required_type = CardDataScript.CardType.NORMAL
+	var blocked_operation := AddDamageOperationScript.new()
+	blocked_operation.amount = 99
+	var blocked_rule := CardRuleScript.new()
+	blocked_rule.condition = non_matching_type
+	blocked_rule.operation = blocked_operation
+	blocked_rule.apply(context, effect_draft)
+	double_damage.apply(context, effect_draft)
+	var add_defense := AddDefenseOperationScript.new()
+	add_defense.amount = 2
+	add_defense.apply(context, effect_draft)
+	var add_heal := AddHealOperationScript.new()
+	add_heal.amount = 3
+	var low_hp_heal_rule := CardRuleScript.new()
+	low_hp_heal_rule.condition = player_hp_condition
+	low_hp_heal_rule.operation = add_heal
+	low_hp_heal_rule.apply(context, effect_draft)
+	var extra_effect := AddCombatEffectOperationScript.new()
+	extra_effect.effect_type = CombatEffectScript.Type.DAMAGE
+	extra_effect.target = CombatEffectScript.Target.MONSTER
+	extra_effect.value = 7
+	extra_effect.apply(context, effect_draft)
+	var effects := effect_draft.to_effects(CombatEffectScript.SourceType.PLAYER_CARD, "Test Card")
+	_expect(effects.size() == 4, "draft emits base effects plus extra effects")
+	_expect(
+		(
+			effects[0].type == CombatEffectScript.Type.DAMAGE
+			and effects[0].target == CombatEffectScript.Target.MONSTER
+			and effects[0].value == 16
+		),
+		"damage operations update only the current draft"
+	)
+	_expect(
+		(
+			effects[1].type == CombatEffectScript.Type.ADD_DEFENSE
+			and effects[1].target == CombatEffectScript.Target.PLAYER
+			and effects[1].value == 4
+		),
+		"draft emits defense after damage"
+	)
+	_expect(
+		(
+			effects[2].type == CombatEffectScript.Type.HEAL
+			and effects[2].target == CombatEffectScript.Target.PLAYER
+			and effects[2].value == 4
+		),
+		"low-HP healing and base healing are emitted after defense"
+	)
+	_expect(
+		(
+			effects[3].type == CombatEffectScript.Type.DAMAGE
+			and effects[3].target == CombatEffectScript.Target.MONSTER
+			and effects[3].value == 7
+			and effects[3].source_name == "Test Card"
+		),
+		"extra effects append in operation order with card source metadata"
+	)
+	_expect(
+		player_stats.hp == 1 and state.monster.stats.hp == 15,
+		"conditions and operations never mutate combat state"
+	)
+
+	var clamped_draft := CardResolutionDraftScript.from_card(current_data)
+	var negative_damage := AddDamageOperationScript.new()
+	negative_damage.amount = -99
+	negative_damage.apply(context, clamped_draft)
+	_expect(
+		clamped_draft.to_effects(CombatEffectScript.SourceType.PLAYER_CARD, "Test Card").is_empty(),
+		"negative draft additions clamp base effects at zero"
 	)
 
 
