@@ -13,6 +13,15 @@ static func from_data(data: Resource) -> CombatStats:
 	return stats
 
 
+func duplicate_runtime() -> CombatStats:
+	var copy := CombatStats.new()
+	copy.max_hp = max_hp
+	copy.hp = hp
+	copy.attack = attack
+	copy.defense = defense
+	return copy
+
+
 func reset_from_data(data: Resource) -> void:
 	max_hp = maxi(int(data.get("max_hp")), 1)
 	hp = max_hp

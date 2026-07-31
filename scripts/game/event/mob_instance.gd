@@ -14,12 +14,23 @@ func _init(mob_data: MobData) -> void:
 		push_error("MobData[%s] is missing base_stats" % data.mob_name)
 
 
-func get_next_action() -> MobAction:
+func next_action() -> MobAction:
 	if data.actions.is_empty():
 		return null
 	var action := data.actions[action_index]
 	action_index = (action_index + 1) % data.actions.size()
 	return action
+
+
+func get_next_action() -> MobAction:
+	return next_action()
+
+
+func duplicate_for_encounter() -> MobInstance:
+	var copy := MobInstance.new(data)
+	copy.stats = stats.duplicate_runtime() if stats else null
+	copy.action_index = 0
+	return copy
 
 
 func take_damage(amount: int) -> int:
