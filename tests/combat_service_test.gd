@@ -1,6 +1,7 @@
 extends SceneTree
 
 const CombatEffectScript = preload("res://scripts/combat/combat_effect.gd")
+const CombatServiceScript = preload("res://scripts/combat/combat_service.gd")
 const MobActionResolverScript = preload("res://scripts/combat/mob_action_resolver.gd")
 const MobActionScript = preload("res://scripts/game/event/mob_action.gd")
 const CombatPenaltyScript = preload("res://scripts/combat/combat_penalty.gd")
@@ -72,6 +73,18 @@ func _init() -> void:
 	_test_card_effect_rules_use_pre_card_snapshot_and_ordered_draft()
 	_test_root_chain_rule_batches()
 	_test_chain_rule_context_snapshot()
+	_test_service_attack_card_then_monster_action()
+	_test_service_lethal_card_wins_without_monster_action()
+	_test_service_root_resolves_registers_rules_without_action()
+	_test_service_adjacent_weapons_share_one_monster_action()
+	_test_service_non_adjacent_weapons_receive_one_action_per_card()
+	_test_service_low_hp_rule_uses_pre_card_context()
+	_test_service_retreat_adds_tail_penalty()
+	_test_service_monster_attack_defeats_immediately()
+	_test_service_steps_are_ordered_and_isolated()
+	_test_service_input_monster_remains_unchanged()
+	_test_service_root_to_weapon_flushes_before_retreat()
+	_test_service_null_monster_action_records_empty_step()
 	call_deferred("_finish_tests")
 
 
@@ -719,6 +732,275 @@ func _test_chain_rule_context_snapshot() -> void:
 		context.get_current_batch_id() == 7 and context.get_current_batch_card_count() == 1,
 		"card context snapshots current batch scalars"
 	)
+
+
+func _test_service_attack_card_then_monster_action() -> void:
+	var player := _make_stats(10, 10, 0, 0)
+	var root := _make_card(CardDataScript.CardType.ROOT, "Root")
+	var attack := _make_card(CardDataScript.CardType.NORMAL, "Strike", 3)
+	var result := CombatServiceScript.new().resolve_encounter(
+		player, [root, attack], _make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.ATTACK, 2)])
+	)
+
+	_expect(result.outcome == CombatResultScript.Outcome.RETREAT, "nonlethal attack exhausts into retreat")
+	_expect(result.monster_stats_after.hp == 7, "attack card reduces monster HP")
+	_expect(result.player_stats_after.hp == 8, "nonlethal attack receives one monster action")
+	_expect(result.steps.size() == 3, "root, player card, and monster action each record a step")
+	if result.steps.size() == 3:
+		_expect(result.steps[1].kind == CombatStepScript.Kind.PLAYER_CARD, "attack is a player-card step")
+		_expect(result.steps[2].kind == CombatStepScript.Kind.MONSTER_ACTION, "attack is followed by monster step")
+
+
+func _test_service_lethal_card_wins_without_monster_action() -> void:
+	var root := _make_card(CardDataScript.CardType.ROOT, "Root")
+	var lethal := _make_card(CardDataScript.CardType.NORMAL, "Lethal", 10)
+	var result := CombatServiceScript.new().resolve_encounter(
+		_make_stats(10, 10, 0, 0),
+		[root, lethal],
+		_make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.ATTACK, 9)])
+	)
+
+	_expect(result.outcome == CombatResultScript.Outcome.VICTORY, "lethal card wins")
+	_expect(result.steps.size() == 2, "lethal card has no monster response step")
+	_expect(result.penalties.is_empty(), "victory has no retreat penalty")
+
+
+func _test_service_root_resolves_registers_rules_without_action() -> void:
+	var provider := WeaponComboRootRuleProviderScript.new()
+	var root := _make_card(CardDataScript.CardType.ROOT, "Guard Root", 0, 4)
+	root.card_data.root_rule_providers = [provider]
+	var result := CombatServiceScript.new().resolve_encounter(
+		_make_stats(10, 10, 0, 0),
+		[root],
+		_make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.ATTACK, 3)])
+	)
+
+	_expect(result.player_stats_after.defense == 4, "root resolves its own defense")
+	_expect(result.steps.size() == 1, "root never triggers a monster action")
+	_expect(result.steps[0].kind == CombatStepScript.Kind.ROOT_CARD, "root uses a root-card step")
+
+
+func _test_service_adjacent_weapons_share_one_monster_action() -> void:
+	var root := _make_combo_root()
+	var first_weapon := _make_card(
+		CardDataScript.CardType.NORMAL, "First Weapon", 1, 0, 0, [CardDataScript.CardTag.WEAPON]
+	)
+	var second_weapon := _make_card(
+		CardDataScript.CardType.NORMAL, "Second Weapon", 1, 0, 0, [CardDataScript.CardTag.WEAPON]
+	)
+	var result := CombatServiceScript.new().resolve_encounter(
+		_make_stats(10, 10, 0, 0),
+		[root, first_weapon, second_weapon],
+		_make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.ATTACK, 1)])
+	)
+
+	_expect(result.steps.size() == 4, "root plus two combo weapons receive one shared response")
+	_expect(result.player_stats_after.hp == 9, "adjacent weapon combo takes one monster action")
+	_expect(_count_monster_steps(result) == 1, "adjacent weapons produce exactly one monster step")
+
+
+func _test_service_non_adjacent_weapons_receive_one_action_per_card() -> void:
+	var root := _make_combo_root()
+	var first_weapon := _make_card(
+		CardDataScript.CardType.NORMAL, "First Weapon", 0, 0, 0, [CardDataScript.CardTag.WEAPON]
+	)
+	var interrupt := _make_card(CardDataScript.CardType.NORMAL, "Interrupt")
+	var second_weapon := _make_card(
+		CardDataScript.CardType.NORMAL, "Second Weapon", 0, 0, 0, [CardDataScript.CardTag.WEAPON]
+	)
+	var result := CombatServiceScript.new().resolve_encounter(
+		_make_stats(10, 10, 0, 0),
+		[root, first_weapon, interrupt, second_weapon],
+		_make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.ATTACK, 1)])
+	)
+
+	_expect(_count_monster_steps(result) == 3, "non-adjacent weapons receive one action per card")
+	_expect(result.player_stats_after.hp == 7, "three distinct batches apply three monster attacks")
+
+
+func _test_service_low_hp_rule_uses_pre_card_context() -> void:
+	var low_hp_condition := PlayerHpRatioConditionScript.new()
+	low_hp_condition.threshold = 0.5
+	low_hp_condition.comparison = CardConditionScript.Comparison.LESS_THAN
+	var extra_heal := AddHealOperationScript.new()
+	extra_heal.amount = 3
+	var rule := CardRuleScript.new()
+	rule.condition = low_hp_condition
+	rule.operation = extra_heal
+	var recovery := _make_card(CardDataScript.CardType.NORMAL, "Recovery", 0, 0, 1)
+	recovery.card_data.effect_rules = [rule]
+	var result := CombatServiceScript.new().resolve_encounter(
+		_make_stats(10, 4, 0, 0),
+		[_make_card(CardDataScript.CardType.ROOT, "Root"), recovery],
+		_make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.DEFEND, 0)])
+	)
+
+	_expect(result.player_stats_after.hp == 8, "low-HP rule emits extra heal from pre-card HP")
+	if result.steps.size() >= 2:
+		_expect(result.steps[1].effects.size() == 1, "recovery combines base and conditional healing")
+		if result.steps[1].effects.size() == 1:
+			_expect(result.steps[1].effects[0].value == 4, "conditional heal uses pre-card HP")
+
+
+func _test_service_retreat_adds_tail_penalty() -> void:
+	var result := CombatServiceScript.new().resolve_encounter(
+		_make_stats(10, 10, 0, 0),
+		[_make_card(CardDataScript.CardType.ROOT, "Root"), _make_card(CardDataScript.CardType.NORMAL, "Wait")],
+		_make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.DEFEND, 1)])
+	)
+
+	_expect(result.outcome == CombatResultScript.Outcome.RETREAT, "exhausted living actors retreat")
+	_expect(result.penalties.size() == 1, "retreat creates one penalty")
+	if result.penalties.size() == 1:
+		_expect(result.penalties[0].type == CombatPenaltyScript.Type.REMOVE_CARD, "retreat removes a card")
+		_expect(result.penalties[0].amount == 1, "retreat removes one card")
+		_expect(
+			result.penalties[0].target == CombatPenaltyScript.Target.TAIL_OF_CARD_CHAIN,
+			"retreat penalty targets the chain tail"
+		)
+
+
+func _test_service_monster_attack_defeats_immediately() -> void:
+	var result := CombatServiceScript.new().resolve_encounter(
+		_make_stats(10, 2, 0, 0),
+		[
+			_make_card(CardDataScript.CardType.ROOT, "Root"),
+			_make_card(CardDataScript.CardType.NORMAL, "First"),
+			_make_card(CardDataScript.CardType.NORMAL, "Never Resolved"),
+		],
+		_make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.ATTACK, 2)])
+	)
+
+	_expect(result.outcome == CombatResultScript.Outcome.DEFEAT, "zero player HP causes immediate defeat")
+	_expect(result.processed_card_count == 2, "defeat stops before later cards")
+	_expect(result.steps.size() == 3, "defeat records only root, player card, and lethal action")
+	_expect(result.penalties.is_empty(), "defeat does not create a retreat penalty")
+
+
+func _test_service_steps_are_ordered_and_isolated() -> void:
+	var result := CombatServiceScript.new().resolve_encounter(
+		_make_stats(10, 10, 0, 0),
+		[_make_card(CardDataScript.CardType.ROOT, "Root"), _make_card(CardDataScript.CardType.NORMAL, "Strike", 3)],
+		_make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.ATTACK, 2)])
+	)
+
+	_expect(result.steps.size() == 3, "service returns the ordered combat log")
+	if result.steps.size() != 3:
+		return
+	_expect(result.steps[0].kind == CombatStepScript.Kind.ROOT_CARD, "first step is root")
+	_expect(result.steps[1].kind == CombatStepScript.Kind.PLAYER_CARD, "second step is player card")
+	_expect(result.steps[2].kind == CombatStepScript.Kind.MONSTER_ACTION, "third step is monster action")
+	_expect(
+		result.steps[1].monster_before.hp == 10 and result.steps[1].monster_after.hp == 7,
+		"player step owns before and after monster snapshots"
+	)
+	_expect(
+		result.steps[2].player_before.hp == 10 and result.steps[2].player_after.hp == 8,
+		"monster step owns before and after player snapshots"
+	)
+	result.steps[0].player_after.hp = 0
+	_expect(result.steps[1].player_before.hp == 10, "step snapshots do not share mutable stats")
+
+
+func _test_service_input_monster_remains_unchanged() -> void:
+	var player := _make_stats(10, 9, 0, 0)
+	var monster := _make_mob("Wolf", 10, 2, [_make_action(MobActionScript.Type.ATTACK, 1)])
+	monster.action_index = 0
+	var result := CombatServiceScript.new().resolve_encounter(
+		player,
+		[_make_card(CardDataScript.CardType.ROOT, "Root"), _make_card(CardDataScript.CardType.NORMAL, "Strike", 3)],
+		monster
+	)
+
+	_expect(player.hp == 9 and player.defense == 0, "service does not mutate input player stats")
+	_expect(monster.action_index == 0, "service does not mutate input monster action index")
+	_expect(monster.stats.hp == 10 and monster.stats.defense == 2, "service does not mutate input monster stats")
+	_expect(result.monster_stats_after.hp == 9, "result owns the encounter-local monster stats")
+
+
+func _test_service_root_to_weapon_flushes_before_retreat() -> void:
+	var weapon := _make_card(
+		CardDataScript.CardType.NORMAL, "Lone Weapon", 0, 0, 0, [CardDataScript.CardTag.WEAPON]
+	)
+	var result := CombatServiceScript.new().resolve_encounter(
+		_make_stats(10, 10, 0, 0),
+		[_make_combo_root(), weapon],
+		_make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.ATTACK, 1)])
+	)
+
+	_expect(result.outcome == CombatResultScript.Outcome.RETREAT, "living player retreats after flush")
+	_expect(result.steps.size() == 3, "root-to-weapon flush resolves an action before retreat")
+	_expect(_count_monster_steps(result) == 1, "flush produces exactly one monster action")
+	_expect(result.player_stats_after.hp == 9, "flush action affects the surviving player")
+
+
+func _test_service_null_monster_action_records_empty_step() -> void:
+	var result := CombatServiceScript.new().resolve_encounter(
+		_make_stats(10, 10, 0, 0),
+		[_make_card(CardDataScript.CardType.ROOT, "Root"), _make_card(CardDataScript.CardType.NORMAL, "Wait")],
+		_make_mob("Silent Wolf", 10, 0, [])
+	)
+
+	_expect(result.steps.size() == 3, "null monster action still creates a combat step")
+	if result.steps.size() == 3:
+		_expect(result.steps[2].kind == CombatStepScript.Kind.MONSTER_ACTION, "null action is a monster step")
+		_expect(result.steps[2].effects.is_empty(), "null monster action has no effects")
+
+
+func _make_combo_root() -> CardInstance:
+	var root := _make_card(CardDataScript.CardType.ROOT, "Combo Root")
+	root.card_data.root_rule_providers = [WeaponComboRootRuleProviderScript.new()]
+	return root
+
+
+func _make_card(
+	card_type: CardData.CardType,
+	card_name: String,
+	damage := 0,
+	defense := 0,
+	heal := 0,
+	tags: Array[CardData.CardTag] = []
+) -> CardInstance:
+	var data := CardDataScript.new()
+	data.card_type = card_type
+	data.card_name = card_name
+	data.damage = damage
+	data.defense = defense
+	data.heal = heal
+	data.tags = tags.duplicate()
+	return CardInstanceScript.new(data)
+
+
+func _make_action(type: MobAction.Type, value: int) -> MobAction:
+	var action := MobActionScript.new()
+	action.type = type
+	action.value = value
+	return action
+
+
+func _make_mob(
+	mob_name: String, hp: int, defense: int, actions: Array[MobAction]
+) -> MobInstance:
+	var stats_data := CombatStatsDataScript.new()
+	stats_data.max_hp = hp
+	stats_data.attack = 0
+	stats_data.defense = defense
+	var data := MobDataScript.new()
+	data.mob_name = mob_name
+	data.base_stats = stats_data
+	data.actions = actions
+	var monster := data.create_instance()
+	monster.stats.hp = hp
+	monster.stats.defense = defense
+	return monster
+
+
+func _count_monster_steps(result: CombatResult) -> int:
+	var count := 0
+	for step in result.steps:
+		if step != null and step.kind == CombatStepScript.Kind.MONSTER_ACTION:
+			count += 1
+	return count
 
 
 func _make_card_with_tag(tag: CardData.CardTag) -> CardInstance:
