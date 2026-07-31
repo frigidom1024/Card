@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="1_card"]
+[ext_resource type="Script" uid="uid://dgvbr808n1wf" path="res://scripts/combat/root_rules/weapon_combo_root_rule_provider.gd" id="2_provider"]
+
+[sub_resource type="Resource" id="WeaponComboProvider_test"]
+script = ExtResource("2_provider")
+required_tag = 0
+matching_count = 2
+
+[resource]
+script = ExtResource("1_card")
+card_id = -1
+card_name = "Test Weapon Combo Root"
+card_type = 0
+root_rule_providers = Array[ExtResource("2_provider")]([SubResource("WeaponComboProvider_test")])

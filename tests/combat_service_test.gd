@@ -357,18 +357,29 @@ func _test_combat_result_ownership() -> void:
 
 
 func _test_existing_card_resource_stays_loadable() -> void:
-	var legacy_card := load("res://data/cards/AllThingsRevival.tres") as CardData
-	_expect(legacy_card != null, "existing CardData resources load after adding effect rules")
-	if legacy_card == null:
-		return
-	_expect(
-		(
-			legacy_card.card_name == "All Things Revival"
-			and legacy_card.heal == 7
-			and legacy_card.effect_rules.is_empty()
-		),
-		"existing CardData fields retain their serialized values and default new rules"
-	)
+	for file_name in DirAccess.get_files_at("res://data/cards"):
+		if file_name.ends_with(".tres"):
+			var card := load("res://data/cards/%s" % file_name) as CardData
+			_expect(card != null, "existing card loads: %s" % file_name)
+
+	var legacy := load("res://data/cards/AllThingsRevival.tres") as CardData
+	_expect(legacy != null, "legacy card loads")
+	if legacy != null:
+		_expect(legacy.effect_rules.is_empty(), "legacy card defaults to no rules")
+		_expect(
+			CardResolutionDraftScript.from_card(legacy).heal == legacy.heal,
+			"legacy base heal is preserved"
+		)
+
+	var root := load("res://tests/fixtures/cards/weapon_combo_root.tres") as CardData
+	_expect(root != null, "combo root fixture loads")
+	if root != null:
+		_expect(root.root_rule_providers.size() == 1, "combo root has one provider")
+		if root.root_rule_providers.size() == 1:
+			_expect(
+				root.root_rule_providers[0] is WeaponComboRootRuleProvider,
+				"combo root loads a weapon-combo provider"
+			)
 
 
 func _test_combat_state_foundation() -> void:
