@@ -20,3 +20,7 @@ func _init(
 	self.value = maxi(value, 0)
 	self.source_type = source_type
 	self.source_name = source_name
+
+
+func duplicate_runtime() -> CombatEffect:
+	return CombatEffect.new(type, target, value, source_type, source_name)

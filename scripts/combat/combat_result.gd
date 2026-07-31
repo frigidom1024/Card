@@ -24,6 +24,10 @@ func _init(
 	self.monster_stats_after = (
 		monster_stats_after.duplicate_runtime() if monster_stats_after else null
 	)
-	self.steps = steps.duplicate()
+	self.steps = []
+	for step in steps:
+		self.steps.append(step.duplicate_runtime() if step else null)
 	self.processed_card_count = processed_card_count
-	self.penalties = penalties.duplicate()
+	self.penalties = []
+	for penalty in penalties:
+		self.penalties.append(penalty.duplicate_runtime() if penalty else null)

@@ -23,8 +23,16 @@ func _init(
 ) -> void:
 	self.kind = kind
 	self.source_name = source_name
-	self.effects = effects.duplicate()
+	self.effects = []
+	for effect in effects:
+		self.effects.append(effect.duplicate_runtime() if effect else null)
 	self.player_before = player_before.duplicate_runtime() if player_before else null
 	self.player_after = player_after.duplicate_runtime() if player_after else null
 	self.monster_before = monster_before.duplicate_runtime() if monster_before else null
 	self.monster_after = monster_after.duplicate_runtime() if monster_after else null
+
+
+func duplicate_runtime() -> CombatStep:
+	return CombatStep.new(
+		kind, source_name, effects, player_before, player_after, monster_before, monster_after
+	)

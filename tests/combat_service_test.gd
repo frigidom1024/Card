@@ -47,6 +47,16 @@ func _test_combat_effect() -> void:
 		CombatEffectScript.SourceType.SYSTEM
 	)
 	_expect(clamped.value == 0, "combat effects clamp negative values")
+	_expect(effect.has_method(&"duplicate_runtime"), "combat effects expose runtime duplication")
+	if effect.has_method(&"duplicate_runtime"):
+		var copy: CombatEffect = effect.call(&"duplicate_runtime")
+		effect.value = 99
+		effect.source_name = "Mutated Card"
+		_expect(copy != effect, "runtime effect duplication creates a distinct object")
+		_expect(
+			copy.value == 4 and copy.source_name == "Test Card",
+			"runtime effect copies preserve their original values"
+		)
 
 
 func _test_combat_stats_runtime_copy() -> void:
@@ -82,6 +92,12 @@ func _test_combat_penalty() -> void:
 		CombatPenaltyScript.Type.REMOVE_CARD, -1, CombatPenaltyScript.Target.TAIL_OF_CARD_CHAIN
 	)
 	_expect(clamped.amount == 0, "combat penalties clamp negative amounts")
+	_expect(penalty.has_method(&"duplicate_runtime"), "combat penalties expose runtime duplication")
+	if penalty.has_method(&"duplicate_runtime"):
+		var copy: CombatPenalty = penalty.call(&"duplicate_runtime")
+		penalty.amount = 99
+		_expect(copy != penalty, "runtime penalty duplication creates a distinct object")
+		_expect(copy.amount == 1, "runtime penalty copies preserve their original amount")
 
 
 func _test_combat_step_snapshots() -> void:
@@ -111,6 +127,8 @@ func _test_combat_step_snapshots() -> void:
 	player_after.defense = 0
 	monster_before.hp = 1
 	monster_after.hp = 1
+	effect.value = 99
+	effect.source_name = "Mutated Root"
 	effects.clear()
 
 	_expect(
@@ -118,7 +136,13 @@ func _test_combat_step_snapshots() -> void:
 		"combat step carries its identity"
 	)
 	_expect(
-		step.effects.size() == 1 and step.effects[0] == effect, "combat step owns its effects array"
+		(
+			step.effects.size() == 1
+			and step.effects[0] != effect
+			and step.effects[0].value == 4
+			and step.effects[0].source_name == "Root"
+		),
+		"combat step deep-copies effect snapshots"
 	)
 	_expect(
 		step.player_before.hp == 15 and step.player_after.defense == 6,
@@ -128,16 +152,41 @@ func _test_combat_step_snapshots() -> void:
 		step.monster_before.hp == 12 and step.monster_after.hp == 8,
 		"combat step owns monster snapshots"
 	)
+	_expect(step.has_method(&"duplicate_runtime"), "combat steps expose runtime duplication")
+	if step.has_method(&"duplicate_runtime"):
+		var copy: CombatStep = step.call(&"duplicate_runtime")
+		step.source_name = "Mutated Step"
+		step.effects[0].value = 0
+		step.player_before.hp = 0
+		step.monster_after.hp = 0
+		_expect(
+			copy != step and copy.source_name == "Root", "runtime step duplication copies identity"
+		)
+		_expect(
+			(
+				copy.effects[0].value == 4
+				and copy.player_before.hp == 15
+				and copy.monster_after.hp == 8
+			),
+			"runtime step copies isolate effects and stat snapshots"
+		)
 
 
 func _test_combat_result_ownership() -> void:
 	var player_after := _make_stats(20, 11, 4, 0)
 	var monster_after := _make_stats(12, 0, 3, 0)
-	var no_effects: Array[CombatEffect] = []
+	var effect := CombatEffectScript.new(
+		CombatEffectScript.Type.DAMAGE,
+		CombatEffectScript.Target.MONSTER,
+		4,
+		CombatEffectScript.SourceType.ROOT_CARD,
+		"Root"
+	)
+	var effects: Array[CombatEffect] = [effect]
 	var step := CombatStepScript.new(
 		CombatStepScript.Kind.ROOT_CARD,
 		"Root",
-		no_effects,
+		effects,
 		player_after,
 		player_after,
 		monster_after,
@@ -154,6 +203,10 @@ func _test_combat_result_ownership() -> void:
 
 	player_after.hp = 1
 	monster_after.hp = 5
+	step.source_name = "Mutated Step"
+	step.effects[0].value = 99
+	step.player_before.hp = 1
+	penalty.amount = 99
 	steps.clear()
 	penalties.clear()
 
@@ -165,7 +218,22 @@ func _test_combat_result_ownership() -> void:
 		"combat result owns final stat snapshots"
 	)
 	_expect(
-		result.steps.size() == 1 and result.penalties.size() == 1, "combat result owns its arrays"
+		(
+			result.steps.size() == 1
+			and result.steps[0] != step
+			and result.steps[0].source_name == "Root"
+			and result.steps[0].effects[0].value == 4
+			and result.steps[0].player_before.hp == 11
+		),
+		"combat result deep-copies step snapshots"
+	)
+	_expect(
+		(
+			result.penalties.size() == 1
+			and result.penalties[0] != penalty
+			and result.penalties[0].amount == 1
+		),
+		"combat result deep-copies penalty snapshots"
 	)
 	_expect(result.processed_card_count == 1, "combat result counts the resolved root card")
 
