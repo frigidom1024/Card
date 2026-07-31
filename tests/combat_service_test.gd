@@ -13,6 +13,11 @@ const CardDataScript = preload("res://scripts/card/card_data.gd")
 const CardConditionScript = preload("res://scripts/combat/card_condition.gd")
 const CardResolutionContextScript = preload("res://scripts/combat/card_resolution_context.gd")
 const CardResolutionDraftScript = preload("res://scripts/combat/card_resolution_draft.gd")
+const ChainRuleScript = preload("res://scripts/combat/chain_rule.gd")
+const ChainRuleTrackerScript = preload("res://scripts/combat/chain_rule_tracker.gd")
+const WeaponComboRootRuleProviderScript = preload(
+	"res://scripts/combat/root_rules/weapon_combo_root_rule_provider.gd"
+)
 const CardRuleScript = preload("res://scripts/combat/card_rule.gd")
 const PreviousCardHasTagConditionScript = preload(
 	"res://scripts/combat/conditions/previous_card_has_tag_condition.gd"
@@ -62,6 +67,8 @@ func _init() -> void:
 	_test_combat_state_foundation()
 	_test_existing_card_resource_stays_loadable()
 	_test_card_effect_rules_use_pre_card_snapshot_and_ordered_draft()
+	_test_root_chain_rule_batches()
+	_test_chain_rule_context_snapshot()
 	call_deferred("_finish_tests")
 
 
@@ -546,6 +553,122 @@ func _test_card_effect_rules_use_pre_card_snapshot_and_ordered_draft() -> void:
 		clamped_draft.to_effects(CombatEffectScript.SourceType.PLAYER_CARD, "Test Card").is_empty(),
 		"negative draft additions clamp base effects at zero"
 	)
+
+
+func _test_root_chain_rule_batches() -> void:
+	var root_data := CardDataScript.new()
+	root_data.card_type = CardDataScript.CardType.ROOT
+	root_data.card_name = "Test Combo Root"
+	var provider := WeaponComboRootRuleProviderScript.new()
+	root_data.root_rule_providers = [provider]
+	var root_card := CardInstanceScript.new(root_data)
+	var root_context := CardResolutionContextScript.new(null, root_card, 0)
+	var rules := provider.build_rules(root_context)
+	_expect(root_data.root_rule_providers.size() == 1, "root cards expose typed rule providers")
+	_expect(rules.size() == 1, "root registration creates one combo rule without an action")
+	if rules.is_empty():
+		return
+	_expect(
+		(
+			rules[0].rule_id == &"weapon_combo"
+			and rules[0].required_tag == CardDataScript.CardTag.WEAPON
+		),
+		"weapon combo provider creates the configured weapon rule"
+	)
+
+	var first_weapon := _make_card_with_tag(CardDataScript.CardTag.WEAPON)
+	var second_weapon := _make_card_with_tag(CardDataScript.CardTag.WEAPON)
+	var heal := _make_card_with_tag(CardDataScript.CardTag.HEAL)
+	var tracker := ChainRuleTrackerScript.new()
+	tracker.start(rules)
+	_expect(not tracker.begin_card(first_weapon), "first adjacent weapon starts a player batch")
+	_expect(
+		not tracker.finish_card(first_weapon), "first adjacent weapon defers the monster action"
+	)
+	_expect(not tracker.begin_card(second_weapon), "second adjacent weapon stays in the same batch")
+	_expect(tracker.finish_card(second_weapon), "two adjacent weapons close one player batch")
+	_expect(not tracker.begin_card(heal), "completed combo does not add a pre-heal monster action")
+	_expect(tracker.finish_card(heal), "heal receives its own monster action after the combo")
+	_expect(not tracker.flush_pending(), "completed combo chain leaves no extra pending action")
+
+	tracker.start(provider.build_rules(root_context))
+	_expect(
+		not tracker.begin_card(first_weapon), "first non-adjacent weapon sequence starts pending"
+	)
+	_expect(not tracker.finish_card(first_weapon), "first non-adjacent weapon defers its action")
+	_expect(tracker.begin_card(heal), "nonmatching heal closes the pending weapon batch first")
+	_expect(tracker.finish_card(heal), "heal then closes its own ordinary batch")
+	_expect(
+		not tracker.begin_card(second_weapon),
+		"later weapon starts a new batch instead of combining"
+	)
+	_expect(not tracker.finish_card(second_weapon), "later lone weapon stays pending for flush")
+	_expect(tracker.flush_pending(), "end-of-chain flush closes a lone final weapon batch")
+
+	tracker.start(provider.build_rules(root_context))
+	_expect(not tracker.begin_card(first_weapon), "single weapon begins an incomplete batch")
+	_expect(
+		not tracker.finish_card(first_weapon),
+		"single weapon does not act before end-of-chain flush"
+	)
+	_expect(tracker.flush_pending(), "root then weapon flushes the pending batch")
+	_expect(not tracker.flush_pending(), "flushing a closed batch does not request another action")
+
+	tracker.start([])
+	_expect(not tracker.begin_card(heal), "ordinary cards have no pre-action without chain rules")
+	_expect(tracker.finish_card(heal), "ordinary cards close their own batch without chain rules")
+	_expect(
+		not tracker.flush_pending(), "ordinary cards leave no pending batch without chain rules"
+	)
+
+	var duplicate_rule := ChainRuleScript.new(
+		&"weapon_combo", CardDataScript.CardTag.WEAPON, 3, "Duplicate Combo Root"
+	)
+	tracker.start([rules[0], duplicate_rule])
+	_expect(not tracker.begin_card(first_weapon), "first rule type begins its combo batch")
+	_expect(
+		not tracker.finish_card(first_weapon),
+		"first combo card stays pending with duplicate rule data"
+	)
+	_expect(not tracker.begin_card(second_weapon), "second combo card remains adjacent")
+	_expect(
+		tracker.finish_card(second_weapon),
+		"tracker keeps the first matching root rule type instead of stacking duplicates"
+	)
+
+
+func _test_chain_rule_context_snapshot() -> void:
+	var rule := ChainRuleScript.new(
+		&"weapon_combo", CardDataScript.CardTag.WEAPON, 2, "Snapshot Root"
+	)
+	var current_card := _make_card_with_tag(CardDataScript.CardTag.WEAPON)
+	var state := CombatStateScript.new(_make_stats(10, 10, 0, 0), null, [current_card])
+	state.active_chain_rules = [rule]
+	state.current_batch_id = 7
+	state.current_batch_card_count = 1
+	var context := CardResolutionContextScript.new(state, current_card, 0)
+
+	rule.rule_id = &"mutated_rule"
+	state.current_batch_id = 99
+	state.current_batch_card_count = 99
+	state.active_chain_rules.clear()
+	var exposed_rule_ids := context.get_active_chain_rule_ids()
+	exposed_rule_ids.clear()
+
+	_expect(
+		context.get_active_chain_rule_ids() == [&"weapon_combo"],
+		"card context copies rule IDs without exposing mutable chain rules"
+	)
+	_expect(
+		context.get_current_batch_id() == 7 and context.get_current_batch_card_count() == 1,
+		"card context snapshots current batch scalars"
+	)
+
+
+func _make_card_with_tag(tag: CardData.CardTag) -> CardInstance:
+	var data := CardDataScript.new()
+	data.tags = [tag]
+	return CardInstanceScript.new(data)
 
 
 func _make_stats(max_hp: int, hp: int, attack: int, defense: int) -> CombatStats:

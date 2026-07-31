@@ -7,6 +7,9 @@ var cards: Array[CardInstance]
 var resolved_cards: Array[CardInstance] = []
 var remaining_cards: Array[CardInstance]
 var steps: Array[CombatStep] = []
+var active_chain_rules: Array[ChainRule] = []
+var current_batch_id := 0
+var current_batch_card_count := 0
 
 
 func _init(

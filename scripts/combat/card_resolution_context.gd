@@ -13,6 +13,9 @@ var _player_defense: int
 var _monster_max_hp: int
 var _monster_hp: int
 var _monster_defense: int
+var _active_chain_rule_ids: Array[StringName] = []
+var _current_batch_id: int
+var _current_batch_card_count: int
 
 
 func _init(state: CombatState, current_card: CardInstance, current_index: int) -> void:
@@ -28,6 +31,11 @@ func _init(state: CombatState, current_card: CardInstance, current_index: int) -
 		_resolved_cards.append(_copy_card(card))
 	for card in state.remaining_cards:
 		_remaining_cards.append(_copy_card(card))
+	for rule in state.active_chain_rules:
+		if rule != null:
+			_active_chain_rule_ids.append(rule.rule_id)
+	_current_batch_id = state.current_batch_id
+	_current_batch_card_count = state.current_batch_card_count
 	if state.player_stats != null:
 		_player_max_hp = state.player_stats.max_hp
 		_player_hp = state.player_stats.hp
@@ -92,6 +100,18 @@ func get_monster_defense() -> int:
 
 func get_monster_hp_ratio() -> float:
 	return float(_monster_hp) / float(_monster_max_hp) if _monster_max_hp > 0 else 0.0
+
+
+func get_active_chain_rule_ids() -> Array[StringName]:
+	return _active_chain_rule_ids.duplicate()
+
+
+func get_current_batch_id() -> int:
+	return _current_batch_id
+
+
+func get_current_batch_card_count() -> int:
+	return _current_batch_card_count
 
 
 func is_first_card() -> bool:
