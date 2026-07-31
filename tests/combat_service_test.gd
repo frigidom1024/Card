@@ -1,3 +1,4 @@
+# gdlint: disable=max-file-lines
 extends SceneTree
 
 const CombatEffectScript = preload("res://scripts/combat/combat_effect.gd")
@@ -753,13 +754,19 @@ func _test_service_attack_card_then_monster_action() -> void:
 		player, [root, attack], _make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.ATTACK, 2)])
 	)
 
-	_expect(result.outcome == CombatResultScript.Outcome.RETREAT, "nonlethal attack exhausts into retreat")
+	_expect(
+		result.outcome == CombatResultScript.Outcome.RETREAT,
+		"nonlethal attack exhausts into retreat"
+	)
 	_expect(result.monster_stats_after.hp == 7, "attack card reduces monster HP")
 	_expect(result.player_stats_after.hp == 8, "nonlethal attack receives one monster action")
 	_expect(result.steps.size() == 3, "root, player card, and monster action each record a step")
 	if result.steps.size() == 3:
 		_expect(result.steps[1].kind == CombatStepScript.Kind.PLAYER_CARD, "attack is a player-card step")
-		_expect(result.steps[2].kind == CombatStepScript.Kind.MONSTER_ACTION, "attack is followed by monster step")
+		_expect(
+			result.steps[2].kind == CombatStepScript.Kind.MONSTER_ACTION,
+			"attack is followed by monster step"
+		)
 
 
 func _test_service_lethal_card_wins_without_monster_action() -> void:
@@ -856,14 +863,20 @@ func _test_service_low_hp_rule_uses_pre_card_context() -> void:
 func _test_service_retreat_adds_tail_penalty() -> void:
 	var result := CombatServiceScript.new().resolve_encounter(
 		_make_stats(10, 10, 0, 0),
-		[_make_card(CardDataScript.CardType.ROOT, "Root"), _make_card(CardDataScript.CardType.NORMAL, "Wait")],
+		[
+			_make_card(CardDataScript.CardType.ROOT, "Root"),
+			_make_card(CardDataScript.CardType.NORMAL, "Wait"),
+		],
 		_make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.DEFEND, 1)])
 	)
 
 	_expect(result.outcome == CombatResultScript.Outcome.RETREAT, "exhausted living actors retreat")
 	_expect(result.penalties.size() == 1, "retreat creates one penalty")
 	if result.penalties.size() == 1:
-		_expect(result.penalties[0].type == CombatPenaltyScript.Type.REMOVE_CARD, "retreat removes a card")
+		_expect(
+			result.penalties[0].type == CombatPenaltyScript.Type.REMOVE_CARD,
+			"retreat removes a card"
+		)
 		_expect(result.penalties[0].amount == 1, "retreat removes one card")
 		_expect(
 			result.penalties[0].target == CombatPenaltyScript.Target.TAIL_OF_CARD_CHAIN,
@@ -882,7 +895,10 @@ func _test_service_monster_attack_defeats_immediately() -> void:
 		_make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.ATTACK, 2)])
 	)
 
-	_expect(result.outcome == CombatResultScript.Outcome.DEFEAT, "zero player HP causes immediate defeat")
+	_expect(
+		result.outcome == CombatResultScript.Outcome.DEFEAT,
+		"zero player HP causes immediate defeat"
+	)
 	_expect(result.processed_card_count == 2, "defeat stops before later cards")
 	_expect(result.steps.size() == 3, "defeat records only root, player card, and lethal action")
 	_expect(result.penalties.is_empty(), "defeat does not create a retreat penalty")
@@ -891,7 +907,10 @@ func _test_service_monster_attack_defeats_immediately() -> void:
 func _test_service_steps_are_ordered_and_isolated() -> void:
 	var result := CombatServiceScript.new().resolve_encounter(
 		_make_stats(10, 10, 0, 0),
-		[_make_card(CardDataScript.CardType.ROOT, "Root"), _make_card(CardDataScript.CardType.NORMAL, "Strike", 3)],
+		[
+			_make_card(CardDataScript.CardType.ROOT, "Root"),
+			_make_card(CardDataScript.CardType.NORMAL, "Strike", 3),
+		],
 		_make_mob("Wolf", 10, 0, [_make_action(MobActionScript.Type.ATTACK, 2)])
 	)
 
@@ -900,7 +919,10 @@ func _test_service_steps_are_ordered_and_isolated() -> void:
 		return
 	_expect(result.steps[0].kind == CombatStepScript.Kind.ROOT_CARD, "first step is root")
 	_expect(result.steps[1].kind == CombatStepScript.Kind.PLAYER_CARD, "second step is player card")
-	_expect(result.steps[2].kind == CombatStepScript.Kind.MONSTER_ACTION, "third step is monster action")
+	_expect(
+		result.steps[2].kind == CombatStepScript.Kind.MONSTER_ACTION,
+		"third step is monster action"
+	)
 	_expect(
 		result.steps[1].monster_before.hp == 10 and result.steps[1].monster_after.hp == 7,
 		"player step owns before and after monster snapshots"
@@ -919,13 +941,19 @@ func _test_service_input_monster_remains_unchanged() -> void:
 	monster.action_index = 0
 	var result := CombatServiceScript.new().resolve_encounter(
 		player,
-		[_make_card(CardDataScript.CardType.ROOT, "Root"), _make_card(CardDataScript.CardType.NORMAL, "Strike", 3)],
+		[
+			_make_card(CardDataScript.CardType.ROOT, "Root"),
+			_make_card(CardDataScript.CardType.NORMAL, "Strike", 3),
+		],
 		monster
 	)
 
 	_expect(player.hp == 9 and player.defense == 0, "service does not mutate input player stats")
 	_expect(monster.action_index == 0, "service does not mutate input monster action index")
-	_expect(monster.stats.hp == 10 and monster.stats.defense == 2, "service does not mutate input monster stats")
+	_expect(
+		monster.stats.hp == 10 and monster.stats.defense == 2,
+		"service does not mutate input monster stats"
+	)
 	_expect(result.monster_stats_after.hp == 9, "result owns the encounter-local monster stats")
 
 
@@ -948,13 +976,19 @@ func _test_service_root_to_weapon_flushes_before_retreat() -> void:
 func _test_service_null_monster_action_records_empty_step() -> void:
 	var result := CombatServiceScript.new().resolve_encounter(
 		_make_stats(10, 10, 0, 0),
-		[_make_card(CardDataScript.CardType.ROOT, "Root"), _make_card(CardDataScript.CardType.NORMAL, "Wait")],
+		[
+			_make_card(CardDataScript.CardType.ROOT, "Root"),
+			_make_card(CardDataScript.CardType.NORMAL, "Wait"),
+		],
 		_make_mob("Silent Wolf", 10, 0, [])
 	)
 
 	_expect(result.steps.size() == 3, "null monster action still creates a combat step")
 	if result.steps.size() == 3:
-		_expect(result.steps[2].kind == CombatStepScript.Kind.MONSTER_ACTION, "null action is a monster step")
+		_expect(
+			result.steps[2].kind == CombatStepScript.Kind.MONSTER_ACTION,
+			"null action is a monster step"
+		)
 		_expect(result.steps[2].effects.is_empty(), "null monster action has no effects")
 
 

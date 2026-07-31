@@ -4,6 +4,7 @@ extends RefCounted
 const MobActionResolverScript = preload("res://scripts/combat/mob_action_resolver.gd")
 
 
+# gdlint: disable=max-returns
 func resolve_encounter(
 	player_stats: CombatStats, card_chain: Array[CardInstance], monster: MobInstance
 ) -> CombatResult:
@@ -60,6 +61,7 @@ func resolve_encounter(
 	return _build_result(state, CombatResult.Outcome.RETREAT, _retreat_penalties())
 
 
+# gdlint: enable=max-returns
 func apply_effect(state: CombatState, effect: CombatEffect) -> int:
 	if state == null or effect == null:
 		return 0
@@ -114,7 +116,9 @@ func resolve_monster_action(state: CombatState) -> bool:
 	var monster_before := _copy_monster_stats(state)
 	var source_name := _monster_name(state)
 	var applied_effects: Array[CombatEffect] = []
-	var action: MobAction = state.monster.next_action() if state != null and state.monster != null else null
+	var action: MobAction = (
+		state.monster.next_action() if state != null and state.monster != null else null
+	)
 	if action != null:
 		for effect in MobActionResolverScript.to_effects(action, source_name):
 			apply_effect(state, effect)
@@ -197,7 +201,11 @@ func _target_stats(state: CombatState, target: CombatEffect.Target) -> CombatSta
 
 
 func _copy_player_stats(state: CombatState) -> CombatStats:
-	return state.player_stats.duplicate_runtime() if state != null and state.player_stats != null else null
+	return (
+		state.player_stats.duplicate_runtime()
+		if state != null and state.player_stats != null
+		else null
+	)
 
 
 func _copy_monster_stats(state: CombatState) -> CombatStats:
@@ -213,11 +221,20 @@ func _is_player_defeated(state: CombatState) -> bool:
 
 
 func _is_monster_defeated(state: CombatState) -> bool:
-	return state == null or state.monster == null or state.monster.stats == null or not state.monster.is_alive()
+	return (
+		state == null
+		or state.monster == null
+		or state.monster.stats == null
+		or not state.monster.is_alive()
+	)
 
 
 func _is_root_card(card: CardInstance) -> bool:
-	return card != null and card.card_data != null and card.card_data.card_type == CardData.CardType.ROOT
+	return (
+		card != null
+		and card.card_data != null
+		and card.card_data.card_type == CardData.CardType.ROOT
+	)
 
 
 func _card_name(card: CardInstance) -> String:
@@ -225,4 +242,8 @@ func _card_name(card: CardInstance) -> String:
 
 
 func _monster_name(state: CombatState) -> String:
-	return state.monster.data.mob_name if state != null and state.monster != null and state.monster.data != null else ""
+	return (
+		state.monster.data.mob_name
+		if state != null and state.monster != null and state.monster.data != null
+		else ""
+	)
