@@ -1,0 +1,8 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+WARNING: No board space remains for event: second
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] place_initial_events (res://scripts/game/event/event_placement_service.gd:19)
+       [1] _test_random_event_placement (res://tests/combat_model_test.gd:359)
+       [2] _run_deferred_tests (res://tests/combat_model_test.gd:167)

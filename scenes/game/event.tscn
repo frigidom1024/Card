@@ -1,17 +1,13 @@
-[gd_scene load_steps=2 format=3 uid="uid://cc6i15eoybvik"]
+[gd_scene format=3 uid="uid://cc6i15eoybvik"]
 
-[ext_resource type="Script" path="res://scripts/game/event.gd" id="1_board_event"]
+[ext_resource type="Script" uid="uid://c76echk8gio2x" path="res://scripts/game/event.gd" id="1_board_event"]
 
 [node name="Event" type="Control" unique_id=1835348391]
-layout_mode = 0
+layout_mode = 3
 anchors_preset = 0
-offset_right = 0.0
-offset_bottom = 0.0
-grow_horizontal = 1
-grow_vertical = 1
 script = ExtResource("1_board_event")
 
-[node name="Background" type="Panel" parent="."]
+[node name="Background" type="Panel" parent="." unique_id=221632303]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,7 +16,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Icon" type="TextureRect" parent="."]
+[node name="Icon" type="TextureRect" parent="." unique_id=1882705986]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -35,7 +31,7 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="TypeBadgeBackground" type="ColorRect" parent="."]
+[node name="TypeBadgeBackground" type="ColorRect" parent="." unique_id=433042240]
 visible = false
 layout_mode = 0
 offset_left = 5.0
@@ -45,14 +41,13 @@ offset_bottom = 23.0
 mouse_filter = 2
 color = Color(0.0352941, 0.0470588, 0.0784314, 0.62)
 
-[node name="TypeBadge" type="Label" parent="."]
+[node name="TypeBadge" type="Label" parent="." unique_id=1329799851]
 visible = false
 layout_mode = 0
 offset_left = 5.0
 offset_top = 5.0
 offset_right = 45.0
 offset_bottom = 23.0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 8
 text = "?"
@@ -60,7 +55,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="TypeLabel" type="Label" parent="."]
+[node name="TypeLabel" type="Label" parent="." unique_id=1696624925]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -71,7 +66,6 @@ offset_right = -8.0
 offset_bottom = -26.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 16
 text = "?"
@@ -79,8 +73,9 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="NameBar" type="ColorRect" parent="."]
+[node name="NameBar" type="ColorRect" parent="." unique_id=1207649912]
 layout_mode = 1
+anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -93,8 +88,9 @@ grow_vertical = 0
 mouse_filter = 2
 color = Color(0.0352941, 0.0470588, 0.0784314, 0.72)
 
-[node name="NameLabel" type="Label" parent="."]
+[node name="NameLabel" type="Label" parent="." unique_id=1760489689]
 layout_mode = 1
+anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -104,7 +100,6 @@ offset_right = -7.0
 offset_bottom = -6.0
 grow_horizontal = 2
 grow_vertical = 0
-mouse_filter = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 10
 text = "Unbound Event"
@@ -112,7 +107,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="ResolvedOverlay" type="ColorRect" parent="."]
+[node name="ResolvedOverlay" type="ColorRect" parent="." unique_id=1520418485]
 visible = false
 layout_mode = 1
 anchors_preset = 15
@@ -123,7 +118,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.0666667, 0.0941176, 0.152941, 0.65)
 
-[node name="SelectButton" type="Button" parent="."]
+[node name="SelectButton" type="Button" parent="." unique_id=1910435513]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

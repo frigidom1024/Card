@@ -1,0 +1,17 @@
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+SCRIPT ERROR: Parse Error: Expected indented block after function declaration.
+   at: GDScript::reload (res://scripts/game_manager.gd:43)
+ERROR: Failed to load script "res://scripts/game_manager.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+WARNING: No board space remains for event: second
+   at: push_warning (core/variant/variant_utility.cpp:1033)
+   GDScript backtrace (most recent call first):
+       [0] place_initial_events (res://scripts/game/event/event_placement_service.gd:19)
+       [1] _test_random_event_placement (res://tests/combat_model_test.gd:359)
+       [2] _run_deferred_tests (res://tests/combat_model_test.gd:167)
+SCRIPT ERROR: Invalid access to property or key 'event_lib' on a base object of type 'Node'.
+   at: _test_game_manager_initial_events (res://tests/combat_model_test.gd:367)
+   GDScript backtrace (most recent call first):
+       [0] _test_game_manager_initial_events (res://tests/combat_model_test.gd:367)
+       [1] _run_deferred_tests (res://tests/combat_model_test.gd:168)

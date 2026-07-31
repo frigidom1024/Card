@@ -1,20 +1,20 @@
-[gd_resource type="Resource" script_class="MobData" format=3]
+[gd_resource type="Resource" script_class="MobData" format=3 uid="uid://ckw77mdeqiirh"]
 
-[ext_resource type="Script" path="res://scripts/game/event/mob_data.gd" id="1_mob"]
-[ext_resource type="Script" path="res://scripts/combat/combat_stats_data.gd" id="2_stats"]
-[ext_resource type="Script" path="res://scripts/game/event/mob_action.gd" id="3_action"]
+[ext_resource type="Script" uid="uid://b3vemd5otcaea" path="res://scripts/game/event/mob_data.gd" id="1_mob"]
+[ext_resource type="Script" uid="uid://cweljpn1qxxyh" path="res://scripts/combat/combat_stats_data.gd" id="2_stats"]
+[ext_resource type="Script" uid="uid://p3onjjcmpt8k" path="res://scripts/game/event/mob_action.gd" id="3_action"]
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="3_m1qcw"]
+
+[sub_resource type="Resource" id="MobAction_wolf"]
+script = ExtResource("3_action")
+value = 3
+description = "Bite"
 
 [sub_resource type="Resource" id="CombatStatsData_wolf"]
 script = ExtResource("2_stats")
 max_hp = 12
 attack = 3
 defense = 1
-
-[sub_resource type="Resource" id="MobAction_wolf"]
-script = ExtResource("3_action")
-type = 0
-value = 3
-description = "Bite"
 
 [resource]
 script = ExtResource("1_mob")

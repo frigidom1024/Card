@@ -23,8 +23,8 @@ enum EventType {
 
 
 ## 从模板创建运行时实例
-func create_instance(origin: Vector2i) -> EventInstance:
+func create_instance() -> EventInstance:
 	var inst = EventInstance.new()
 	inst.template = self
-	inst.origin = origin
+	inst.origin = Vector2i(-1,-1)
 	return inst

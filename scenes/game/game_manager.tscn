@@ -7,7 +7,7 @@
 [ext_resource type="Resource" uid="uid://o345kvd04ypm" path="res://data/card_lib.tres" id="5_0rse5"]
 [ext_resource type="Script" uid="uid://d4g532r3gevbr" path="res://scripts/game/drag_layer.gd" id="6_aonbx"]
 [ext_resource type="PackedScene" uid="uid://bf2h2gqo4hyjl" path="res://scenes/game/board.tscn" id="7_lcbjr"]
-[ext_resource type="Resource" path="res://data/player/player_data.tres" id="8_player"]
+[ext_resource type="Resource" uid="uid://b5ybu7vxrcp4j" path="res://data/player/player_data.tres" id="8_player"]
 [ext_resource type="Resource" uid="uid://ulqs1hfc6vy3" path="res://data/event/event_lib.tres" id="9_event_lib"]
 
 [node name="GameManager" type="Node" unique_id=2111395174]
@@ -27,4 +27,3 @@ script = ExtResource("6_aonbx")
 
 [node name="Board" parent="." unique_id=969095891 instance=ExtResource("7_lcbjr")]
 position = Vector2(47, 44)
-drop_detector = NodePath("DropDetector")

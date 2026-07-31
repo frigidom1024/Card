@@ -1,9 +1,15 @@
-[gd_resource type="Resource" script_class="MobData" format=3]
+[gd_resource type="Resource" script_class="MobData" format=3 uid="uid://d382110q7ktd7"]
 
-[ext_resource type="Script" path="res://scripts/game/event/mob_data.gd" id="1_mob"]
-[ext_resource type="Script" path="res://scripts/combat/combat_stats_data.gd" id="2_stats"]
-[ext_resource type="Script" path="res://scripts/game/event/mob_action.gd" id="3_action"]
+[ext_resource type="Script" uid="uid://b3vemd5otcaea" path="res://scripts/game/event/mob_data.gd" id="1_mob"]
+[ext_resource type="Script" uid="uid://cweljpn1qxxyh" path="res://scripts/combat/combat_stats_data.gd" id="2_stats"]
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="3_60d3a"]
+[ext_resource type="Script" uid="uid://p3onjjcmpt8k" path="res://scripts/game/event/mob_action.gd" id="3_action"]
 [ext_resource type="Resource" path="res://data/cards/WorldTreeBranchCleaver.tres" id="4_card"]
+
+[sub_resource type="Resource" id="MobAction_miasma_grove_guardian"]
+script = ExtResource("3_action")
+value = 5
+description = "Root Lash"
 
 [sub_resource type="Resource" id="CombatStatsData_miasma_grove_guardian"]
 script = ExtResource("2_stats")
@@ -11,16 +17,10 @@ max_hp = 30
 attack = 5
 defense = 2
 
-[sub_resource type="Resource" id="MobAction_miasma_grove_guardian"]
-script = ExtResource("3_action")
-type = 0
-value = 5
-description = "Root Lash"
-
 [resource]
 script = ExtResource("1_mob")
 mob_name = "Miasma Grove Guardian"
 base_stats = SubResource("CombatStatsData_miasma_grove_guardian")
 actions = Array[ExtResource("3_action")]([SubResource("MobAction_miasma_grove_guardian")])
 gold_reward = 16
-card_rewards = Array[ExtResource("4_card")]([ExtResource("4_card")])
+card_rewards = Array[ExtResource("3_60d3a")]([ExtResource("4_card")])
