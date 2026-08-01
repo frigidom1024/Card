@@ -1,7 +1,7 @@
 class_name Board
 extends Node2D
 
-@export var cell_size: int = 80
+@export var cell_size: int = LayoutConfig.CELL_SIZE
 @export var width: int = 10
 @export var height: int = 8
 
@@ -19,6 +19,22 @@ var events: Array[BoardEvent] = []
 var _grid_owner: Dictionary = {}
 # 事件占用表：Vector2i → BoardEvent
 var _event_grid_owner: Dictionary[Vector2i, BoardEvent] = {}
+
+func _ready() -> void:
+	_apply_drop_detector_size()
+
+
+## DropDetector 碰撞盒跟随 cell_size（当前未被拖拽逻辑调用，仅保持一致）
+func _apply_drop_detector_size() -> void:
+	var shape_node := get_node_or_null("DropDetector/CollisionShape2D") as CollisionShape2D
+	if shape_node == null:
+		return
+	var grid_size := Vector2(width * cell_size, height * cell_size)
+	var shape := RectangleShape2D.new()
+	shape.size = grid_size
+	shape_node.shape = shape
+	shape_node.position = grid_size / 2.0
+
 
 func _draw():
 	# 绘制棋盘

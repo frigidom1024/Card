@@ -33,10 +33,24 @@ func _init() -> void:
 	var hand_top := hand_pos.y - 86
 	_expect(board_bottom + 10 <= hand_top, "board bottom clears the hand top")
 
+	var board := BoardScene.instantiate() as Board
+	_expect(board.cell_size == LayoutConfigScript.CELL_SIZE, "board defaults to the configured cell size")
+	board.free()
+
 	call_deferred("_run_deferred_tests")
 
 func _run_deferred_tests() -> void:
+	_test_board_drop_detector()
 	_finish_tests()
+
+func _test_board_drop_detector() -> void:
+	var board := BoardScene.instantiate() as Board
+	root.add_child(board)
+	var shape_node := board.get_node_or_null("DropDetector/CollisionShape2D") as CollisionShape2D
+	var shape := shape_node.shape as RectangleShape2D
+	_expect(shape != null and shape.size == Vector2(860, 688), "drop detector matches the resized grid")
+	_expect(shape_node.position == Vector2(430, 344), "drop detector centers on the resized grid")
+	board.queue_free()
 
 func _finish_tests() -> void:
 	quit(1 if _failure_count > 0 else 0)
