@@ -4,6 +4,7 @@ const LayoutConfigScript = preload("res://scripts/game/layout_config.gd")
 const BoardScene = preload("res://scenes/game/board.tscn")
 const HandAreaScript = preload("res://scripts/game/hand.gd")
 const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
+const CardViewScene = preload("res://scenes/card_view/card_view.tscn")
 
 var _failure_count := 0
 
@@ -43,6 +44,7 @@ func _init() -> void:
 func _run_deferred_tests() -> void:
 	_test_board_drop_detector()
 	_test_card_entity_sizing()
+	_test_card_view_label_container()
 	_finish_tests()
 
 func _test_board_drop_detector() -> void:
@@ -62,6 +64,15 @@ func _test_card_entity_sizing() -> void:
 	var card_view := card.get_node("CardView") as Control
 	_expect(card_view.size == Vector2(80, 166), "card view derives from the configured cell size")
 	card.queue_free()
+
+func _test_card_view_label_container() -> void:
+	var view := CardViewScene.instantiate() as Control
+	root.add_child(view)
+	view.size = Vector2(80, 166)
+	var label := view.get_node("LabelContainer") as Control
+	_expect(label.offset_bottom == 166.0, "label container pins to the resized card bottom")
+	_expect(label.offset_top == 143.0, "label container bar height stays 23")
+	view.queue_free()
 
 func _finish_tests() -> void:
 	quit(1 if _failure_count > 0 else 0)
