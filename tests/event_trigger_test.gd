@@ -17,6 +17,11 @@ class TrackingDragLayer extends DragLayer:
 		drag_end_call_count += 1
 		super.on_card_drag_end(card)
 
+
+class RejectingHandArea extends HandArea:
+	func add_card(_card: CardEntity, _animate: bool = true) -> bool:
+		return false
+
 var _failure_count := 0
 
 
@@ -37,6 +42,10 @@ func _run_scene_interaction_tests() -> void:
 	_test_drag_lock_blocks_card_input_and_restores_an_active_drag()
 	_test_lock_consumes_mouse_release_after_active_drag_cancel()
 	_test_lock_restores_non_root_card_transform_and_occupancy()
+	_test_restore_failure_returns_card_to_available_hand()
+	_test_restore_failure_bypasses_full_hand_capacity_without_deletion()
+	_test_restore_failure_keeps_card_in_recovery_container_after_hand_failure()
+	_test_restore_failure_keeps_card_in_recovery_container_without_hand()
 	call_deferred("_finish_tests")
 
 
@@ -242,6 +251,117 @@ func _test_lock_restores_non_root_card_transform_and_occupancy() -> void:
 	_expect(card.rotation_degrees == original_rotation, "locking restores non-root rotation before Board placement")
 	_expect(card.card_instance.direction == original_direction, "locking restores non-root direction before Board placement")
 	_expect(_board_owns_cells(board, card, original_cells), "locking restores non-root Board membership and footprint")
+
+
+func _test_restore_failure_returns_card_to_available_hand() -> void:
+	var board := _make_board(5, 2)
+	var hand := _make_hand(2)
+	var drag_layer := _make_drag_layer(board, hand)
+	var card := _make_card_at(board, Vector2(120, 40), 90.0)
+	card.drag_layer = drag_layer
+	var original_instance := card.card_instance
+	_expect(board.add_card(card), "available-hand failure setup card is placed")
+	_force_restore_failure_with_origin_blocker(board, card)
+	drag_layer.set_interaction_locked(true)
+	_expect_restore_failure_keeps_card_off_board(board, card, original_instance, hand, "available HandArea")
+	_expect(card in hand.cards, "available HandArea records recovered card")
+
+
+func _test_restore_failure_bypasses_full_hand_capacity_without_deletion() -> void:
+	var board := _make_board(5, 2)
+	var hand := _make_hand(1)
+	var drag_layer := _make_drag_layer(board, hand)
+	var filler := _make_card_at(board, Vector2(-80, 40), 90.0)
+	_expect(hand.add_card(filler, false), "full-hand failure setup fills HandArea")
+	_expect(hand.is_full(), "full-hand failure setup reaches normal capacity")
+	var card := _make_card_at(board, Vector2(120, 40), 90.0)
+	card.drag_layer = drag_layer
+	var original_instance := card.card_instance
+	_expect(board.add_card(card), "full-hand failure setup card is placed")
+	_force_restore_failure_with_origin_blocker(board, card)
+	drag_layer.set_interaction_locked(true)
+	_expect_restore_failure_keeps_card_off_board(board, card, original_instance, hand, "full HandArea")
+	_expect(card in hand.cards, "full HandArea bypasses normal capacity for cancellation recovery")
+	_expect(hand.cards.size() == 2 and hand.max_hand_size == 1, "recovery preserves the configured hand capacity after forced return")
+
+
+func _test_restore_failure_keeps_card_in_recovery_container_after_hand_failure() -> void:
+	var board := _make_board(5, 2)
+	var hand := RejectingHandArea.new()
+	root.add_child(hand)
+	var drag_layer := _make_drag_layer(board, hand)
+	var card := _make_card_at(board, Vector2(120, 40), 90.0)
+	card.drag_layer = drag_layer
+	var original_instance := card.card_instance
+	_expect(board.add_card(card), "rejecting-hand failure setup card is placed")
+	_force_restore_failure_with_origin_blocker(board, card)
+	drag_layer.set_interaction_locked(true)
+	var recovery_container := drag_layer.get_node_or_null("InteractionLockRecovery")
+	_expect(recovery_container != null, "hand add failure creates a named recovery container")
+	_expect_restore_failure_keeps_card_off_board(board, card, original_instance, recovery_container, "hand-failure recovery container")
+	_expect(not card.is_queued_for_deletion(), "hand add failure never queues the player card for deletion")
+
+
+func _test_restore_failure_keeps_card_in_recovery_container_without_hand() -> void:
+	var board := _make_board(5, 2)
+	var drag_layer := _make_drag_layer(board)
+	var card := _make_card_at(board, Vector2(120, 40), 90.0)
+	card.drag_layer = drag_layer
+	var original_instance := card.card_instance
+	_expect(board.add_card(card), "no-hand failure setup card is placed")
+	_force_restore_failure_with_origin_blocker(board, card)
+	drag_layer.set_interaction_locked(true)
+	var recovery_container := drag_layer.get_node_or_null("InteractionLockRecovery")
+	_expect(recovery_container != null, "no-hand restore failure creates a named recovery container")
+	_expect_restore_failure_keeps_card_off_board(board, card, original_instance, recovery_container, "recovery container")
+	_expect(not card.is_queued_for_deletion(), "no-hand restore failure never queues the player card for deletion")
+
+
+func _make_drag_layer(board: Board, hand: HandArea = null) -> DragLayer:
+	var drag_layer := DragLayerScript.new() as DragLayer
+	drag_layer.board = board
+	drag_layer.hand_area = hand
+	root.add_child(drag_layer)
+	return drag_layer
+
+
+func _make_hand(max_hand_size: int) -> HandArea:
+	var hand := HandArea.new()
+	hand.max_hand_size = max_hand_size
+	root.add_child(hand)
+	return hand
+
+
+func _force_restore_failure_with_origin_blocker(board: Board, card: CardEntity) -> void:
+	var origin_position := card.global_position
+	var origin_rotation := card.rotation_degrees
+	_card_left_click(card, true)
+	_expect(card._dragging, "restore-failure setup enters real drag chain")
+	var blocker := _make_card_at(board, board.to_local(origin_position), origin_rotation)
+	_expect(board.add_card(blocker), "restore-failure setup places a blocker at the original footprint")
+
+
+func _expect_restore_failure_keeps_card_off_board(
+	board: Board,
+	card: CardEntity,
+	original_instance: CardInstance,
+	expected_parent: Node,
+	label: String
+) -> void:
+	_expect(is_instance_valid(card), label + " retains the CardEntity node")
+	_expect(card.card_instance == original_instance, label + " retains the CardInstance")
+	_expect(not card.is_queued_for_deletion(), label + " does not queue the player card for deletion")
+	_expect(card.get_parent() == expected_parent, label + " is the exact fallback parent")
+	_expect(card.get_parent() != board, label + " never reparents the failed card directly to Board")
+	_expect(card not in board.cards, label + " leaves no Board cards membership")
+	_expect(not _board_has_owner(board, card), label + " leaves no Board grid ownership")
+
+
+func _board_has_owner(board: Board, card: CardEntity) -> bool:
+	for owner in board._grid_owner.values():
+		if owner == card:
+			return true
+	return false
 
 
 func _make_board(board_width: int, board_height: int) -> Board:

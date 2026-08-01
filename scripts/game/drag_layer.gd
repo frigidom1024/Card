@@ -13,6 +13,7 @@ var _drag_origin_rotation_degrees := 0.0
 var _drag_origin_direction := 0
 var _drag_origin_was_on_board := false
 var _drag_origin_hand_area: HandArea = null
+var _interaction_lock_recovery_container: Node2D = null
 
 # 提示标签
 var _hint_label: Label = null
@@ -125,10 +126,42 @@ func _restore_drag_origin_transform(card: CardEntity) -> void:
 
 
 func _restore_failed_board_card_to_hand(card: CardEntity) -> void:
-	if hand_area and hand_area.add_card(card, false):
+	if _return_card_to_hand_for_interaction_recovery(card):
 		return
-	push_error("Unable to return failed Board restore to HandArea")
-	card.queue_free()
+	push_error("Unable to return failed Board restore to HandArea; holding card for recovery")
+	_hold_card_for_interaction_recovery(card)
+
+
+func _return_card_to_hand_for_interaction_recovery(card: CardEntity) -> bool:
+	if hand_area == null or not is_instance_valid(hand_area):
+		return false
+
+	# A lock cancellation returns an existing player card; it is not a capacity-limited reward.
+	var original_max_hand_size := hand_area.max_hand_size
+	if hand_area.cards.size() >= hand_area.max_hand_size:
+		hand_area.max_hand_size = hand_area.cards.size() + 1
+	var restored := hand_area.add_card(card, false)
+	hand_area.max_hand_size = original_max_hand_size
+	return restored
+
+
+func _hold_card_for_interaction_recovery(card: CardEntity) -> void:
+	var container := _get_or_create_interaction_lock_recovery_container()
+	if card.get_parent():
+		card.reparent(container)
+	else:
+		container.add_child(card)
+
+
+func _get_or_create_interaction_lock_recovery_container() -> Node2D:
+	if _interaction_lock_recovery_container and is_instance_valid(_interaction_lock_recovery_container):
+		return _interaction_lock_recovery_container
+
+	_interaction_lock_recovery_container = Node2D.new()
+	_interaction_lock_recovery_container.name = "InteractionLockRecovery"
+	_interaction_lock_recovery_container.visible = false
+	add_child(_interaction_lock_recovery_container)
+	return _interaction_lock_recovery_container
 
 
 func _restore_card_to_origin_parent(card: CardEntity) -> void:
