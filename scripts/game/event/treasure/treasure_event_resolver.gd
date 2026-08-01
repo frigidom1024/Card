@@ -1,6 +1,7 @@
 class_name TreasureEventResolver
 extends RefCounted
 
+const EventDataScript = preload("res://scripts/game/event/core/event_data.gd")
 const TreasureEventContentScript = preload("res://scripts/game/event/treasure/treasure_event_content.gd")
 const TreasureRuntimeStateScript = preload("res://scripts/game/event/treasure/treasure_runtime_state.gd")
 const TreasureRewardOptionScript = preload("res://scripts/game/event/treasure/treasure_reward_option.gd")
@@ -12,10 +13,14 @@ func ensure_options(
 ) -> Array[TreasureRewardOptionScript]:
 	if instance == null:
 		return []
+	if instance.get_event_type() != EventDataScript.EventType.TREASURE:
+		return []
 
 	var content := instance.get_content() as TreasureEventContentScript
 	var state := instance.runtime_state as TreasureRuntimeStateScript
 	if content == null or state == null:
+		return []
+	if instance.is_resolved or rng == null:
 		return []
 	if not state.options.is_empty():
 		return state.options
@@ -37,6 +42,8 @@ func claim_reward(
 ) -> EventResolutionResultScript:
 	if instance == null or player == null:
 		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
+	if instance.get_event_type() != EventDataScript.EventType.TREASURE:
+		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
 
 	var content := instance.get_content() as TreasureEventContentScript
 	var state := instance.runtime_state as TreasureRuntimeStateScript
@@ -44,6 +51,8 @@ func claim_reward(
 		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
 	if instance.is_resolved:
 		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.ALREADY_RESOLVED)
+	if rng == null:
+		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
 
 	if state.options.is_empty():
 		var card_option_count := mini(2, content.unique_card_count())

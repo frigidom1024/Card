@@ -1,6 +1,7 @@
 class_name ShopEventResolver
 extends RefCounted
 
+const EventDataScript = preload("res://scripts/game/event/core/event_data.gd")
 const ShopEventContentScript = preload("res://scripts/game/event/shop/shop_event_content.gd")
 const ShopRuntimeStateScript = preload("res://scripts/game/event/shop/shop_runtime_state.gd")
 const EventResolutionResultScript = preload("res://scripts/game/event/core/event_resolution_result.gd")
@@ -10,6 +11,8 @@ func purchase_item(
 	instance: EventInstance, item_index: int, player: PlayerData, hand_has_capacity: bool
 ) -> EventResolutionResultScript:
 	if instance == null or player == null:
+		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
+	if instance.get_event_type() != EventDataScript.EventType.SHOP:
 		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
 
 	var content = instance.get_content() as ShopEventContentScript
@@ -26,7 +29,7 @@ func purchase_item(
 		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.HAND_FULL)
 
 	var item = content.items[item_index]
-	if item == null:
+	if item == null or item.card_data == null:
 		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
 	if player.gold < item.price:
 		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INSUFFICIENT_GOLD)

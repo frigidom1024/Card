@@ -39,6 +39,8 @@ func _init() -> void:
 	_test_event_data_uses_content_runtime_state_factory()
 	_test_monster_and_boss_create_encounter_runtime_state()
 	_test_encounter_begin_caches_a_single_mob_instance()
+	_test_encounter_rejects_resolved_event_without_state_writes()
+	_test_encounter_rejects_mismatched_event_type_without_state_writes()
 	_test_encounter_rejects_non_encounter_content()
 	_test_encounter_rejects_missing_mob_without_state_writes()
 	_test_encounter_rejects_missing_base_stats_without_state_writes()
@@ -47,10 +49,15 @@ func _init() -> void:
 	_test_shop_purchase_changes_only_successful_state()
 	_test_shop_failures_do_not_mutate_runtime_state()
 	_test_shop_rejects_mismatched_runtime_state()
+	_test_shop_rejects_mismatched_event_type_without_state_writes()
 	_test_shop_validation_order_preserves_state()
+	_test_shop_rejects_null_card_data_without_state_writes()
 	_test_treasure_options_are_cached_by_reference_and_include_gold()
 	_test_treasure_always_offers_two_cards_and_gold_when_available()
 	_test_treasure_failures_do_not_mutate_runtime_state()
+	_test_treasure_ensure_options_rejects_resolved_or_missing_rng_without_state_writes()
+	_test_treasure_claim_rejects_missing_rng_without_state_writes()
+	_test_treasure_rejects_mismatched_event_type_without_state_writes()
 	_test_treasure_rejects_mismatched_runtime_state()
 	_test_treasure_rejects_non_treasure_content()
 	_test_full_hand_rejects_card_but_allows_gold()
@@ -68,6 +75,8 @@ func _test_event_resources_load_after_directory_migration() -> void:
 	]
 	for resource_path in resource_paths:
 		_expect(load(resource_path) != null, "%s loads after event script migration" % resource_path)
+	var boss_event := load("res://data/event/events/miasma_grove_guardian_boss_event.tres") as EventDataScript
+	_expect(boss_event != null and boss_event.content is BossEventContentScript, "boss event uses BossEventContent")
 
 
 func _test_player_starts_with_persistent_gold() -> void:
@@ -127,6 +136,24 @@ func _test_encounter_begin_caches_a_single_mob_instance() -> void:
 	var second := encounter_resolver.begin(instance)
 	_expect(first != null and first == second, "encounter reuses its single mob instance")
 	_expect((instance.runtime_state as EncounterRuntimeStateScript).has_started, "encounter state records start")
+
+
+func _test_encounter_rejects_resolved_event_without_state_writes() -> void:
+	var instance := _make_instance(EventDataScript.EventType.MONSTER, _make_monster_content())
+	instance.resolve()
+	var state := instance.runtime_state as EncounterRuntimeStateScript
+	var mob := encounter_resolver.begin(instance)
+	_expect(mob == null, "resolved encounter does not begin")
+	_expect(state.mob_instance == null and not state.has_started, "resolved encounter does not cache or start")
+
+
+func _test_encounter_rejects_mismatched_event_type_without_state_writes() -> void:
+	var instance := _make_instance(EventDataScript.EventType.MONSTER, _make_monster_content())
+	instance.template.event_type = EventDataScript.EventType.SHOP
+	var state := instance.runtime_state as EncounterRuntimeStateScript
+	_expect(encounter_resolver.begin(instance) == null, "encounter rejects mismatched event type")
+	_expect(state.mob_instance == null and not state.has_started, "mismatched encounter type leaves state unchanged")
+	_expect(not instance.is_revealed and not instance.is_resolved, "mismatched encounter type leaves lifecycle unchanged")
 
 
 func _test_encounter_rejects_non_encounter_content() -> void:
@@ -269,6 +296,25 @@ func _test_shop_failures_do_not_mutate_runtime_state() -> void:
 	)
 
 
+func _test_shop_rejects_mismatched_event_type_without_state_writes() -> void:
+	var player := PlayerDataScript.new()
+	player.gold = 10
+	var instance := _make_shop_instance([_offer("Twig Blade", 6)])
+	instance.template.event_type = EventDataScript.EventType.TREASURE
+	var state := instance.runtime_state as ShopRuntimeStateScript
+	var before := _snapshot_runtime_state(player, instance)
+	var result = shop_resolver.purchase_item(instance, 0, player, true)
+	_expect_failure_preserves_runtime_state(
+		result,
+		EventResolutionResultScript.Failure.INVALID_EVENT,
+		before,
+		player,
+		instance,
+		"shop rejects mismatched event type"
+	)
+	_expect(state.sold_flags.is_empty(), "mismatched shop type does not write sold flags")
+
+
 func _test_shop_rejects_mismatched_runtime_state() -> void:
 	var player := PlayerDataScript.new()
 	player.gold = 10
@@ -282,6 +328,24 @@ func _test_shop_rejects_mismatched_runtime_state() -> void:
 	_expect(
 		player.gold == 10 and not instance.is_revealed and not instance.is_resolved,
 		"wrong shop state does not mutate event"
+	)
+
+
+func _test_shop_rejects_null_card_data_without_state_writes() -> void:
+	var player := PlayerDataScript.new()
+	player.gold = 10
+	var invalid_item := ShopItemDataScript.new()
+	invalid_item.price = 6
+	var instance := _make_shop_instance([invalid_item])
+	var before := _snapshot_runtime_state(player, instance)
+	var result = shop_resolver.purchase_item(instance, 0, player, true)
+	_expect_failure_preserves_runtime_state(
+		result,
+		EventResolutionResultScript.Failure.INVALID_EVENT,
+		before,
+		player,
+		instance,
+		"shop rejects item with null card data"
 	)
 
 
@@ -452,6 +516,57 @@ func _test_treasure_failures_do_not_mutate_runtime_state() -> void:
 		resolved_instance,
 		"treasure resolved-event failure"
 	)
+
+
+func _test_treasure_ensure_options_rejects_resolved_or_missing_rng_without_state_writes() -> void:
+	var resolved_instance = _make_treasure_instance([_card("A"), _card("B")], Vector2i(7, 7))
+	resolved_instance.resolve()
+	var resolved_state := resolved_instance.runtime_state as TreasureRuntimeStateScript
+	var resolved_options := treasure_resolver.ensure_options(resolved_instance, RandomNumberGenerator.new())
+	_expect(resolved_options.is_empty(), "resolved treasure does not ensure options")
+	_expect(resolved_state.options.is_empty(), "resolved treasure does not write options")
+
+	var missing_rng_instance = _make_treasure_instance([_card("A"), _card("B")], Vector2i(7, 7))
+	var missing_rng_state := missing_rng_instance.runtime_state as TreasureRuntimeStateScript
+	var missing_rng_options := treasure_resolver.ensure_options(missing_rng_instance, null)
+	_expect(missing_rng_options.is_empty(), "treasure without rng does not ensure options")
+	_expect(missing_rng_state.options.is_empty(), "treasure without rng does not write options")
+
+
+func _test_treasure_claim_rejects_missing_rng_without_state_writes() -> void:
+	var player := PlayerDataScript.new()
+	player.gold = 30
+	var instance = _make_treasure_instance([_card("A"), _card("B")], Vector2i(7, 7))
+	var before := _snapshot_runtime_state(player, instance)
+	var result = treasure_resolver.claim_reward(instance, 0, player, true, null)
+	_expect_failure_preserves_runtime_state(
+		result,
+		EventResolutionResultScript.Failure.INVALID_EVENT,
+		before,
+		player,
+		instance,
+		"treasure rejects missing rng"
+	)
+
+
+func _test_treasure_rejects_mismatched_event_type_without_state_writes() -> void:
+	var player := PlayerDataScript.new()
+	player.gold = 30
+	var instance = _make_treasure_instance([_card("A"), _card("B")], Vector2i(7, 7))
+	instance.template.event_type = EventDataScript.EventType.SHOP
+	var state := instance.runtime_state as TreasureRuntimeStateScript
+	var before := _snapshot_runtime_state(player, instance)
+	var options = treasure_resolver.ensure_options(instance, RandomNumberGenerator.new())
+	_expect(options.is_empty(), "treasure ensure rejects mismatched event type")
+	_expect_failure_preserves_runtime_state(
+		treasure_resolver.claim_reward(instance, 0, player, true, RandomNumberGenerator.new()),
+		EventResolutionResultScript.Failure.INVALID_EVENT,
+		before,
+		player,
+		instance,
+		"treasure claim rejects mismatched event type"
+	)
+	_expect(state.options.is_empty(), "mismatched treasure type does not write options")
 
 
 func _test_treasure_rejects_mismatched_runtime_state() -> void:
