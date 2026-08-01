@@ -93,7 +93,7 @@ func _get_type_marker(event_type: EventData.EventType) -> String:
 func _get_display_name(data: EventData) -> String:
 	if data == null:
 		return "Unbound Event"
-	var monster_content := data.content as EventMonsterContent
+	var monster_content := data.content as EncounterEventContent
 	if monster_content and monster_content.mob and not monster_content.mob.mob_name.is_empty():
 		return monster_content.mob.mob_name
 	return data.event_id.replace("_", " ").capitalize()

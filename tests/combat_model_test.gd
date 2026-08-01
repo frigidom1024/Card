@@ -2,9 +2,10 @@ extends SceneTree
 
 const CombatStatsDataScript = preload("res://scripts/combat/combat_stats_data.gd")
 const CombatStatsScript = preload("res://scripts/combat/combat_stats.gd")
-const MobDataScript = preload("res://scripts/game/event/mob_data.gd")
+const MobDataScript = preload("res://scripts/game/event/encounter/mob_data.gd")
 const PlayerDataScript = preload("res://scripts/player/player_data.gd")
-const MobActionScript = preload("res://scripts/game/event/mob_action.gd")
+const MobActionScript = preload("res://scripts/game/event/encounter/mob_action.gd")
+const EncounterEventContentScript = preload("res://scripts/game/event/encounter/encounter_event_content.gd")
 const CardDataScript = preload("res://scripts/card/card_data.gd")
 const BoardEventScene = preload("res://scenes/game/event.tscn")
 const BoardScene = preload("res://scenes/game/board.tscn")
@@ -139,7 +140,7 @@ func _init() -> void:
 						_expect(configured_event.event_id == expected_event_id, "%s configured event has expected roster ID" % expected_event_id)
 						_expect(configured_event.event_type == expected_event_types[index], "%s configured event has correct type" % expected_event_id)
 						_expect(configured_event.size == Vector2i.ONE, "%s configured event uses default one-cell size" % expected_event_id)
-						var configured_content = configured_event.content as EventMonsterContent
+						var configured_content = configured_event.content as EncounterEventContentScript
 						_expect(configured_content != null, "%s configured event has monster content" % expected_event_id)
 						if configured_content:
 							_expect(configured_content.count == 1, "%s configured content spawns one mob" % expected_event_id)
@@ -160,7 +161,7 @@ func _init() -> void:
 					if generated_template:
 						_expect(generated_template.event_id == expected_event_id, "generated event %d has expected roster ID" % (index + 1))
 						_expect(generated_template.event_type == expected_event_types[index], "%s generated event has correct type" % expected_event_id)
-						var generated_content = generated_template.content as EventMonsterContent
+						var generated_content = generated_template.content as EncounterEventContentScript
 						_expect(generated_content != null, "%s generated event has monster content" % expected_event_id)
 						if generated_content:
 							_expect(generated_content.count == 1, "%s generated event spawns one mob" % expected_event_id)

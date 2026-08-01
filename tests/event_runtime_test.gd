@@ -12,6 +12,11 @@ const TreasureEventContentScript = preload("res://scripts/game/event/treasure/tr
 const TreasureRewardOptionScript = preload("res://scripts/game/event/treasure/treasure_reward_option.gd")
 const TreasureRuntimeStateScript = preload("res://scripts/game/event/treasure/treasure_runtime_state.gd")
 const EventResolutionResultScript = preload("res://scripts/game/event/core/event_resolution_result.gd")
+const MonsterEventContentScript = preload("res://scripts/game/event/encounter/monster_event_content.gd")
+const BossEventContentScript = preload("res://scripts/game/event/encounter/boss_event_content.gd")
+const EncounterRuntimeStateScript = preload("res://scripts/game/event/encounter/encounter_runtime_state.gd")
+const EncounterEventResolverScript = preload("res://scripts/game/event/encounter/encounter_event_resolver.gd")
+const MobDataScript = preload("res://scripts/game/event/encounter/mob_data.gd")
 const TreasureEventResolverScript = preload("res://scripts/game/event/treasure/treasure_event_resolver.gd")
 const CardDataScript = preload("res://scripts/card/card_data.gd")
 const BoardScene = preload("res://scenes/game/board.tscn")
@@ -23,12 +28,16 @@ const EventPlacementServiceScript = preload("res://scripts/game/event/core/event
 var _failure_count := 0
 var treasure_resolver := TreasureEventResolverScript.new()
 var shop_resolver := ShopEventResolverScript.new()
+var encounter_resolver := EncounterEventResolverScript.new()
 
 
 func _init() -> void:
 	_test_player_starts_with_persistent_gold()
 	_test_event_instance_creates_base_runtime_state_for_missing_content()
 	_test_event_data_uses_content_runtime_state_factory()
+	_test_monster_and_boss_create_encounter_runtime_state()
+	_test_encounter_begin_caches_a_single_mob_instance()
+	_test_encounter_rejects_non_encounter_content()
 	_test_resolve_marks_event_revealed_and_resolved()
 	_test_shop_purchase_changes_only_successful_state()
 	_test_shop_failures_do_not_mutate_runtime_state()
@@ -65,6 +74,44 @@ func _test_event_data_uses_content_runtime_state_factory() -> void:
 		instance.runtime_state is ShopRuntimeStateScript,
 		"event data uses the content runtime-state factory"
 	)
+
+
+func _mob(mob_name: String) -> MobDataScript:
+	var mob := MobDataScript.new()
+	mob.mob_name = mob_name
+	return mob
+
+
+func _make_monster_content() -> MonsterEventContentScript:
+	var content := MonsterEventContentScript.new()
+	content.mob = _mob("Plan Test Monster")
+	return content
+
+
+func _make_boss_content() -> BossEventContentScript:
+	var content := BossEventContentScript.new()
+	content.mob = _mob("Plan Test Boss")
+	return content
+
+
+func _test_monster_and_boss_create_encounter_runtime_state() -> void:
+	var monster_instance := _make_instance(EventDataScript.EventType.MONSTER, _make_monster_content())
+	var boss_instance := _make_instance(EventDataScript.EventType.BOSS, _make_boss_content())
+	_expect(monster_instance.runtime_state is EncounterRuntimeStateScript, "monster creates encounter state")
+	_expect(boss_instance.runtime_state is EncounterRuntimeStateScript, "boss creates encounter state")
+
+
+func _test_encounter_begin_caches_a_single_mob_instance() -> void:
+	var instance := _make_instance(EventDataScript.EventType.MONSTER, _make_monster_content())
+	var first := encounter_resolver.begin(instance)
+	var second := encounter_resolver.begin(instance)
+	_expect(first != null and first == second, "encounter reuses its single mob instance")
+	_expect((instance.runtime_state as EncounterRuntimeStateScript).has_started, "encounter state records start")
+
+
+func _test_encounter_rejects_non_encounter_content() -> void:
+	var instance := _make_shop_instance([])
+	_expect(encounter_resolver.begin(instance) == null, "encounter resolver rejects shop event")
 
 
 func _test_resolve_marks_event_revealed_and_resolved() -> void:
@@ -453,7 +500,7 @@ func _snapshot_runtime_state(player, instance) -> Dictionary:
 	}
 
 
-func _make_shop_instance(items: Array):
+func _make_shop_instance(items: Array) -> EventInstanceScript:
 	var content = ShopEventContentScript.new()
 	content.items.assign(items)
 	return _make_instance(EventDataScript.EventType.SHOP, content)
@@ -467,7 +514,7 @@ func _make_treasure_instance(cards: Array, gold_range: Vector2i, choices: int = 
 	return _make_instance(EventDataScript.EventType.TREASURE, content)
 
 
-func _make_instance(event_type: int, content: Resource):
+func _make_instance(event_type: int, content: Resource) -> EventInstanceScript:
 	var template = EventDataScript.new()
 	template.event_type = event_type
 	template.content = content
