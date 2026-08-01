@@ -1,6 +1,8 @@
 class_name Board
 extends Node2D
 
+signal event_triggered(instance: EventInstance)
+
 @export var cell_size: int = 80
 @export var width: int = 10
 @export var height: int = 8
@@ -221,6 +223,16 @@ func _are_cells_in_bounds(cells: Array[Vector2i]) -> bool:
 	return true
 
 
+func get_event_buffer_cells(origin: Vector2i, event_size: Vector2i) -> Array[Vector2i]:
+	var result: Array[Vector2i] = []
+	for x in range(origin.x - 1, origin.x + event_size.x + 1):
+		for y in range(origin.y - 1, origin.y + event_size.y + 1):
+			var cell := Vector2i(x, y)
+			if _are_cells_in_bounds([cell]):
+				result.append(cell)
+	return result
+
+
 func can_attach_event(instance: EventInstance) -> bool:
 	if instance == null or instance.template == null:
 		return false
@@ -228,9 +240,24 @@ func can_attach_event(instance: EventInstance) -> bool:
 	if cells.is_empty() or not _are_cells_in_bounds(cells):
 		return false
 	for cell in cells:
-		if _grid_owner.has(cell) or _event_grid_owner.has(cell):
+		if _grid_owner.has(cell):
+			return false
+	for buffer_cell in get_event_buffer_cells(instance.origin, instance.get_size()):
+		if _event_grid_owner.has(buffer_cell):
 			return false
 	return true
+
+
+func get_overlapping_unresolved_event(cells: Array[Vector2i]) -> EventInstance:
+	var matches: Array[BoardEvent] = []
+	for cell in cells:
+		var event_node := _event_grid_owner.get(cell) as BoardEvent
+		if event_node and event_node.event_instance and not event_node.event_instance.is_resolved and event_node not in matches:
+			matches.append(event_node)
+	if matches.size() > 1:
+		push_error("Card placement overlaps multiple unresolved events")
+		return null
+	return matches[0].event_instance if matches.size() == 1 else null
 
 
 func attach_event(event_node: BoardEvent) -> bool:
@@ -364,8 +391,6 @@ func has_conflict(cells: Array[Vector2i], exclude: CardEntity = null) -> bool:
 		var key := Vector2i(c.x, c.y)
 		if _grid_owner.has(key) and _grid_owner[key] != exclude:
 			return true
-		if _event_grid_owner.has(key):
-			return true
 	return false
 
 func add_card(card: CardEntity) -> bool:
@@ -398,6 +423,10 @@ func add_card(card: CardEntity) -> bool:
 	cards.append(card)
 	for c in cells:
 		_grid_owner[Vector2i(c.x, c.y)] = card
+
+	var overlapping_event := get_overlapping_unresolved_event(cells)
+	if overlapping_event:
+		event_triggered.emit(overlapping_event)
 
 	clear_preview()
 	return true

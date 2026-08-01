@@ -47,6 +47,7 @@ enum State { NORMAL, HOVER, DRAGGING, ZOOMED }
 var card_instance: CardInstance = null
 var state: State = State.NORMAL
 var _dragging: bool = false
+var _consume_next_left_release := false
 
 var drag_layer
 
@@ -135,6 +136,12 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 			MOUSE_BUTTON_LEFT:
 				if event.pressed:
 					_start_drag()
+				elif drag_layer and drag_layer.is_interaction_locked():
+					_consume_next_left_release = false
+					return
+				elif _consume_next_left_release:
+					_consume_next_left_release = false
+					return
 				elif _dragging:
 					_end_drag()
 				else:
@@ -157,24 +164,41 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 # ============================
 
 func _start_drag() -> void:
+	if drag_layer and drag_layer.is_interaction_locked():
+		return
+
 	_dragging = true
 	state = State.DRAGGING
 	_card_view.modulate = Color(1.2, 1.2, 1.0)
 	_show_info(false)
 	set_process(true)
 
-
 	if drag_layer:
 		drag_layer.on_card_drag_start(self)
 
 
 func _end_drag() -> void:
+	if drag_layer and drag_layer.is_interaction_locked():
+		return
+
 	_dragging = false
 	state = State.NORMAL
 	set_process(false)
 
 	if drag_layer:
 		drag_layer.on_card_drag_end(self)
+
+
+func cancel_drag_for_interaction_lock() -> void:
+	_consume_next_left_release = true
+	cancel_drag()
+
+
+func cancel_drag() -> void:
+	_dragging = false
+	state = State.NORMAL
+	set_process(false)
+	_card_view.modulate = Color.WHITE
 
 
 func _process(_delta: float) -> void:
