@@ -157,12 +157,14 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 # ============================
 
 func _start_drag() -> void:
+	if drag_layer and drag_layer.is_interaction_locked():
+		return
+
 	_dragging = true
 	state = State.DRAGGING
 	_card_view.modulate = Color(1.2, 1.2, 1.0)
 	_show_info(false)
 	set_process(true)
-
 
 	if drag_layer:
 		drag_layer.on_card_drag_start(self)
@@ -175,6 +177,13 @@ func _end_drag() -> void:
 
 	if drag_layer:
 		drag_layer.on_card_drag_end(self)
+
+
+func cancel_drag() -> void:
+	_dragging = false
+	state = State.NORMAL
+	set_process(false)
+	_card_view.modulate = Color.WHITE
 
 
 func _process(_delta: float) -> void:
