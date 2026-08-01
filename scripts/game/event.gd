@@ -59,7 +59,8 @@ func _refresh() -> void:
 	type_label.text = type_marker
 	name_label.text = _get_display_name(data)
 	resolved_overlay.visible = is_resolved
-	select_button.disabled = event_instance == null or is_resolved
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	select_button.disabled = true
 
 func _on_select_button_pressed() -> void:
 	if event_instance and not event_instance.is_resolved:

@@ -10,6 +10,11 @@ const TreasureRewardOptionScript = preload("res://scripts/game/event/treasure_re
 const EventResolutionResultScript = preload("res://scripts/game/event/event_resolution_result.gd")
 const EventRewardResolverScript = preload("res://scripts/game/event/event_reward_resolver.gd")
 const CardDataScript = preload("res://scripts/card/card_data.gd")
+const BoardScene = preload("res://scenes/game/board.tscn")
+const EventScene = preload("res://scenes/game/event.tscn")
+const EventEntryScript = preload("res://scripts/game/event/event_entry.gd")
+const EventLibScript = preload("res://scripts/game/event/event_lib.gd")
+const EventPlacementServiceScript = preload("res://scripts/game/event/event_placement_service.gd")
 
 var _failure_count := 0
 var resolver := EventRewardResolverScript.new()
@@ -23,6 +28,7 @@ func _init() -> void:
 	_test_treasure_always_offers_two_cards_and_gold_when_available()
 	_test_treasure_failures_do_not_mutate_runtime_state()
 	_test_full_hand_rejects_card_but_allows_gold()
+	_test_seeded_event_placement_reserves_footprints_and_boundaries()
 	call_deferred("_finish_tests")
 
 
@@ -286,3 +292,32 @@ func _expect(condition: bool, message: String) -> void:
 
 func _finish_tests() -> void:
 	quit(0 if _failure_count == 0 else 1)
+
+func _test_seeded_event_placement_reserves_footprints_and_boundaries() -> void:
+	for seed in range(8):
+		var board := BoardScene.instantiate() as Board
+		board.width = 4
+		board.height = 1
+		root.add_child(board)
+
+		var template := EventDataScript.new()
+		template.event_id = "seeded_%d" % seed
+		template.size = Vector2i.ONE
+		var entry := EventEntryScript.new()
+		entry.event_data = template
+		entry.min_count = 2
+		entry.max_count = 2
+		var event_lib := EventLibScript.new()
+		event_lib.entries = [entry]
+		event_lib.event_scene = EventScene
+		var rng := RandomNumberGenerator.new()
+		rng.seed = seed
+		var placed := EventPlacementServiceScript.new().place_initial_events(event_lib, board, rng)
+		_expect(placed.size() == 2, "seed %d places both events" % seed)
+		if placed.size() == 2:
+			var horizontal_gap := absi(placed[0].origin.x - placed[1].origin.x)
+			_expect(
+				horizontal_gap > 1,
+				"seed %d later event avoids the footprint and mandatory empty boundary" % seed
+			)
+		board.queue_free()

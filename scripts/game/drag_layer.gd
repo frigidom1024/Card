@@ -5,13 +5,20 @@ var board: Board
 var hand_area: HandArea
 
 var _dragged_card: CardEntity = null
+var interaction_locked := false
 
 # 提示标签
 var _hint_label: Label = null
 var _hint_tween: Tween = null
 
 
+func set_interaction_locked(locked: bool) -> void:
+	interaction_locked = locked
+
+
 func on_card_drag_start(card: CardEntity) -> void:
+	if interaction_locked:
+		return
 	_dragged_card = card
 
 	# 如果卡牌在棋盘上，释放格子 + 撤回后续卡牌
@@ -34,6 +41,8 @@ func on_card_drag_start(card: CardEntity) -> void:
 
 
 func on_card_drag_end(card: CardEntity) -> void:
+	if interaction_locked:
+		return
 	_dragged_card = null
 	board.clear_preview()
 
