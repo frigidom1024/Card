@@ -33,6 +33,7 @@ var encounter_resolver := EncounterEventResolverScript.new()
 
 
 func _init() -> void:
+	_test_event_resources_load_after_directory_migration()
 	_test_player_starts_with_persistent_gold()
 	_test_event_instance_creates_base_runtime_state_for_missing_content()
 	_test_event_data_uses_content_runtime_state_factory()
@@ -55,6 +56,18 @@ func _init() -> void:
 	_test_full_hand_rejects_card_but_allows_gold()
 	_test_seeded_event_placement_reserves_footprints_and_boundaries()
 	call_deferred("_finish_tests")
+
+
+func _test_event_resources_load_after_directory_migration() -> void:
+	var resource_paths := [
+		"res://data/event/event_lib.tres",
+		"res://data/event/events/forest_wolf_event.tres",
+		"res://data/event/events/miasma_grove_guardian_boss_event.tres",
+		"res://data/event/content/event_shop_content.tres",
+		"res://data/event/content/event_treasure_content.tres",
+	]
+	for resource_path in resource_paths:
+		_expect(load(resource_path) != null, "%s loads after event script migration" % resource_path)
 
 
 func _test_player_starts_with_persistent_gold() -> void:
