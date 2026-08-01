@@ -1,0 +1,2 @@
+class_name EventRuntimeState
+extends RefCounted

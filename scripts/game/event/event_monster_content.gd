@@ -1,5 +1,5 @@
 class_name EventMonsterContent
-extends Resource
+extends EventContent
 
 ## 怪物数据模板
 @export var mob: MobData = null

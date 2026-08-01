@@ -1,5 +1,5 @@
 class_name EventTreasureContent
-extends Resource
+extends EventContent
 
 const CardDataScript = preload("res://scripts/card/card_data.gd")
 

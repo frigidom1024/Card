@@ -1,5 +1,5 @@
 class_name EventShopContent
-extends Resource
+extends EventContent
 
 const ShopItemDataScript = preload("res://scripts/game/event/shop_item_data.gd")
 

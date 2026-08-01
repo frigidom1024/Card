@@ -3,7 +3,7 @@ extends RefCounted
 
 const EventShopContentScript = preload("res://scripts/game/event/event_shop_content.gd")
 const EventTreasureContentScript = preload("res://scripts/game/event/event_treasure_content.gd")
-const EventResolutionResultScript = preload("res://scripts/game/event/event_resolution_result.gd")
+const EventResolutionResultScript = preload("res://scripts/game/event/core/event_resolution_result.gd")
 const TreasureRewardOptionScript = preload("res://scripts/game/event/treasure_reward_option.gd")
 
 

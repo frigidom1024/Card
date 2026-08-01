@@ -1,20 +1,20 @@
 extends SceneTree
 
 const PlayerDataScript = preload("res://scripts/player/player_data.gd")
-const EventDataScript = preload("res://scripts/game/event/event_data.gd")
-const EventInstanceScript = preload("res://scripts/game/event/event_zone.gd")
+const EventDataScript = preload("res://scripts/game/event/core/event_data.gd")
+const EventInstanceScript = preload("res://scripts/game/event/core/event_instance.gd")
 const EventShopContentScript = preload("res://scripts/game/event/event_shop_content.gd")
 const EventTreasureContentScript = preload("res://scripts/game/event/event_treasure_content.gd")
 const ShopItemDataScript = preload("res://scripts/game/event/shop_item_data.gd")
 const TreasureRewardOptionScript = preload("res://scripts/game/event/treasure_reward_option.gd")
-const EventResolutionResultScript = preload("res://scripts/game/event/event_resolution_result.gd")
+const EventResolutionResultScript = preload("res://scripts/game/event/core/event_resolution_result.gd")
 const EventRewardResolverScript = preload("res://scripts/game/event/event_reward_resolver.gd")
 const CardDataScript = preload("res://scripts/card/card_data.gd")
 const BoardScene = preload("res://scenes/game/board.tscn")
 const EventScene = preload("res://scenes/game/event.tscn")
-const EventEntryScript = preload("res://scripts/game/event/event_entry.gd")
-const EventLibScript = preload("res://scripts/game/event/event_lib.gd")
-const EventPlacementServiceScript = preload("res://scripts/game/event/event_placement_service.gd")
+const EventEntryScript = preload("res://scripts/game/event/core/event_entry.gd")
+const EventLibScript = preload("res://scripts/game/event/core/event_lib.gd")
+const EventPlacementServiceScript = preload("res://scripts/game/event/core/event_placement_service.gd")
 
 var _failure_count := 0
 var resolver := EventRewardResolverScript.new()
@@ -22,6 +22,8 @@ var resolver := EventRewardResolverScript.new()
 
 func _init() -> void:
 	_test_player_starts_with_persistent_gold()
+	_test_event_instance_creates_base_runtime_state_for_missing_content()
+	_test_resolve_marks_event_revealed_and_resolved()
 	_test_shop_purchase_changes_only_successful_state()
 	_test_shop_failures_do_not_mutate_runtime_state()
 	_test_treasure_options_are_cached_and_include_gold()
@@ -35,6 +37,20 @@ func _init() -> void:
 func _test_player_starts_with_persistent_gold() -> void:
 	var player := PlayerDataScript.new()
 	_expect(player.gold == 30, "player starts with 30 gold")
+
+
+func _test_event_instance_creates_base_runtime_state_for_missing_content() -> void:
+	var template := EventDataScript.new()
+	var instance := template.create_instance()
+	_expect(instance.runtime_state != null, "event instance always owns runtime state")
+	_expect(not instance.is_revealed and not instance.is_resolved, "new event begins unresolved")
+
+
+func _test_resolve_marks_event_revealed_and_resolved() -> void:
+	var instance := EventInstanceScript.new()
+	instance.resolve()
+	_expect(instance.is_revealed, "resolve reveals the event")
+	_expect(instance.is_resolved, "resolve marks the event resolved")
 
 
 func _test_shop_purchase_changes_only_successful_state() -> void:

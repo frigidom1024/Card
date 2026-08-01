@@ -1,7 +1,7 @@
 class_name EventInstance
 extends RefCounted
 
-const EventDataScript = preload("res://scripts/game/event/event_data.gd")
+const EventDataScript = preload("res://scripts/game/event/core/event_data.gd")
 const TreasureRewardOptionScript = preload("res://scripts/game/event/treasure_reward_option.gd")
 
 ## 事件模板（引用 EventData 配置）
@@ -12,6 +12,8 @@ var origin: Vector2i
 var is_revealed: bool = false
 ## 是否已解决（战斗胜利/购买完成/奖励已领）
 var is_resolved: bool = false
+## 每个事件实例的可扩展运行时状态。
+var runtime_state: EventRuntimeState
 
 ## 每个商店静态商品对应的运行时售罄标记。
 var shop_sold_flags: Array[bool] = []

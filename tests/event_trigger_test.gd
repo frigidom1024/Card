@@ -6,8 +6,8 @@ const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
 const DragLayerScript = preload("res://scripts/game/drag_layer.gd")
 const CardDataScript = preload("res://scripts/card/card_data.gd")
 const CardInstanceScript = preload("res://scripts/card/card_instance.gd")
-const EventDataScript = preload("res://scripts/game/event/event_data.gd")
-const EventInstanceScript = preload("res://scripts/game/event/event_zone.gd")
+const EventDataScript = preload("res://scripts/game/event/core/event_data.gd")
+const EventInstanceScript = preload("res://scripts/game/event/core/event_instance.gd")
 
 
 class TrackingDragLayer extends DragLayer:

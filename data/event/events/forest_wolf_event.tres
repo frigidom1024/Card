@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="EventData" format=3 uid="uid://dt5pxflytgoue"]
 
-[ext_resource type="Script" uid="uid://bfo5dyx04bmv0" path="res://scripts/game/event/event_data.gd" id="1"]
+[ext_resource type="Script" uid="uid://bfo5dyx04bmv0" path="res://scripts/game/event/core/event_data.gd" id="1"]
 [ext_resource type="Resource" path="res://data/event/content/forest_wolf_monster_content.tres" id="2"]
 
 [resource]
