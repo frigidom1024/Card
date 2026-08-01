@@ -8,10 +8,11 @@ const ShopEventContentScript = preload("res://scripts/game/event/shop/shop_event
 const ShopItemDataScript = preload("res://scripts/game/event/shop/shop_item_data.gd")
 const ShopRuntimeStateScript = preload("res://scripts/game/event/shop/shop_runtime_state.gd")
 const ShopEventResolverScript = preload("res://scripts/game/event/shop/shop_event_resolver.gd")
-const EventTreasureContentScript = preload("res://scripts/game/event/event_treasure_content.gd")
-const TreasureRewardOptionScript = preload("res://scripts/game/event/treasure_reward_option.gd")
+const TreasureEventContentScript = preload("res://scripts/game/event/treasure/treasure_event_content.gd")
+const TreasureRewardOptionScript = preload("res://scripts/game/event/treasure/treasure_reward_option.gd")
+const TreasureRuntimeStateScript = preload("res://scripts/game/event/treasure/treasure_runtime_state.gd")
 const EventResolutionResultScript = preload("res://scripts/game/event/core/event_resolution_result.gd")
-const EventRewardResolverScript = preload("res://scripts/game/event/event_reward_resolver.gd")
+const TreasureEventResolverScript = preload("res://scripts/game/event/treasure/treasure_event_resolver.gd")
 const CardDataScript = preload("res://scripts/card/card_data.gd")
 const BoardScene = preload("res://scenes/game/board.tscn")
 const EventScene = preload("res://scenes/game/event.tscn")
@@ -20,7 +21,7 @@ const EventLibScript = preload("res://scripts/game/event/core/event_lib.gd")
 const EventPlacementServiceScript = preload("res://scripts/game/event/core/event_placement_service.gd")
 
 var _failure_count := 0
-var treasure_resolver := EventRewardResolverScript.new()
+var treasure_resolver := TreasureEventResolverScript.new()
 var shop_resolver := ShopEventResolverScript.new()
 
 
@@ -36,6 +37,7 @@ func _init() -> void:
 	_test_treasure_options_are_cached_and_include_gold()
 	_test_treasure_always_offers_two_cards_and_gold_when_available()
 	_test_treasure_failures_do_not_mutate_runtime_state()
+	_test_treasure_rejects_mismatched_runtime_state()
 	_test_full_hand_rejects_card_but_allows_gold()
 	_test_seeded_event_placement_reserves_footprints_and_boundaries()
 	call_deferred("_finish_tests")
@@ -264,8 +266,8 @@ func _test_treasure_options_are_cached_and_include_gold() -> void:
 	var instance = _make_treasure_instance([_card("A"), _card("B"), _card("C")], Vector2i(9, 9))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
-	var first = treasure_resolver.ensure_treasure_options(instance, rng)
-	var second = treasure_resolver.ensure_treasure_options(instance, rng)
+	var first = treasure_resolver.ensure_options(instance, rng)
+	var second = treasure_resolver.ensure_options(instance, rng)
 	_expect(first.size() == 3, "two cards plus gold")
 	_expect(
 		first[2].kind == TreasureRewardOptionScript.Kind.GOLD and first[2].gold_amount == 9,
@@ -279,7 +281,7 @@ func _test_treasure_always_offers_two_cards_and_gold_when_available() -> void:
 		var instance = _make_treasure_instance(
 			[_card("A"), _card("B"), _card("C")], Vector2i(9, 9), configured_choices
 		)
-		var options = treasure_resolver.ensure_treasure_options(instance, RandomNumberGenerator.new())
+		var options = treasure_resolver.ensure_options(instance, RandomNumberGenerator.new())
 		_expect(options.size() == 3, "choices=%d still creates two cards and gold" % configured_choices)
 		if options.size() < 3:
 			continue
@@ -299,9 +301,9 @@ func _test_treasure_failures_do_not_mutate_runtime_state() -> void:
 	var full_hand_player := PlayerDataScript.new()
 	full_hand_player.gold = 30
 	var full_hand_instance = _make_treasure_instance([_card("A"), _card("B")], Vector2i(7, 7))
-	treasure_resolver.ensure_treasure_options(full_hand_instance, RandomNumberGenerator.new())
+	treasure_resolver.ensure_options(full_hand_instance, RandomNumberGenerator.new())
 	var full_hand_before := _snapshot_runtime_state(full_hand_player, full_hand_instance)
-	var full_hand_result = treasure_resolver.claim_treasure_reward(
+	var full_hand_result = treasure_resolver.claim_reward(
 		full_hand_instance, 0, full_hand_player, false, RandomNumberGenerator.new()
 	)
 	_expect_failure_preserves_runtime_state(
@@ -317,7 +319,7 @@ func _test_treasure_failures_do_not_mutate_runtime_state() -> void:
 	invalid_index_player.gold = 30
 	var invalid_index_instance = _make_treasure_instance([_card("A"), _card("B")], Vector2i(7, 7))
 	var invalid_index_before := _snapshot_runtime_state(invalid_index_player, invalid_index_instance)
-	var invalid_index_result = treasure_resolver.claim_treasure_reward(
+	var invalid_index_result = treasure_resolver.claim_reward(
 		invalid_index_instance, 3, invalid_index_player, true, RandomNumberGenerator.new()
 	)
 	_expect_failure_preserves_runtime_state(
@@ -332,10 +334,10 @@ func _test_treasure_failures_do_not_mutate_runtime_state() -> void:
 	var resolved_player := PlayerDataScript.new()
 	resolved_player.gold = 30
 	var resolved_instance = _make_treasure_instance([_card("A"), _card("B")], Vector2i(7, 7))
-	treasure_resolver.ensure_treasure_options(resolved_instance, RandomNumberGenerator.new())
+	treasure_resolver.ensure_options(resolved_instance, RandomNumberGenerator.new())
 	resolved_instance.resolve()
 	var resolved_before := _snapshot_runtime_state(resolved_player, resolved_instance)
-	var resolved_result = treasure_resolver.claim_treasure_reward(
+	var resolved_result = treasure_resolver.claim_reward(
 		resolved_instance, 0, resolved_player, true, RandomNumberGenerator.new()
 	)
 	_expect_failure_preserves_runtime_state(
@@ -348,18 +350,40 @@ func _test_treasure_failures_do_not_mutate_runtime_state() -> void:
 	)
 
 
+func _test_treasure_rejects_mismatched_runtime_state() -> void:
+	var player := PlayerDataScript.new()
+	player.gold = 30
+	var instance = _make_treasure_instance([_card("A"), _card("B")], Vector2i(7, 7))
+	instance.runtime_state = EventRuntimeStateScript.new()
+	var before := _snapshot_runtime_state(player, instance)
+	var result = treasure_resolver.claim_reward(instance, 0, player, true, RandomNumberGenerator.new())
+	_expect_failure_preserves_runtime_state(
+		result,
+		EventResolutionResultScript.Failure.INVALID_EVENT,
+		before,
+		player,
+		instance,
+		"treasure rejects wrong runtime state"
+	)
+
+
 func _test_full_hand_rejects_card_but_allows_gold() -> void:
 	var player := PlayerDataScript.new()
 	player.gold = 30
 	var instance = _make_treasure_instance([_card("A"), _card("B")], Vector2i(7, 7))
-	treasure_resolver.ensure_treasure_options(instance, RandomNumberGenerator.new())
-	var card_result = treasure_resolver.claim_treasure_reward(instance, 0, player, false, RandomNumberGenerator.new())
+	treasure_resolver.ensure_options(instance, RandomNumberGenerator.new())
+	var state := instance.runtime_state as TreasureRuntimeStateScript
+	var cached_options := state.options.duplicate()
+	var card_result = treasure_resolver.claim_reward(instance, 0, player, false, RandomNumberGenerator.new())
 	_expect(not card_result.success and not instance.is_resolved, "full hand keeps treasure open")
-	var gold_result = treasure_resolver.claim_treasure_reward(instance, 2, player, false, RandomNumberGenerator.new())
+	_expect(state.options == cached_options, "failed card claim keeps cached treasure options")
+	var gold_result = treasure_resolver.claim_reward(instance, 2, player, false, RandomNumberGenerator.new())
 	_expect(
 		gold_result.success and player.gold == 37 and instance.is_resolved,
 		"gold resolves treasure"
 	)
+	_expect(instance.is_revealed and instance.is_resolved, "treasure claim resolves the event")
+	_expect(state.selected_option_index == 2, "treasure records the chosen option in runtime state")
 	_expect(gold_result.granted_card == null, "gold never creates a card instance")
 
 
@@ -375,16 +399,22 @@ func _expect_failure_preserves_runtime_state(
 
 func _snapshot_runtime_state(player, instance) -> Dictionary:
 	var sold_flags: Array[bool] = []
+	var treasure_options: Array = []
+	var selected_option_index := -1
 	var shop_state := instance.runtime_state as ShopRuntimeStateScript
+	var treasure_state := instance.runtime_state as TreasureRuntimeStateScript
 	if shop_state != null:
 		sold_flags = shop_state.sold_flags.duplicate()
+	if treasure_state != null:
+		treasure_options = treasure_state.options.duplicate()
+		selected_option_index = treasure_state.selected_option_index
 	return {
 		"gold": player.gold,
 		"sold_flags": sold_flags,
-		"selected_treasure_option": instance.selected_treasure_option,
+		"selected_option_index": selected_option_index,
 		"is_revealed": instance.is_revealed,
 		"is_resolved": instance.is_resolved,
-		"treasure_options": instance.treasure_options.duplicate(),
+		"treasure_options": treasure_options,
 	}
 
 
@@ -395,7 +425,7 @@ func _make_shop_instance(items: Array):
 
 
 func _make_treasure_instance(cards: Array, gold_range: Vector2i, choices: int = 2):
-	var content = EventTreasureContentScript.new()
+	var content = TreasureEventContentScript.new()
 	content.card_rewards.assign(cards)
 	content.gold_range = gold_range
 	content.choices = choices
