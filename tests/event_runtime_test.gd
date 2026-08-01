@@ -17,6 +17,7 @@ const BossEventContentScript = preload("res://scripts/game/event/encounter/boss_
 const EncounterRuntimeStateScript = preload("res://scripts/game/event/encounter/encounter_runtime_state.gd")
 const EncounterEventResolverScript = preload("res://scripts/game/event/encounter/encounter_event_resolver.gd")
 const MobDataScript = preload("res://scripts/game/event/encounter/mob_data.gd")
+const CombatStatsDataScript = preload("res://scripts/combatv2/combat_stats_data.gd")
 const TreasureEventResolverScript = preload("res://scripts/game/event/treasure/treasure_event_resolver.gd")
 const CardDataScript = preload("res://scripts/card/card_data.gd")
 const BoardScene = preload("res://scenes/game/board.tscn")
@@ -38,6 +39,9 @@ func _init() -> void:
 	_test_monster_and_boss_create_encounter_runtime_state()
 	_test_encounter_begin_caches_a_single_mob_instance()
 	_test_encounter_rejects_non_encounter_content()
+	_test_encounter_rejects_missing_mob_without_state_writes()
+	_test_encounter_rejects_missing_base_stats_without_state_writes()
+	_test_encounter_rejects_generic_runtime_state_without_state_writes()
 	_test_resolve_marks_event_revealed_and_resolved()
 	_test_shop_purchase_changes_only_successful_state()
 	_test_shop_failures_do_not_mutate_runtime_state()
@@ -79,6 +83,9 @@ func _test_event_data_uses_content_runtime_state_factory() -> void:
 func _mob(mob_name: String) -> MobDataScript:
 	var mob := MobDataScript.new()
 	mob.mob_name = mob_name
+	var stats := CombatStatsDataScript.new()
+	stats.max_hp = 1
+	mob.base_stats = stats
 	return mob
 
 
@@ -112,6 +119,41 @@ func _test_encounter_begin_caches_a_single_mob_instance() -> void:
 func _test_encounter_rejects_non_encounter_content() -> void:
 	var instance := _make_shop_instance([])
 	_expect(encounter_resolver.begin(instance) == null, "encounter resolver rejects shop event")
+
+
+func _test_encounter_rejects_missing_mob_without_state_writes() -> void:
+	var content := MonsterEventContentScript.new()
+	var instance := _make_instance(EventDataScript.EventType.MONSTER, content)
+	_expect(encounter_resolver.begin(instance) == null, "encounter resolver rejects missing mob")
+	_expect_encounter_state_unstarted(instance, "missing mob rejection")
+
+
+func _test_encounter_rejects_missing_base_stats_without_state_writes() -> void:
+	var content := MonsterEventContentScript.new()
+	var mob := MobDataScript.new()
+	mob.mob_name = "Statless Test Monster"
+	content.mob = mob
+	var instance := _make_instance(EventDataScript.EventType.MONSTER, content)
+	_expect(encounter_resolver.begin(instance) == null, "encounter resolver rejects mob without base stats")
+	_expect_encounter_state_unstarted(instance, "missing base stats rejection")
+
+
+func _test_encounter_rejects_generic_runtime_state_without_state_writes() -> void:
+	var instance := _make_instance(EventDataScript.EventType.MONSTER, _make_monster_content())
+	var generic_state := EventRuntimeStateScript.new()
+	instance.runtime_state = generic_state
+	_expect(encounter_resolver.begin(instance) == null, "encounter resolver rejects generic runtime state")
+	_expect(instance.runtime_state == generic_state, "generic runtime state remains unchanged")
+	_expect(not instance.is_revealed and not instance.is_resolved, "generic state rejection leaves lifecycle unchanged")
+
+
+func _expect_encounter_state_unstarted(instance: EventInstanceScript, label: String) -> void:
+	var state := instance.runtime_state as EncounterRuntimeStateScript
+	_expect(state != null, "%s keeps encounter runtime state" % label)
+	if state != null:
+		_expect(state.mob_instance == null, "%s keeps mob instance empty" % label)
+		_expect(not state.has_started, "%s keeps encounter unstarted" % label)
+	_expect(not instance.is_revealed and not instance.is_resolved, "%s leaves lifecycle unchanged" % label)
 
 
 func _test_resolve_marks_event_revealed_and_resolved() -> void:
