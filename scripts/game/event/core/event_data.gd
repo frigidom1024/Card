@@ -1,9 +1,6 @@
 class_name EventData
 extends Resource
 
-const EventContentScript = preload("res://scripts/game/event/core/event_content.gd")
-const EventInstanceScript = preload("res://scripts/game/event/core/event_instance.gd")
-const EventRuntimeStateScript = preload("res://scripts/game/event/core/event_runtime_state.gd")
 
 enum EventType {
 	SHOP,
@@ -23,13 +20,13 @@ enum EventType {
 @export var icon: Texture2D
 
 ## 具体事件配置（多态，各类型不同）
-@export var content: EventContentScript
+@export var content: EventContent
 
 
 ## 从模板创建运行时实例
-func create_instance() -> EventInstanceScript:
-	var instance := EventInstanceScript.new()
+func create_instance() -> EventInstance:
+	var instance := EventInstance.new()
 	instance.template = self
 	instance.origin = Vector2i(-1, -1)
-	instance.runtime_state = content.create_runtime_state() if content else EventRuntimeStateScript.new()
+	instance.runtime_state = content.create_runtime_state() if content else EventRuntimeState.new()
 	return instance

@@ -1,23 +1,18 @@
 class_name TreasureEventResolver
 extends RefCounted
 
-const EventDataScript = preload("res://scripts/game/event/core/event_data.gd")
-const TreasureEventContentScript = preload("res://scripts/game/event/treasure/treasure_event_content.gd")
-const TreasureRuntimeStateScript = preload("res://scripts/game/event/treasure/treasure_runtime_state.gd")
-const TreasureRewardOptionScript = preload("res://scripts/game/event/treasure/treasure_reward_option.gd")
-const EventResolutionResultScript = preload("res://scripts/game/event/core/event_resolution_result.gd")
 
 
 func ensure_options(
 	instance: EventInstance, rng: RandomNumberGenerator
-) -> Array[TreasureRewardOptionScript]:
+) -> Array[TreasureRewardOption]:
 	if instance == null:
 		return []
-	if instance.get_event_type() != EventDataScript.EventType.TREASURE:
+	if instance.get_event_type() != EventData.EventType.TREASURE:
 		return []
 
-	var content := instance.get_content() as TreasureEventContentScript
-	var state := instance.runtime_state as TreasureRuntimeStateScript
+	var content := instance.get_content() as TreasureEventContent
+	var state := instance.runtime_state as TreasureRuntimeState
 	if content == null or state == null:
 		return []
 	if instance.is_resolved or rng == null:
@@ -26,9 +21,9 @@ func ensure_options(
 		return state.options
 
 	for card in content.draw_unique_choices(2, rng):
-		state.options.append(TreasureRewardOptionScript.card(card))
+		state.options.append(TreasureRewardOption.card(card))
 	state.options.append(
-		TreasureRewardOptionScript.gold(rng.randi_range(content.gold_range.x, content.gold_range.y))
+		TreasureRewardOption.gold(rng.randi_range(content.gold_range.x, content.gold_range.y))
 	)
 	return state.options
 
@@ -39,41 +34,41 @@ func claim_reward(
 	player: PlayerData,
 	hand_has_capacity: bool,
 	rng: RandomNumberGenerator
-) -> EventResolutionResultScript:
+) -> EventResolutionResult:
 	if instance == null or player == null:
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
-	if instance.get_event_type() != EventDataScript.EventType.TREASURE:
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_EVENT)
+	if instance.get_event_type() != EventData.EventType.TREASURE:
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_EVENT)
 
-	var content := instance.get_content() as TreasureEventContentScript
-	var state := instance.runtime_state as TreasureRuntimeStateScript
+	var content := instance.get_content() as TreasureEventContent
+	var state := instance.runtime_state as TreasureRuntimeState
 	if content == null or state == null:
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_EVENT)
 	if instance.is_resolved:
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.ALREADY_RESOLVED)
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.ALREADY_RESOLVED)
 	if rng == null:
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_EVENT)
 
 	if state.options.is_empty():
 		var card_option_count := mini(2, content.unique_card_count())
 		if option_index < 0 or option_index > card_option_count:
-			return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_INDEX)
+			return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_INDEX)
 		if option_index < card_option_count and not hand_has_capacity:
-			return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.HAND_FULL)
+			return EventResolutionResult.rejected(EventResolutionResult.Failure.HAND_FULL)
 	else:
 		if option_index < 0 or option_index >= state.options.size():
-			return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_INDEX)
+			return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_INDEX)
 		if (
-			state.options[option_index].kind == TreasureRewardOptionScript.Kind.CARD
+			state.options[option_index].kind == TreasureRewardOption.Kind.CARD
 			and not hand_has_capacity
 		):
-			return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.HAND_FULL)
+			return EventResolutionResult.rejected(EventResolutionResult.Failure.HAND_FULL)
 
 	var options := ensure_options(instance, rng)
 	var option := options[option_index]
-	var result := EventResolutionResultScript.new()
+	var result := EventResolutionResult.new()
 	result.success = true
-	if option.kind == TreasureRewardOptionScript.Kind.GOLD:
+	if option.kind == TreasureRewardOption.Kind.GOLD:
 		player.gold += option.gold_amount
 		result.gold_delta = option.gold_amount
 	else:

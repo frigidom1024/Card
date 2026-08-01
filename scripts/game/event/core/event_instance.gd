@@ -1,10 +1,9 @@
 class_name EventInstance
 extends RefCounted
 
-const EventDataScript = preload("res://scripts/game/event/core/event_data.gd")
 
 ## 事件模板（引用 EventData 配置）
-var template: EventDataScript
+var template: EventData
 ## 棋盘格子坐标（左上角）
 var origin: Vector2i
 ## 是否已揭开（玩家发现该事件）

@@ -59,7 +59,7 @@ func _test_event_placement_reserves_a_one_cell_gap() -> void:
 
 func _test_event_placement_rejects_card_occupied_footprint() -> void:
 	var board := _make_board(5, 2)
-	var card := _make_card_at(board, Vector2(120, 40), 90.0)
+	var card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	_expect(board.add_card(card), "setup card is legally placed")
 	var candidate := _new_event("blocked-by-card", Vector2i.ONE, Vector2i(1, 0))
 	_expect(
@@ -72,7 +72,7 @@ func _test_event_placement_rejects_card_occupied_footprint() -> void:
 func _test_successful_card_placement_triggers_exactly_one_event() -> void:
 	var board := _make_board(5, 2)
 	_attach_event(board, "treasure", Vector2i(2, 0), Vector2i.ONE)
-	var card := _make_card_at(board, Vector2(120, 40), 90.0)
+	var card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	var triggered: Array[EventInstance] = []
 	board.event_triggered.connect(func(instance): triggered.append(instance))
 	_expect(board.add_card(card), "card is legally placed")
@@ -88,7 +88,7 @@ func _test_resolved_or_failed_placement_never_triggers() -> void:
 	event_node.event_instance.resolve()
 	var trigger_count := 0
 	board.event_triggered.connect(func(_instance): trigger_count += 1)
-	board.add_card(_make_card_at(board, Vector2(120, 40), 90.0))
+	board.add_card(_make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0))
 	board.add_card(_make_card_at(board, Vector2(-80, 40), 90.0))
 	_expect(trigger_count == 0, "resolved and rejected placements do not trigger")
 
@@ -96,11 +96,11 @@ func _test_resolved_or_failed_placement_never_triggers() -> void:
 func _test_failed_overlap_with_card_and_event_never_triggers() -> void:
 	var board := _make_board(5, 2)
 	_attach_event(board, "overlap", Vector2i(1, 0), Vector2i.ONE)
-	var placed_card := _make_card_at(board, Vector2(120, 40), 90.0)
+	var placed_card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	_expect(board.add_card(placed_card), "setup card can cover the unresolved event")
 	var trigger_count := 0
 	board.event_triggered.connect(func(_instance): trigger_count += 1)
-	var conflicting_candidate := _make_card_at(board, Vector2(120, 40), 90.0)
+	var conflicting_candidate := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	_expect(
 		not board.add_card(conflicting_candidate),
 		"candidate overlapping an event and a placed card is rejected"
@@ -110,12 +110,12 @@ func _test_failed_overlap_with_card_and_event_never_triggers() -> void:
 
 func _test_multiple_unresolved_event_overlap_never_triggers() -> void:
 	var board := _make_board(5, 2)
-	_inject_event_owner(board, _new_event("first", Vector2i.ONE, Vector2i(1, 0)))
-	_inject_event_owner(board, _new_event("second", Vector2i.ONE, Vector2i(2, 0)))
+	_inject_event_owner(board, _new_event("first", Vector2i.ONE, Vector2i(1, 0), board.cell_size))
+	_inject_event_owner(board, _new_event("second", Vector2i.ONE, Vector2i(2, 0), board.cell_size))
 	var trigger_count := 0
 	board.event_triggered.connect(func(_instance): trigger_count += 1)
 	_expect(
-		board.add_card(_make_card_at(board, Vector2(120, 40), 90.0)),
+		board.add_card(_make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)),
 		"exception fixture still has a legal card placement"
 	)
 	_expect(trigger_count == 0, "multiple unresolved event overlap never emits a trigger")
@@ -126,7 +126,7 @@ func _test_preview_never_triggers() -> void:
 	_attach_event(board, "preview-only", Vector2i(2, 0), Vector2i.ONE)
 	var trigger_count := 0
 	board.event_triggered.connect(func(_instance): trigger_count += 1)
-	board.preview_card(_make_card_at(board, Vector2(120, 40), 90.0))
+	board.preview_card(_make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0))
 	_expect(trigger_count == 0, "preview does not trigger events")
 
 
@@ -145,7 +145,7 @@ func _test_drag_lock_blocks_card_input_and_restores_an_active_drag() -> void:
 	var drag_layer := DragLayerScript.new() as DragLayer
 	drag_layer.board = board
 	root.add_child(drag_layer)
-	var card := _make_card_at(board, Vector2(120, 40), 90.0)
+	var card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	card.drag_layer = drag_layer
 	_expect(board.add_card(card), "drag-lock setup card is placed on the Board")
 	var original_parent := card.get_parent()
@@ -188,7 +188,7 @@ func _test_lock_consumes_mouse_release_after_active_drag_cancel() -> void:
 	var drag_layer := TrackingDragLayer.new()
 	drag_layer.board = board
 	root.add_child(drag_layer)
-	var card := _make_card_at(board, Vector2(120, 40), 90.0)
+	var card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	card.drag_layer = drag_layer
 	_expect(board.add_card(card), "release-consumption setup card is placed")
 	var original_parent := card.get_parent()
@@ -228,9 +228,9 @@ func _test_lock_restores_non_root_card_transform_and_occupancy() -> void:
 	var drag_layer := DragLayerScript.new() as DragLayer
 	drag_layer.board = board
 	root.add_child(drag_layer)
-	var root_card := _make_card_at(board, Vector2(120, 40), 90.0)
+	var root_card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	_expect(board.add_card(root_card), "non-root restore setup root card is placed")
-	var card := _make_card_at(board, Vector2(320, 40), 90.0, CardDataScript.CardType.NORMAL)
+	var card := _make_card_at(board, _horizontal_card_center(board, Vector2i(3, 0)), 90.0, CardDataScript.CardType.NORMAL)
 	card.card_instance.direction = 1
 	card.drag_layer = drag_layer
 	_expect(board.add_card(card), "non-root restore setup card is placed")
@@ -257,7 +257,7 @@ func _test_restore_failure_returns_card_to_available_hand() -> void:
 	var board := _make_board(5, 2)
 	var hand := _make_hand(2)
 	var drag_layer := _make_drag_layer(board, hand)
-	var card := _make_card_at(board, Vector2(120, 40), 90.0)
+	var card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	card.drag_layer = drag_layer
 	var original_instance := card.card_instance
 	_expect(board.add_card(card), "available-hand failure setup card is placed")
@@ -274,7 +274,7 @@ func _test_restore_failure_bypasses_full_hand_capacity_without_deletion() -> voi
 	var filler := _make_card_at(board, Vector2(-80, 40), 90.0)
 	_expect(hand.add_card(filler, false), "full-hand failure setup fills HandArea")
 	_expect(hand.is_full(), "full-hand failure setup reaches normal capacity")
-	var card := _make_card_at(board, Vector2(120, 40), 90.0)
+	var card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	card.drag_layer = drag_layer
 	var original_instance := card.card_instance
 	_expect(board.add_card(card), "full-hand failure setup card is placed")
@@ -290,7 +290,7 @@ func _test_restore_failure_keeps_card_in_recovery_container_after_hand_failure()
 	var hand := RejectingHandArea.new()
 	root.add_child(hand)
 	var drag_layer := _make_drag_layer(board, hand)
-	var card := _make_card_at(board, Vector2(120, 40), 90.0)
+	var card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	card.drag_layer = drag_layer
 	var original_instance := card.card_instance
 	_expect(board.add_card(card), "rejecting-hand failure setup card is placed")
@@ -305,7 +305,7 @@ func _test_restore_failure_keeps_card_in_recovery_container_after_hand_failure()
 func _test_restore_failure_keeps_card_in_recovery_container_without_hand() -> void:
 	var board := _make_board(5, 2)
 	var drag_layer := _make_drag_layer(board)
-	var card := _make_card_at(board, Vector2(120, 40), 90.0)
+	var card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	card.drag_layer = drag_layer
 	var original_instance := card.card_instance
 	_expect(board.add_card(card), "no-hand failure setup card is placed")
@@ -372,7 +372,12 @@ func _make_board(board_width: int, board_height: int) -> Board:
 	return board
 
 
-func _new_event(event_id: String, event_size: Vector2i, origin: Vector2i) -> BoardEvent:
+func _new_event(
+	event_id: String,
+	event_size: Vector2i,
+	origin: Vector2i,
+	cell_size: int = LayoutConfig.CELL_SIZE
+) -> BoardEvent:
 	var template := EventDataScript.new()
 	template.event_id = event_id
 	template.size = event_size
@@ -380,12 +385,12 @@ func _new_event(event_id: String, event_size: Vector2i, origin: Vector2i) -> Boa
 	instance.template = template
 	instance.origin = origin
 	var event_node := EventScene.instantiate() as BoardEvent
-	event_node.setup(instance, 80)
+	event_node.setup(instance, cell_size)
 	return event_node
 
 
 func _attach_event(board: Board, event_id: String, origin: Vector2i, event_size: Vector2i) -> BoardEvent:
-	var event_node := _new_event(event_id, event_size, origin)
+	var event_node := _new_event(event_id, event_size, origin, board.cell_size)
 	_expect(board.attach_event(event_node), "event attaches to board")
 	return event_node
 
@@ -395,6 +400,13 @@ func _inject_event_owner(board: Board, event_node: BoardEvent) -> void:
 	board.events.append(event_node)
 	for cell in board.get_event_cells(event_node.event_instance.origin, event_node.event_instance.get_size()):
 		board._event_grid_owner[cell] = event_node
+
+
+func _horizontal_card_center(board: Board, left_cell: Vector2i) -> Vector2:
+	var right_cell := left_cell + Vector2i.RIGHT
+	return board.to_local(
+		(board.grid_to_world_center(left_cell) + board.grid_to_world_center(right_cell)) / 2.0
+	)
 
 
 func _make_card_at(

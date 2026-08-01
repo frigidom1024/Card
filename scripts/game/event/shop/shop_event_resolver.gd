@@ -1,54 +1,50 @@
 class_name ShopEventResolver
 extends RefCounted
 
-const EventDataScript = preload("res://scripts/game/event/core/event_data.gd")
-const ShopEventContentScript = preload("res://scripts/game/event/shop/shop_event_content.gd")
-const ShopRuntimeStateScript = preload("res://scripts/game/event/shop/shop_runtime_state.gd")
-const EventResolutionResultScript = preload("res://scripts/game/event/core/event_resolution_result.gd")
 
 
 func purchase_item(
 	instance: EventInstance, item_index: int, player: PlayerData, hand_has_capacity: bool
-) -> EventResolutionResultScript:
+) -> EventResolutionResult:
 	if instance == null or player == null:
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
-	if instance.get_event_type() != EventDataScript.EventType.SHOP:
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_EVENT)
+	if instance.get_event_type() != EventData.EventType.SHOP:
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_EVENT)
 
-	var content = instance.get_content() as ShopEventContentScript
-	var state = instance.runtime_state as ShopRuntimeStateScript
+	var content = instance.get_content() as ShopEventContent
+	var state = instance.runtime_state as ShopRuntimeState
 	if content == null or state == null:
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_EVENT)
 	if item_index < 0 or item_index >= content.items.size():
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_INDEX)
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_INDEX)
 	if instance.is_resolved:
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.ALREADY_RESOLVED)
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.ALREADY_RESOLVED)
 	if _is_item_sold(state, item_index):
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.SOLD_OUT)
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.SOLD_OUT)
 	if not hand_has_capacity:
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.HAND_FULL)
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.HAND_FULL)
 
 	var item = content.items[item_index]
 	if item == null or item.card_data == null:
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INVALID_EVENT)
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_EVENT)
 	if player.gold < item.price:
-		return EventResolutionResultScript.rejected(EventResolutionResultScript.Failure.INSUFFICIENT_GOLD)
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.INSUFFICIENT_GOLD)
 
 	_ensure_sold_flags(state, content.items.size())
 	player.gold -= item.price
 	state.sold_flags[item_index] = true
 
-	var result := EventResolutionResultScript.new()
+	var result := EventResolutionResult.new()
 	result.success = true
 	result.granted_card = item.card_data
 	return result
 
 
-func _is_item_sold(state: ShopRuntimeStateScript, item_index: int) -> bool:
+func _is_item_sold(state: ShopRuntimeState, item_index: int) -> bool:
 	return item_index < state.sold_flags.size() and state.sold_flags[item_index]
 
 
-func _ensure_sold_flags(state: ShopRuntimeStateScript, item_count: int) -> void:
+func _ensure_sold_flags(state: ShopRuntimeState, item_count: int) -> void:
 	if state.sold_flags.size() == item_count:
 		return
 

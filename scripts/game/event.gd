@@ -38,6 +38,10 @@ func _ready() -> void:
 	else:
 		_refresh()
 
+func refresh_display() -> void:
+	_refresh()
+
+
 func _refresh() -> void:
 	var data := event_instance.template if event_instance else null
 	var is_resolved := event_instance != null and event_instance.is_resolved

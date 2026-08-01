@@ -1,16 +1,15 @@
 class_name TreasureRewardOption
 extends RefCounted
 
-const CardDataScript = preload("res://scripts/card/card_data.gd")
 
 enum Kind { CARD, GOLD }
 
 var kind: Kind
-var card_data: CardDataScript
+var card_data: CardData
 var gold_amount := 0
 
 
-static func card(card: CardDataScript):
+static func card(card: CardData):
 	var option = TreasureRewardOption.new()
 	option.kind = Kind.CARD
 	option.card_data = card

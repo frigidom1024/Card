@@ -447,6 +447,13 @@ func add_card(card: CardEntity) -> bool:
 	clear_preview()
 	return true
 
+func get_combat_card_chain() -> Array[CardInstance]:
+	var chain: Array[CardInstance] = []
+	for card in cards:
+		if is_instance_valid(card) and card.card_instance != null:
+			chain.append(card.card_instance)
+	return chain
+
 func remove_card(card: CardEntity) -> bool:
 	if card not in cards:
 		return false
