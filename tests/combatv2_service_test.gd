@@ -13,8 +13,8 @@ const PreviousWeaponDamageDoubleRuleScript = preload(
 )
 const CardDataScript = preload("res://scripts/card/card_data.gd")
 const CardInstanceScript = preload("res://scripts/card/card_instance.gd")
-const MobDataScript = preload("res://scripts/game/event/mob_data.gd")
-const MobActionScript = preload("res://scripts/game/event/mob_action.gd")
+const MobDataScript = preload("res://scripts/game/event/encounter/mob_data.gd")
+const MobActionScript = preload("res://scripts/game/event/encounter/mob_action.gd")
 
 var _failure_count := 0
 

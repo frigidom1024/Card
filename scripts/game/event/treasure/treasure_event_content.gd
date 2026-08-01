@@ -1,7 +1,8 @@
-class_name EventTreasureContent
-extends Resource
+class_name TreasureEventContent
+extends EventContent
 
 const CardDataScript = preload("res://scripts/card/card_data.gd")
+const TreasureRuntimeStateScript = preload("res://scripts/game/event/treasure/treasure_runtime_state.gd")
 
 ## 金币奖励范围（最小值 最大值）
 @export var gold_range: Vector2i = Vector2i(3, 7)
@@ -9,7 +10,7 @@ const CardDataScript = preload("res://scripts/card/card_data.gd")
 @export var card_rewards: Array[CardDataScript] = []
 ## 遗留序列化字段；事件运行时始终从池中提供最多两张唯一普通卡。
 @export var card_draw_count: int = 1
-## 遗留序列化字段；EventRewardResolver 固定生成两张卡和一项金币。
+## 遗留序列化字段；TreasureEventResolver 固定生成两张卡和一项金币。
 @export var choices: int = 2
 
 
@@ -37,3 +38,6 @@ func _unique_cards() -> Array[CardDataScript]:
 		if card != null and not unique_cards.has(card):
 			unique_cards.append(card)
 	return unique_cards
+
+func create_runtime_state() -> TreasureRuntimeStateScript:
+	return TreasureRuntimeStateScript.new()

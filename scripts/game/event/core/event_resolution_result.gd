@@ -12,6 +12,6 @@ var gold_delta := 0
 
 
 static func rejected(reason: Failure):
-	var result = load("res://scripts/game/event/event_resolution_result.gd").new()
+	var result = load("res://scripts/game/event/core/event_resolution_result.gd").new()
 	result.failure = reason
 	return result
