@@ -40,6 +40,10 @@ func _init() -> void:
 	_expect(board.cell_size == LayoutConfigScript.CELL_SIZE, "board defaults to the configured cell size")
 	board.free()
 
+	var hand := HandAreaScript.new()
+	_expect(hand.card_width == LayoutConfigScript.HAND_STEP, "hand card slot width derives from config")
+	_expect(hand.card_spacing == LayoutConfigScript.HAND_SPACING, "hand card spacing derives from config")
+
 	call_deferred("_run_deferred_tests")
 
 func _run_deferred_tests() -> void:
