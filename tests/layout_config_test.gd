@@ -5,6 +5,7 @@ const BoardScene = preload("res://scenes/game/board.tscn")
 const HandAreaScript = preload("res://scripts/game/hand.gd")
 const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
 const CardViewScene = preload("res://scenes/card_view/card_view.tscn")
+const GameManagerScene = preload("res://scenes/game/game_manager.tscn")
 
 var _failure_count := 0
 
@@ -45,6 +46,7 @@ func _run_deferred_tests() -> void:
 	_test_board_drop_detector()
 	_test_card_entity_sizing()
 	_test_card_view_label_container()
+	_test_game_manager_centering()
 	_finish_tests()
 
 func _test_board_drop_detector() -> void:
@@ -73,6 +75,18 @@ func _test_card_view_label_container() -> void:
 	_expect(label.offset_bottom == 166.0, "label container pins to the resized card bottom")
 	_expect(label.offset_top == 143.0, "label container bar height stays 23")
 	view.queue_free()
+
+func _test_game_manager_centering() -> void:
+	var gm := GameManagerScene.instantiate()
+	root.add_child(gm)
+	var view := gm.get_viewport().get_visible_rect().size
+	var expected_board := LayoutConfigScript.board_origin(
+		view, gm.board.width, gm.board.height, gm.board.cell_size
+	)
+	var expected_hand := LayoutConfigScript.hand_origin(view)
+	_expect(gm.board.position == expected_board, "game manager centers the board")
+	_expect(gm.hand_area.position == expected_hand, "game manager centers the hand")
+	gm.queue_free()
 
 func _finish_tests() -> void:
 	quit(1 if _failure_count > 0 else 0)
