@@ -31,7 +31,6 @@ enum Rarity { COMMON, RARE, EPIC, LEGENDARY }
 @export var defense: int = 0
 @export var heal: int = 0
 @export var effect_rules: Array[CardRule] = []
-@export var root_rule_providers: Array[RootChainRuleProvider] = []
 
 # 描述
 @export_multiline var description: String = ""

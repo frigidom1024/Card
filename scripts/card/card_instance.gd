@@ -24,4 +24,3 @@ func _init(data:CardData):
 static func create_debug_card() -> CardInstance:
 	var data = load("res://data/cards/AllThingsRevival.tres") as CardData
 	return CardInstance.new(data)
-	

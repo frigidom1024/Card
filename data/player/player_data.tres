@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="PlayerData" format=3 uid="uid://b5ybu7vxrcp4j"]
 
 [ext_resource type="Script" uid="uid://blnxyxuigj6pp" path="res://scripts/player/player_data.gd" id="1_player"]
-[ext_resource type="Script" uid="uid://cweljpn1qxxyh" path="res://scripts/combat/combat_stats_data.gd" id="2_stats"]
+[ext_resource type="Script" uid="uid://cweljpn1qxxyh" path="res://scripts/combatv2/combat_stats_data.gd" id="2_stats"]
 
 [sub_resource type="Resource" id="CombatStatsData_player"]
 script = ExtResource("2_stats")
