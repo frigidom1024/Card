@@ -34,10 +34,11 @@ func _init() -> void:
 	_test_shop_failures_do_not_mutate_runtime_state()
 	_test_shop_rejects_mismatched_runtime_state()
 	_test_shop_validation_order_preserves_state()
-	_test_treasure_options_are_cached_and_include_gold()
+	_test_treasure_options_are_cached_by_reference_and_include_gold()
 	_test_treasure_always_offers_two_cards_and_gold_when_available()
 	_test_treasure_failures_do_not_mutate_runtime_state()
 	_test_treasure_rejects_mismatched_runtime_state()
+	_test_treasure_rejects_non_treasure_content()
 	_test_full_hand_rejects_card_but_allows_gold()
 	_test_seeded_event_placement_reserves_footprints_and_boundaries()
 	call_deferred("_finish_tests")
@@ -262,18 +263,19 @@ func _test_shop_validation_order_preserves_state() -> void:
 	)
 
 
-func _test_treasure_options_are_cached_and_include_gold() -> void:
+func _test_treasure_options_are_cached_by_reference_and_include_gold() -> void:
 	var instance = _make_treasure_instance([_card("A"), _card("B"), _card("C")], Vector2i(9, 9))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
 	var first = treasure_resolver.ensure_options(instance, rng)
+	var cached_options := first.duplicate()
 	var second = treasure_resolver.ensure_options(instance, rng)
 	_expect(first.size() == 3, "two cards plus gold")
 	_expect(
 		first[2].kind == TreasureRewardOptionScript.Kind.GOLD and first[2].gold_amount == 9,
 		"cached gold option"
 	)
-	_expect(second == first, "same instance never rerolls")
+	_expect_same_option_references(second, cached_options, "second ensure keeps cached treasure options")
 
 
 func _test_treasure_always_offers_two_cards_and_gold_when_available() -> void:
@@ -367,6 +369,30 @@ func _test_treasure_rejects_mismatched_runtime_state() -> void:
 	)
 
 
+func _test_treasure_rejects_non_treasure_content() -> void:
+	var player := PlayerDataScript.new()
+	player.gold = 30
+	var instance = _make_treasure_instance([_card("A"), _card("B")], Vector2i(7, 7))
+	var state := instance.runtime_state as TreasureRuntimeStateScript
+	var generated_options = treasure_resolver.ensure_options(instance, RandomNumberGenerator.new())
+	var cached_options := generated_options.duplicate()
+	var shop_content := ShopEventContentScript.new()
+	instance.template.content = shop_content
+	var before := _snapshot_runtime_state(player, instance)
+	var result = treasure_resolver.claim_reward(instance, 0, player, true, RandomNumberGenerator.new())
+	_expect_failure_preserves_runtime_state(
+		result,
+		EventResolutionResultScript.Failure.INVALID_EVENT,
+		before,
+		player,
+		instance,
+		"treasure rejects non-treasure content"
+	)
+	_expect_same_option_references(
+		state.options, cached_options, "invalid treasure content preserves generated option objects"
+	)
+
+
 func _test_full_hand_rejects_card_but_allows_gold() -> void:
 	var player := PlayerDataScript.new()
 	player.gold = 30
@@ -395,6 +421,15 @@ func _expect_failure_preserves_runtime_state(
 	_expect(
 		before == _snapshot_runtime_state(player, instance), "%s preserves runtime state" % label
 	)
+
+
+func _expect_same_option_references(actual: Array, expected: Array, label: String) -> void:
+	_expect(actual.size() == expected.size(), "%s keeps the option count" % label)
+	for option_index in mini(actual.size(), expected.size()):
+		_expect(
+			is_same(actual[option_index], expected[option_index]),
+			"%s keeps the cached option object at index %d" % [label, option_index]
+		)
 
 
 func _snapshot_runtime_state(player, instance) -> Dictionary:
