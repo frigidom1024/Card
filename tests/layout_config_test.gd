@@ -1,0 +1,47 @@
+extends SceneTree
+
+const LayoutConfigScript = preload("res://scripts/game/layout_config.gd")
+const BoardScene = preload("res://scenes/game/board.tscn")
+const HandAreaScript = preload("res://scripts/game/hand.gd")
+
+var _failure_count := 0
+
+func _init() -> void:
+	_expect(LayoutConfigScript.CELL_SIZE == 86, "CELL_SIZE is 86")
+	_expect(LayoutConfigScript.CARD_MARGIN == 6, "CARD_MARGIN is 6")
+	_expect(LayoutConfigScript.CARD_W == 80, "CARD_W derives from CELL_SIZE minus margin")
+	_expect(LayoutConfigScript.CARD_H == 166, "CARD_H covers two cells minus margin")
+	_expect(LayoutConfigScript.HAND_SPACING == 30, "HAND_SPACING derives from CELL_SIZE")
+	_expect(LayoutConfigScript.HAND_STEP == 110, "HAND_STEP is card width plus spacing")
+	_expect(
+		LayoutConfigScript.CARD_H + LayoutConfigScript.CARD_MARGIN == LayoutConfigScript.CELL_SIZE * 2,
+		"card height plus margin fills exactly two cells"
+	)
+
+	var card_rect := LayoutConfigScript.card_view_rect(86)
+	_expect(card_rect.size == Vector2(80, 166), "card view rect size follows cell size")
+	_expect(card_rect.position == Vector2(-40, -83), "card view rect is centered on the entity")
+
+	var board_pos := LayoutConfigScript.board_origin(Vector2(1600, 900), 10, 8, 86)
+	_expect(board_pos == Vector2(370, 16), "board origin centers the 860x688 grid horizontally")
+
+	var hand_pos := LayoutConfigScript.hand_origin(Vector2(1600, 900))
+	_expect(hand_pos == Vector2(800, 804), "hand origin centers and hugs the bottom")
+
+	# 棋盘底与手牌顶不重叠（至少留 10px）
+	var board_bottom := board_pos.y + 8 * 86
+	var hand_top := hand_pos.y - 86
+	_expect(board_bottom + 10 <= hand_top, "board bottom clears the hand top")
+
+	call_deferred("_run_deferred_tests")
+
+func _run_deferred_tests() -> void:
+	_finish_tests()
+
+func _finish_tests() -> void:
+	quit(1 if _failure_count > 0 else 0)
+
+func _expect(condition: bool, message: String) -> void:
+	if not condition:
+		_failure_count += 1
+		push_error(message)
