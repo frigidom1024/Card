@@ -75,6 +75,20 @@ func _ready() -> void:
 	if not card_instance:
 		card_instance = CardInstance.create_debug_card()
 	_card_view.set_value(card_instance)
+	_apply_layout()
+
+
+## 卡牌尺寸由 LayoutConfig.CELL_SIZE 派生（碰撞盒 1×2 格，卡面居中）
+func _apply_layout() -> void:
+	var shape := RectangleShape2D.new()
+	shape.size = Vector2(LayoutConfig.CELL_SIZE, LayoutConfig.CELL_SIZE * 2)
+	$CollisionShape2D.shape = shape
+
+	var rect := LayoutConfig.card_view_rect(LayoutConfig.CELL_SIZE)
+	_card_view.offset_left = rect.position.x
+	_card_view.offset_top = rect.position.y
+	_card_view.offset_right = rect.position.x + rect.size.x
+	_card_view.offset_bottom = rect.position.y + rect.size.y
 
 
 # ============================

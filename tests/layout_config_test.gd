@@ -3,6 +3,7 @@ extends SceneTree
 const LayoutConfigScript = preload("res://scripts/game/layout_config.gd")
 const BoardScene = preload("res://scenes/game/board.tscn")
 const HandAreaScript = preload("res://scripts/game/hand.gd")
+const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
 
 var _failure_count := 0
 
@@ -41,6 +42,7 @@ func _init() -> void:
 
 func _run_deferred_tests() -> void:
 	_test_board_drop_detector()
+	_test_card_entity_sizing()
 	_finish_tests()
 
 func _test_board_drop_detector() -> void:
@@ -51,6 +53,15 @@ func _test_board_drop_detector() -> void:
 	_expect(shape != null and shape.size == Vector2(860, 688), "drop detector matches the resized grid")
 	_expect(shape_node.position == Vector2(430, 344), "drop detector centers on the resized grid")
 	board.queue_free()
+
+func _test_card_entity_sizing() -> void:
+	var card := CardEntityScene.instantiate() as CardEntity
+	root.add_child(card)
+	var shape := (card.get_node("CollisionShape2D") as CollisionShape2D).shape as RectangleShape2D
+	_expect(shape != null and shape.size == Vector2(86, 172), "card collision box covers two resized cells")
+	var card_view := card.get_node("CardView") as Control
+	_expect(card_view.size == Vector2(80, 166), "card view derives from the configured cell size")
+	card.queue_free()
 
 func _finish_tests() -> void:
 	quit(1 if _failure_count > 0 else 0)
