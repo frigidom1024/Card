@@ -9,6 +9,14 @@ const CardInstanceScript = preload("res://scripts/card/card_instance.gd")
 const EventDataScript = preload("res://scripts/game/event/event_data.gd")
 const EventInstanceScript = preload("res://scripts/game/event/event_zone.gd")
 
+
+class TrackingDragLayer extends DragLayer:
+	var drag_end_call_count := 0
+
+	func on_card_drag_end(card: CardEntity) -> void:
+		drag_end_call_count += 1
+		super.on_card_drag_end(card)
+
 var _failure_count := 0
 
 
@@ -27,6 +35,8 @@ func _run_scene_interaction_tests() -> void:
 	await process_frame
 	_test_board_event_does_not_intercept_mouse_or_enable_selection()
 	_test_drag_lock_blocks_card_input_and_restores_an_active_drag()
+	_test_lock_consumes_mouse_release_after_active_drag_cancel()
+	_test_lock_restores_non_root_card_transform_and_occupancy()
 	call_deferred("_finish_tests")
 
 
@@ -164,6 +174,76 @@ func _test_drag_lock_blocks_card_input_and_restores_an_active_drag() -> void:
 	_expect(_board_owns_cells(board, card, original_cells), "locked post-cancel drag end preserves Board occupancy")
 
 
+func _test_lock_consumes_mouse_release_after_active_drag_cancel() -> void:
+	var board := _make_board(5, 2)
+	var drag_layer := TrackingDragLayer.new()
+	drag_layer.board = board
+	root.add_child(drag_layer)
+	var card := _make_card_at(board, Vector2(120, 40), 90.0)
+	card.drag_layer = drag_layer
+	_expect(board.add_card(card), "release-consumption setup card is placed")
+	var original_parent := card.get_parent()
+	var original_position := card.global_position
+	var original_cells := board.get_card_cells(original_position, card.rotation_degrees)
+	var clicked_cards: Array[CardEntity] = []
+	card.clicked.connect(func(clicked_card): clicked_cards.append(clicked_card))
+
+	_card_left_click(card, true)
+	_expect(card._dragging, "real input starts the drag before lock")
+	drag_layer.set_interaction_locked(true)
+	var state_after_lock := card.state
+	_expect(not card._dragging, "lock-driven cancel ends CardEntity drag state")
+	_expect(_board_owns_cells(board, card, original_cells), "lock-driven cancel restores Board occupancy")
+
+	_card_left_click(card, false)
+	_expect(clicked_cards.is_empty(), "release after lock-driven cancel does not emit clicked")
+	_expect(drag_layer.drag_end_call_count == 0, "release after lock-driven cancel does not run a second end")
+	_expect(card.state == state_after_lock and not card._dragging, "release after cancel leaves CardEntity state stable")
+	_expect(card.get_parent() == original_parent, "release after cancel preserves restored parent")
+	_expect(card.global_position == original_position, "release after cancel preserves restored position")
+	_expect(_board_owns_cells(board, card, original_cells), "release after cancel preserves Board occupancy")
+
+	card._end_drag()
+	_expect(
+		drag_layer.drag_end_call_count == 0,
+		"locked direct _end_drag does not invoke DragLayer completion"
+	)
+	_expect(card.state == state_after_lock, "locked direct _end_drag preserves state")
+	_expect(card.get_parent() == original_parent, "locked direct _end_drag preserves parent")
+	_expect(card.global_position == original_position, "locked direct _end_drag preserves position")
+	_expect(_board_owns_cells(board, card, original_cells), "locked direct _end_drag preserves Board occupancy")
+
+
+func _test_lock_restores_non_root_card_transform_and_occupancy() -> void:
+	var board := _make_board(5, 2)
+	var drag_layer := DragLayerScript.new() as DragLayer
+	drag_layer.board = board
+	root.add_child(drag_layer)
+	var root_card := _make_card_at(board, Vector2(120, 40), 90.0)
+	_expect(board.add_card(root_card), "non-root restore setup root card is placed")
+	var card := _make_card_at(board, Vector2(320, 40), 90.0, CardDataScript.CardType.NORMAL)
+	card.card_instance.direction = 1
+	card.drag_layer = drag_layer
+	_expect(board.add_card(card), "non-root restore setup card is placed")
+	var original_parent := card.get_parent()
+	var original_position := card.global_position
+	var original_rotation := card.rotation_degrees
+	var original_direction := card.card_instance.direction
+	var original_cells := board.get_card_cells(original_position, original_rotation)
+
+	_card_left_click(card, true)
+	_expect(card._dragging and card.get_parent() == drag_layer, "non-root card enters real drag chain")
+	card.rotation_degrees = 180.0
+	card.card_instance.direction = 2
+	drag_layer.set_interaction_locked(true)
+	_expect(not card._dragging, "locking cancels dragged non-root card")
+	_expect(card.get_parent() == original_parent, "locking restores non-root parent")
+	_expect(card.global_position == original_position, "locking restores non-root position")
+	_expect(card.rotation_degrees == original_rotation, "locking restores non-root rotation before Board placement")
+	_expect(card.card_instance.direction == original_direction, "locking restores non-root direction before Board placement")
+	_expect(_board_owns_cells(board, card, original_cells), "locking restores non-root Board membership and footprint")
+
+
 func _make_board(board_width: int, board_height: int) -> Board:
 	var board := BoardScene.instantiate() as Board
 	board.width = board_width
@@ -197,10 +277,15 @@ func _inject_event_owner(board: Board, event_node: BoardEvent) -> void:
 		board._event_grid_owner[cell] = event_node
 
 
-func _make_card_at(board: Board, world_position: Vector2, rotation: float) -> CardEntity:
+func _make_card_at(
+	board: Board,
+	world_position: Vector2,
+	rotation: float,
+	card_type = CardDataScript.CardType.ROOT
+) -> CardEntity:
 	var card := CardEntityScene.instantiate() as CardEntity
 	var card_data := CardDataScript.new()
-	card_data.card_type = CardDataScript.CardType.ROOT
+	card_data.card_type = card_type
 	card.bind_instance(CardInstanceScript.new(card_data))
 	root.add_child(card)
 	card.global_position = board.to_global(world_position)

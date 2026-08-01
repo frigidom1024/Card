@@ -9,6 +9,8 @@ var interaction_locked := false
 
 var _drag_origin_parent: Node = null
 var _drag_origin_global_position := Vector2.ZERO
+var _drag_origin_rotation_degrees := 0.0
+var _drag_origin_direction := 0
 var _drag_origin_was_on_board := false
 var _drag_origin_hand_area: HandArea = null
 
@@ -35,6 +37,8 @@ func on_card_drag_start(card: CardEntity) -> void:
 	_dragged_card = card
 	_drag_origin_parent = card.get_parent()
 	_drag_origin_global_position = card.global_position
+	_drag_origin_rotation_degrees = card.rotation_degrees
+	_drag_origin_direction = card.card_instance.direction if card.card_instance else 0
 	_drag_origin_was_on_board = board != null and card in board.cards
 	_drag_origin_hand_area = hand_area if hand_area and card in hand_area.cards else null
 
@@ -100,15 +104,31 @@ func _cancel_active_drag() -> void:
 		_clear_drag_origin()
 		return
 
-	card.cancel_drag()
-	if _drag_origin_was_on_board and board:
-		card.global_position = _drag_origin_global_position
-		if not board.add_card(card):
-			push_error("Failed to restore Board card after interaction lock")
-			_restore_card_to_origin_parent(card)
+	card.cancel_drag_for_interaction_lock()
+	_restore_drag_origin_transform(card)
+	if _drag_origin_was_on_board:
+		if board and board.add_card(card):
+			_clear_drag_origin()
+			return
+		push_error("Failed to restore Board card after interaction lock")
+		_restore_failed_board_card_to_hand(card)
 	else:
 		_restore_card_to_origin_parent(card)
 	_clear_drag_origin()
+
+
+func _restore_drag_origin_transform(card: CardEntity) -> void:
+	card.global_position = _drag_origin_global_position
+	card.rotation_degrees = _drag_origin_rotation_degrees
+	if card.card_instance:
+		card.card_instance.direction = _drag_origin_direction
+
+
+func _restore_failed_board_card_to_hand(card: CardEntity) -> void:
+	if hand_area and hand_area.add_card(card, false):
+		return
+	push_error("Unable to return failed Board restore to HandArea")
+	card.queue_free()
 
 
 func _restore_card_to_origin_parent(card: CardEntity) -> void:
@@ -116,14 +136,16 @@ func _restore_card_to_origin_parent(card: CardEntity) -> void:
 		if not _drag_origin_hand_area.add_card(card, false):
 			push_error("Failed to restore hand card after interaction lock")
 		return
-	if _drag_origin_parent and is_instance_valid(_drag_origin_parent):
+	if not _drag_origin_was_on_board and _drag_origin_parent and is_instance_valid(_drag_origin_parent):
 		card.reparent(_drag_origin_parent)
-		card.global_position = _drag_origin_global_position
+		_restore_drag_origin_transform(card)
 
 
 func _clear_drag_origin() -> void:
 	_drag_origin_parent = null
 	_drag_origin_global_position = Vector2.ZERO
+	_drag_origin_rotation_degrees = 0.0
+	_drag_origin_direction = 0
 	_drag_origin_was_on_board = false
 	_drag_origin_hand_area = null
 
