@@ -15,8 +15,6 @@ var is_resolved: bool = false
 ## 每个事件实例的可扩展运行时状态。
 var runtime_state: EventRuntimeState
 
-## 每个商店静态商品对应的运行时售罄标记。
-var shop_sold_flags: Array[bool] = []
 ## 此事件已经生成的宝藏选项，重复打开时不重新抽取。
 var treasure_options: Array[TreasureRewardOptionScript] = []
 ## 已领取的宝藏选项索引；未领取时为 -1。

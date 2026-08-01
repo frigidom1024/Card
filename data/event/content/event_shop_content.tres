@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="EventShopContent" format=3]
+[gd_resource type="Resource" script_class="ShopEventContent" format=3]
 
-[ext_resource type="Script" path="res://scripts/game/event/event_shop_content.gd" id="1_xqlp3"]
+[ext_resource type="Script" path="res://scripts/game/event/shop/shop_event_content.gd" id="1_xqlp3"]
 
 [resource]
 script = ExtResource("1_xqlp3")
