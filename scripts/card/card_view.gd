@@ -7,7 +7,17 @@ var card_inst:CardInstance
 func _ready() -> void:
 	if not card_inst:
 		card_inst = CardInstance.create_debug_card()
+	resized.connect(_pin_label_container)
+	_pin_label_container()
 	refresh_display()
+
+
+func _pin_label_container() -> void:
+	var h := size.y
+	labelcontainer.offset_left = 0.5
+	labelcontainer.offset_top = h - 23.0
+	labelcontainer.offset_right = size.x - 0.5
+	labelcontainer.offset_bottom = h
 
 
 func refresh_display():

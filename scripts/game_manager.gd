@@ -27,6 +27,12 @@ func _ready() -> void:
 
 	init_player_cards()
 	init_events()
+	_center_layout()
+
+	# 窗口实时缩放时重新居中（带重复连接防护）
+	var viewport := get_viewport()
+	if not viewport.size_changed.is_connected(_center_layout):
+		viewport.size_changed.connect(_center_layout)
 
 
 # 初始化玩家卡牌：创建初始卡牌并全部发到手牌区
@@ -48,3 +54,9 @@ func init_events() -> void:
 		push_warning("GameManager is missing EventLib")
 		return
 	_event_placement_service.place_initial_events(event_lib, board)
+
+## 棋盘水平居中（垂直让出底部手牌区），手牌居中贴底
+func _center_layout() -> void:
+	var view := get_viewport().get_visible_rect().size
+	board.position = LayoutConfig.board_origin(view, board.width, board.height, board.cell_size)
+	hand_area.position = LayoutConfig.hand_origin(view)

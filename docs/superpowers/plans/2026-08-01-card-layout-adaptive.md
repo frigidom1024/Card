@@ -467,8 +467,8 @@ git commit -m "feat: center board and hand based on viewport"
 - Test: `tests/layout_config_test.gd`
 
 **Interfaces:**
-- Consumes: `LayoutConfig.HAND_STEP`, `LayoutConfig.HAND_SPACING`。
-- Produces: `HandArea.card_width == 110`, `card_spacing == 30`（默认值）。
+- Consumes: `LayoutConfig.CARD_W`, `LayoutConfig.HAND_SPACING`。
+- Produces: `HandArea.card_width == 80`, `card_spacing == 30`（默认值）。
 
 - [ ] **Step 1: 追加失败测试**
 
@@ -476,7 +476,7 @@ git commit -m "feat: center board and hand based on viewport"
 
 ```gdscript
 	var hand := HandAreaScript.new()
-	_expect(hand.card_width == LayoutConfigScript.HAND_STEP, "hand card slot width derives from config")
+	_expect(hand.card_width == LayoutConfigScript.CARD_W, "hand card slot width derives from config")
 	_expect(hand.card_spacing == LayoutConfigScript.HAND_SPACING, "hand card spacing derives from config")
 ```
 
@@ -490,7 +490,7 @@ Expected: FAIL。`hand.card_width` 仍是 100，`card_spacing` 仍是 30（与 1
 修改 `scripts/game/hand.gd` 第 14-15 行：
 
 ```gdscript
-@export var card_width: float = LayoutConfig.HAND_STEP
+@export var card_width: float = LayoutConfig.CARD_W
 @export var card_spacing: float = LayoutConfig.HAND_SPACING
 ```
 
