@@ -29,6 +29,11 @@ func _ready() -> void:
 	init_events()
 	_center_layout()
 
+	# 窗口实时缩放时重新居中（带重复连接防护）
+	var viewport := get_viewport()
+	if not viewport.size_changed.is_connected(_center_layout):
+		viewport.size_changed.connect(_center_layout)
+
 
 # 初始化玩家卡牌：创建初始卡牌并全部发到手牌区
 func init_player_cards() -> void:

@@ -41,7 +41,7 @@ func _init() -> void:
 	board.free()
 
 	var hand := HandAreaScript.new()
-	_expect(hand.card_width == LayoutConfigScript.HAND_STEP, "hand card slot width derives from config")
+	_expect(hand.card_width == LayoutConfigScript.CARD_W, "hand card slot width derives from config")
 	_expect(hand.card_spacing == LayoutConfigScript.HAND_SPACING, "hand card spacing derives from config")
 
 	call_deferred("_run_deferred_tests")
@@ -90,6 +90,12 @@ func _test_game_manager_centering() -> void:
 	var expected_hand := LayoutConfigScript.hand_origin(view)
 	_expect(gm.board.position == expected_board, "game manager centers the board")
 	_expect(gm.hand_area.position == expected_hand, "game manager centers the hand")
+	_expect(
+		gm.get_viewport().size_changed.is_connected(gm._center_layout),
+		"game manager re-centers on viewport size change"
+	)
+	gm.get_viewport().size_changed.emit()
+	_expect(gm.board.position == expected_board, "board stays centered after resize signal")
 	gm.queue_free()
 
 func _finish_tests() -> void:

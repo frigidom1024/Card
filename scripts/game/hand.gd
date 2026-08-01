@@ -11,7 +11,7 @@ signal card_unhovered(card: CardEntity)
 
 # ===== 导出参数 =====
 @export_group("布局参数")
-@export var card_width: float = LayoutConfig.HAND_STEP
+@export var card_width: float = LayoutConfig.CARD_W
 @export var card_spacing: float = LayoutConfig.HAND_SPACING
 @export var max_hand_size: int = 10
 

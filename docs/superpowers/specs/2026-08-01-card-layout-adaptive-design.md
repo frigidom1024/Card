@@ -85,7 +85,7 @@ func _center_layout() -> void:
 
 ### 4.4 手牌参数派生
 
-`hand.gd` 的 `card_width` / `card_spacing` 默认值改为 `LayoutConfig.HAND_STEP` / `LayoutConfig.HAND_SPACING`（80 / 30，步长 110，卡间距 30，比现状略紧凑）。`max_hand_size` 保持 10。
+`hand.gd` 的 `card_width` / `card_spacing` 默认值改为 `LayoutConfig.CARD_W` / `LayoutConfig.HAND_SPACING`（80 / 30，步长 110，卡间距 30，比现状略紧凑）。`max_hand_size` 保持 10。
 
 ### 4.5 场景文件
 
