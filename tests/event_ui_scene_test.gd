@@ -5,6 +5,7 @@ const CARD_VIEW_SCRIPT_PATH := "res://scripts/card/card_view.gd"
 const SHOP_SCENE_PATH := "res://scenes/game/event_shop.tscn"
 const TREASURE_SCENE_PATH := "res://scenes/game/event_treasure.tscn"
 const COMBAT_SCENE_PATH := "res://scenes/game/event_combat.tscn"
+const GameManagerScene = preload("res://scenes/game/game_manager.tscn")
 
 const COMBAT_NODE_NAMES := [
 	"Overlay",
@@ -47,6 +48,7 @@ func _run_tests() -> void:
 	_test_shop_scene_structure()
 	_test_treasure_scene_structure()
 	_test_combat_scene_structure()
+	await _test_event_views_are_not_children_of_gameplay_canvas()
 	await _assert_runtime_modal_layout(SHOP_SCENE_PATH, "shop")
 	await _assert_runtime_modal_layout(TREASURE_SCENE_PATH, "treasure")
 	await _assert_runtime_modal_layout(COMBAT_SCENE_PATH, "combat")
@@ -97,6 +99,27 @@ func _test_combat_scene_structure() -> void:
 			"combat exposes stable node %s" % node_name
 		)
 	scene_root.free()
+
+func _test_event_views_are_not_children_of_gameplay_canvas() -> void:
+	var manager := GameManagerScene.instantiate()
+	root.add_child(manager)
+	await process_frame
+
+	var gameplay_canvas := manager.get_node_or_null("GameplayCanvas")
+	var event_layer := manager.get_node_or_null("EventModalLayer") as CanvasLayer
+	_expect(gameplay_canvas != null, "game manager has gameplay canvas")
+	_expect(event_layer != null, "game manager has event modal canvas layer")
+	for view_name in ["ShopEventView", "TreasureEventView", "CombatEventView"]:
+		var view := event_layer.get_node_or_null(view_name) as Control if event_layer != null else null
+		_expect(view != null, "%s remains under event modal layer" % view_name)
+		if view != null:
+			_expect(event_layer.is_ancestor_of(view), "%s inherits the event modal layer" % view_name)
+			if gameplay_canvas != null:
+				_expect(not gameplay_canvas.is_ancestor_of(view), "%s is not scaled with gameplay" % view_name)
+			_expect(view.anchors_preset == Control.PRESET_FULL_RECT, "%s covers the actual viewport" % view_name)
+
+	manager.queue_free()
+	await process_frame
 
 
 func _instantiate_scene(scene_path: String) -> Control:

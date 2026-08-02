@@ -1,0 +1,551 @@
+# Responsive Game Canvas Implementation Plan
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** 让 MonoCard 在不同桌面窗口尺寸与宽高比下保持棋盘玩法区等比缩放、卡牌与事件命中关系稳定，并让额外空间由全屏背景和响应式 UI 承担。
+
+**Architecture:** 增加 `GameplayCanvas` 作为棋盘、手牌、卡牌实体和拖拽层的共同 `Node2D` 父节点。`GameManager` 始终用固定的 `1600×900` 设计坐标摆放玩法对象，再将整个 `GameplayCanvas` 依据实际视口以统一比例缩放并居中；商店、宝藏和战斗模态继续位于独立 `CanvasLayer` 中。主场景增加不参与输入的全屏背景层，用来覆盖非 16:9 和大尺寸窗口的扩展区域。
+
+**Tech Stack:** Godot 4.7、GDScript、`.tscn` 场景、`SceneTree` headless 测试。
+
+## Global Constraints
+
+- 卡牌的棋盘逻辑占位继续保持 `1×2`；本计划不修改棋盘格规则、连接规则、事件触发规则或碰撞语义。
+- `Board`、`HandManager`、`CardManager` 与 `DragLayer` 必须处在同一 `GameplayCanvas` 变换树下，禁止单独缩放其中任意一个节点。
+- `GameplayCanvas` 使用统一的 X/Y 等比缩放，禁止非等比拉伸；事件圈必须保持圆形。
+- 设计尺寸固定为 `1600×900`，最小玩法缩放为 `0.8`，最大玩法缩放为 `1.35`。
+- 最小桌面窗口尺寸为 `1280×720`；窗口缩小到该尺寸时，玩法区仍完整可见。
+- 窗口宽高比扩展区域由背景层呈现，不得通过拉伸棋盘或卡牌填满。
+- `EventModalLayer` 必须保留在 `CanvasLayer` 中，商店、宝藏和战斗 UI 不能成为 `GameplayCanvas` 的子节点。
+- UI 只能使用锚点、容器和自身响应式布局适配真实窗口，不得依赖 `GameplayCanvas.scale`。
+- 使用 `class_name` 创建的新类型；不要引入 `const Script = preload(...)` 再通过 `Script.new()` 的生产代码模式。
+- 每项代码变更先添加失败测试，测试通过后再提交；每次提交只暂存任务列出的文件，避免包含现有未提交布局改动或 `.uid` 文件状态变化。
+
+---
+
+## File Structure
+
+- Create: `scripts/game/gameplay_canvas.gd` — 只负责把固定设计画布等比缩放、钳制并居中到给定视口。
+- Modify: `scripts/game/layout_config.gd` — 持有设计尺寸、缩放范围与最小窗口尺寸常量；不再把窗口实际尺寸直接用于棋盘局部坐标。
+- Create: `tests/gameplay_canvas_test.gd` — 对缩放比例、钳制和居中坐标进行纯逻辑回归测试。
+- Modify: `scenes/game/game_manager.tscn` — 增加 `GameplayCanvas`，并把玩法 `Node2D` 子树移入其中；保持 `EventModalLayer` 原层级。
+- Modify: `scripts/game_manager.gd` — 在设计坐标内布局棋盘和手牌，并在视口变化时调用 `GameplayCanvas.fit_to_viewport()`。
+- Modify: `tests/layout_config_test.gd` — 将布局断言改为设计坐标与画布变换职责，并覆盖 GameManager 的节点层级和 resize 信号行为。
+- Modify: `scenes/main.tscn` — 添加最底层全屏背景 `CanvasLayer` 与不拦截鼠标的 `ColorRect` 占位背景。
+- Modify: `scripts/main.gd` — 在启动时设置最小桌面窗口尺寸。
+- Modify: `project.godot` — 显式设置 `window/stretch/aspect="expand"`，让根视口能够使用实际扩展区域。
+- Modify: `tests/event_ui_scene_test.gd` — 增加对事件模态仍位于 `CanvasLayer`、使用全屏锚点的回归断言。
+- Create: `tests/responsive_layout_scene_test.gd` — 验证主背景层、玩法层级、项目拉伸设置及模态 UI 的分层契约。
+
+## Runtime Interfaces
+
+```gdscript
+# res://scripts/game/gameplay_canvas.gd
+class_name GameplayCanvas
+extends Node2D
+
+func fit_to_viewport(viewport_size: Vector2) -> void:
+    # 将 scale 和 position 更新为当前视口下的统一画布变换。
+    pass
+
+func get_applied_scale(viewport_size: Vector2) -> float:
+    # 返回 clamp 后的统一缩放比例，不修改节点状态。
+    return 1.0
+```
+
+```gdscript
+# res://scripts/game/layout_config.gd
+const DESIGN_VIEWPORT_SIZE := Vector2(1600, 900)
+const MIN_GAMEPLAY_SCALE := 0.8
+const MAX_GAMEPLAY_SCALE := 1.35
+const MIN_WINDOW_SIZE := Vector2i(1280, 720)
+```
+
+```gdscript
+# res://scripts/game_manager.gd
+@onready var gameplay_canvas: GameplayCanvas = $GameplayCanvas
+
+func _center_layout() -> void:
+    # 以 DESIGN_VIEWPORT_SIZE 计算 Board/HandManager 的局部坐标；
+    # 之后把 GameplayCanvas 适配到当前真实视口。
+    pass
+```
+
+### Task 1: 建立固定设计尺寸与等比画布变换
+
+**Files:**
+- Create: `scripts/game/gameplay_canvas.gd`
+- Modify: `scripts/game/layout_config.gd:1-35`
+- Create: `tests/gameplay_canvas_test.gd`
+
+**Interfaces:**
+- Consumes: `LayoutConfig.DESIGN_VIEWPORT_SIZE`、`LayoutConfig.MIN_GAMEPLAY_SCALE`、`LayoutConfig.MAX_GAMEPLAY_SCALE`。
+- Produces: `GameplayCanvas.get_applied_scale(viewport_size: Vector2) -> float` 与 `GameplayCanvas.fit_to_viewport(viewport_size: Vector2) -> void`。
+- Invariant: 画布 `position` 始终为 `(viewport_size - DESIGN_VIEWPORT_SIZE * scale) / 2`；X/Y 缩放分量必须相等。
+
+- [ ] **Step 1: 写入失败的画布变换测试**
+
+创建 `tests/gameplay_canvas_test.gd`。测试使用预加载脚本实例化画布，避免 headless 运行中依赖全局类扫描；覆盖基准、16:10、超宽和最大缩放钳制。
+
+```gdscript
+extends SceneTree
+
+const GameplayCanvasScript = preload("res://scripts/game/gameplay_canvas.gd")
+const LayoutConfigScript = preload("res://scripts/game/layout_config.gd")
+var _failure_count := 0
+
+func _init() -> void:
+    _expect(LayoutConfigScript.DESIGN_VIEWPORT_SIZE == Vector2(1600, 900), "design size is 1600x900")
+    _expect(LayoutConfigScript.MIN_GAMEPLAY_SCALE == 0.8, "minimum gameplay scale is 0.8")
+    _expect(LayoutConfigScript.MAX_GAMEPLAY_SCALE == 1.35, "maximum gameplay scale is 1.35")
+
+    var canvas := GameplayCanvasScript.new()
+    _expect(is_equal_approx(canvas.get_applied_scale(Vector2(1600, 900)), 1.0), "design viewport uses scale 1.0")
+    _expect(is_equal_approx(canvas.get_applied_scale(Vector2(1920, 1200)), 1.2), "16:10 viewport uses the limiting axis")
+    _expect(is_equal_approx(canvas.get_applied_scale(Vector2(2560, 1080)), 1.2), "ultrawide viewport does not stretch horizontally")
+    _expect(is_equal_approx(canvas.get_applied_scale(Vector2(2560, 1440)), 1.35), "large viewport clamps to maximum scale")
+    _expect(is_equal_approx(canvas.get_applied_scale(Vector2(1280, 720)), 0.8), "minimum window uses minimum scale")
+
+    canvas.fit_to_viewport(Vector2(2560, 1080))
+    _expect(canvas.scale == Vector2(1.2, 1.2), "canvas uses a uniform scale")
+    _expect(canvas.position == Vector2(320, 0), "ultrawide canvas is centered horizontally")
+
+    canvas.fit_to_viewport(Vector2(2560, 1440))
+    _expect(canvas.scale == Vector2(1.35, 1.35), "maximum scale applies to both axes")
+    _expect(canvas.position == Vector2(200, 112.5), "clamped canvas remains centered")
+    canvas.free()
+    quit(1 if _failure_count > 0 else 0)
+
+func _expect(condition: bool, message: String) -> void:
+    if not condition:
+        _failure_count += 1
+        push_error(message)
+```
+
+- [ ] **Step 2: 运行测试确认失败**
+
+Run:
+
+```powershell
+$godot = 'D:\InstallPath\godot\Godot_v4.7-stable_win64_console.exe'
+& $godot --headless --path . --script tests\gameplay_canvas_test.gd
+```
+
+Expected: FAIL，原因是 `res://scripts/game/gameplay_canvas.gd` 尚不存在，且 `LayoutConfig` 尚未声明画布常量。
+
+- [ ] **Step 3: 在 LayoutConfig 中声明画布尺度常量**
+
+在 `scripts/game/layout_config.gd` 的现有布局常量附近添加如下稳定基线；保留既有卡槽/卡面常量，不在该任务内改变其视觉比例：
+
+```gdscript
+const DESIGN_VIEWPORT_SIZE := Vector2(1600, 900)
+const MIN_GAMEPLAY_SCALE := 0.8
+const MAX_GAMEPLAY_SCALE := 1.35
+const MIN_WINDOW_SIZE := Vector2i(1280, 720)
+```
+
+- [ ] **Step 4: 实现 GameplayCanvas**
+
+创建 `scripts/game/gameplay_canvas.gd`：
+
+```gdscript
+class_name GameplayCanvas
+extends Node2D
+
+func get_applied_scale(viewport_size: Vector2) -> float:
+    if viewport_size.x <= 0.0 or viewport_size.y <= 0.0:
+        return LayoutConfig.MIN_GAMEPLAY_SCALE
+    var width_scale := viewport_size.x / LayoutConfig.DESIGN_VIEWPORT_SIZE.x
+    var height_scale := viewport_size.y / LayoutConfig.DESIGN_VIEWPORT_SIZE.y
+    return clampf(minf(width_scale, height_scale), LayoutConfig.MIN_GAMEPLAY_SCALE, LayoutConfig.MAX_GAMEPLAY_SCALE)
+
+func fit_to_viewport(viewport_size: Vector2) -> void:
+    var applied_scale := get_applied_scale(viewport_size)
+    scale = Vector2.ONE * applied_scale
+    position = (viewport_size - LayoutConfig.DESIGN_VIEWPORT_SIZE * applied_scale) * 0.5
+```
+
+不得在该脚本中访问 `Board`、`HandArea`、卡牌、事件或 UI 节点；它只负责 `Node2D` 变换。
+
+- [ ] **Step 5: 运行新测试确认通过**
+
+Run:
+
+```powershell
+$godot = 'D:\InstallPath\godot\Godot_v4.7-stable_win64_console.exe'
+& $godot --headless --path . --script tests\gameplay_canvas_test.gd
+```
+
+Expected: PASS，退出码 `0`。
+
+- [ ] **Step 6: 提交画布变换基础设施**
+
+```powershell
+git add scripts/game/gameplay_canvas.gd scripts/game/layout_config.gd tests/gameplay_canvas_test.gd
+git commit -m "feat: add responsive gameplay canvas"
+```
+
+Expected: 仅暂存三个列出的文件；不要把现有卡牌比例实验或 `.uid` 删除一并提交。
+
+### Task 2: 将玩法对象迁移到 GameplayCanvas 并保持输入坐标一致
+
+**Files:**
+- Modify: `scenes/game/game_manager.tscn:14-45`
+- Modify: `scripts/game_manager.gd:7-13, 33-64, 88-93`
+- Modify: `tests/layout_config_test.gd:1-108`
+
+**Interfaces:**
+- Consumes: Task 1 的 `GameplayCanvas.fit_to_viewport()` 与 `LayoutConfig.DESIGN_VIEWPORT_SIZE`。
+- Produces: `GameManager._center_layout()` 在设计坐标中放置 Board/Hand，再将 `GameplayCanvas` 放入实际视口。
+- Invariant: `Board`、`HandManager`、`CardManager` 和 `DragLayer` 同为 `GameplayCanvas` 的直接子节点；`EventModalLayer` 仍为 `GameManager` 的直接 `CanvasLayer` 子节点。
+
+- [ ] **Step 1: 先更新失败的布局与层级测试**
+
+在 `tests/layout_config_test.gd` 中保留现有常量与卡牌槽测试，但将 GameManager 部分替换为以下断言。需要先在文件顶部加入：
+
+```gdscript
+const GameplayCanvasScript = preload("res://scripts/game/gameplay_canvas.gd")
+```
+
+将 `_test_game_manager_centering()` 的核心断言替换为：
+
+```gdscript
+var gameplay_canvas := gm.get_node_or_null("GameplayCanvas")
+_expect(gameplay_canvas is GameplayCanvasScript, "game manager owns a GameplayCanvas")
+_expect(gm.board.get_parent() == gameplay_canvas, "board is inside gameplay canvas")
+_expect(gm.hand_area.get_parent() == gameplay_canvas, "hand is inside gameplay canvas")
+_expect(gm.card_manager.get_parent() == gameplay_canvas, "card manager is inside gameplay canvas")
+_expect(gm.drag_layer.get_parent() == gameplay_canvas, "drag layer is inside gameplay canvas")
+_expect(gm.get_node_or_null("EventModalLayer") is CanvasLayer, "event modal layer remains a screen UI layer")
+
+var design := LayoutConfigScript.DESIGN_VIEWPORT_SIZE
+var expected_board := LayoutConfigScript.board_origin(design, gm.board.width, gm.board.height, gm.board.cell_size)
+var expected_hand := LayoutConfigScript.hand_origin(design)
+_expect(gm.board.position == expected_board, "board uses fixed design coordinates")
+_expect(gm.hand_area.position == expected_hand, "hand uses fixed design coordinates")
+
+var view := gm.get_viewport().get_visible_rect().size
+_expect(gameplay_canvas.position == (view - design * gameplay_canvas.scale.x) * 0.5, "canvas is centered in the actual viewport")
+_expect(gameplay_canvas.scale.x == gameplay_canvas.scale.y, "canvas scale remains uniform")
+_expect(gm.get_viewport().size_changed.is_connected(gm._center_layout), "game manager reflows when the viewport changes")
+```
+
+保留测试原有的实例清理逻辑。若当前 `CARD_MARGIN` 基线已确认为 `20`，同步把固定数值断言替换为与实际常量一致的值；不要让该任务静默回退卡牌布局选择。
+
+- [ ] **Step 2: 运行布局测试确认失败**
+
+Run:
+
+```powershell
+$godot = 'D:\InstallPath\godot\Godot_v4.7-stable_win64_console.exe'
+& $godot --headless --path . --script tests\layout_config_test.gd
+```
+
+Expected: FAIL，因为场景尚无 `GameplayCanvas`，玩法节点仍是 `GameManager` 的直接子节点。
+
+- [ ] **Step 3: 重构 GameManager 场景树**
+
+在 `scenes/game/game_manager.tscn` 中：
+
+1. 添加外部脚本资源：
+
+```text
+res://scripts/game/gameplay_canvas.gd
+```
+
+2. 在 `GameManager` 下创建：
+
+```text
+[node name="GameplayCanvas" type="Node2D" parent="."]
+script = ExtResource("<gameplay_canvas_script_id>")
+```
+
+3. 将以下节点的 `parent="."` 改为 `parent="GameplayCanvas"`，并移除它们在 `.tscn` 中的固定 `position` 值：
+
+```text
+HandManager
+CardManager
+DragLayer
+Board
+```
+
+4. 保持 `EventModalLayer`、`ShopEventView`、`TreasureEventView`、`CombatEventView` 原有父级和 `CanvasLayer` 层级不变。
+
+不要修改事件模态场景文件，也不要修改 `Board` 的格子尺寸、碰撞形状或事件节点配置。
+
+- [ ] **Step 4: 修改 GameManager 的节点引用和布局方法**
+
+在 `scripts/game_manager.gd` 中使用以下路径：
+
+```gdscript
+@onready var gameplay_canvas: GameplayCanvas = $GameplayCanvas
+@onready var board: Board = $GameplayCanvas/Board
+@onready var card_manager: Node2D = $GameplayCanvas/CardManager
+@onready var hand_area: HandArea = $GameplayCanvas/HandManager
+@onready var drag_layer: DragLayer = $GameplayCanvas/DragLayer
+```
+
+将 `_center_layout()` 替换为：
+
+```gdscript
+func _center_layout() -> void:
+    var design_size := LayoutConfig.DESIGN_VIEWPORT_SIZE
+    board.position = LayoutConfig.board_origin(
+        design_size, board.width, board.height, board.cell_size
+    )
+    hand_area.position = LayoutConfig.hand_origin(design_size)
+    gameplay_canvas.fit_to_viewport(get_viewport().get_visible_rect().size)
+```
+
+保留 `_ready()` 中对 `viewport.size_changed` 的连接。不要修改 `DragLayer` 或 `CardEntity` 的鼠标坐标逻辑：同一 `Node2D` 父树的全局变换会使 `get_global_mouse_position()`、碰撞和拖拽坐标自动保持一致。
+
+- [ ] **Step 5: 运行布局与拖拽相关回归测试**
+
+Run:
+
+```powershell
+$godot = 'D:\InstallPath\godot\Godot_v4.7-stable_win64_console.exe'
+& $godot --headless --path . --script tests\layout_config_test.gd
+& $godot --headless --path . --script tests\event_trigger_test.gd
+```
+
+Expected: 两个测试均 PASS。`event_trigger_test.gd` 可以输出其既有的错误恢复分支日志，但退出码必须为 `0`。
+
+- [ ] **Step 6: 提交玩法层级迁移**
+
+```powershell
+git add scenes/game/game_manager.tscn scripts/game_manager.gd tests/layout_config_test.gd
+git commit -m "refactor: scale gameplay content as one canvas"
+```
+
+Expected: 只包含玩法层级和对应测试；不包含事件 UI 场景或未列出的工作区改动。
+
+### Task 3: 添加全屏背景、真实视口扩展与最小窗口保护
+
+**Files:**
+- Modify: `scenes/main.tscn:1-10`
+- Modify: `scripts/main.gd:1-2`
+- Modify: `project.godot:14-18`
+- Create: `tests/responsive_layout_scene_test.gd`
+
+**Interfaces:**
+- Consumes: `LayoutConfig.MIN_WINDOW_SIZE` 和 Task 2 的 `GameplayCanvas` 场景层级。
+- Produces: 主场景中的全屏 `BackgroundLayer`；项目显式扩展真实可用视口；启动时设定最小窗口尺寸。
+- Invariant: 背景层在玩法层之后渲染、在 UI 之前渲染，且 `mouse_filter == Control.MOUSE_FILTER_IGNORE`。
+
+- [ ] **Step 1: 写入失败的场景和项目设置测试**
+
+创建 `tests/responsive_layout_scene_test.gd`：
+
+```gdscript
+extends SceneTree
+
+const MainScene = preload("res://scenes/main.tscn")
+const LayoutConfigScript = preload("res://scripts/game/layout_config.gd")
+var _failure_count := 0
+
+func _init() -> void:
+    var config := ConfigFile.new()
+    _expect(config.load("res://project.godot") == OK, "project configuration loads")
+    _expect(config.get_value("display", "window/stretch/mode") == "canvas_items", "canvas items stretching stays enabled")
+    _expect(config.get_value("display", "window/stretch/aspect") == "expand", "viewport expands instead of letterboxing gameplay root")
+
+    var main := MainScene.instantiate()
+    root.add_child(main)
+    var background_layer := main.get_node_or_null("BackgroundLayer")
+    var background := main.get_node_or_null("BackgroundLayer/BackgroundFill") as ColorRect
+    var manager := main.get_node_or_null("GameManager")
+    _expect(background_layer is CanvasLayer, "main owns a canvas background layer")
+    _expect(background != null, "background layer owns a background fill")
+    if background != null:
+        _expect(background.anchors_preset == Control.PRESET_FULL_RECT, "background fill covers the window")
+        _expect(background.mouse_filter == Control.MOUSE_FILTER_IGNORE, "background never blocks game input")
+    _expect(manager != null and manager.get_node_or_null("GameplayCanvas") != null, "game manager exposes gameplay canvas above background")
+    _expect(LayoutConfigScript.MIN_WINDOW_SIZE == Vector2i(1280, 720), "minimum desktop window is 1280x720")
+    main.free()
+    quit(1 if _failure_count > 0 else 0)
+
+func _expect(condition: bool, message: String) -> void:
+    if not condition:
+        _failure_count += 1
+        push_error(message)
+```
+
+- [ ] **Step 2: 运行测试确认失败**
+
+Run:
+
+```powershell
+$godot = 'D:\InstallPath\godot\Godot_v4.7-stable_win64_console.exe'
+& $godot --headless --path . --script tests\responsive_layout_scene_test.gd
+```
+
+Expected: FAIL，因为 `stretch/aspect`、`BackgroundLayer` 和 `BackgroundFill` 尚不存在。
+
+- [ ] **Step 3: 扩展主场景背景层**
+
+在 `scenes/main.tscn` 中，在 `GameManager` 之前添加：
+
+```text
+[node name="BackgroundLayer" type="CanvasLayer" parent="."]
+layer = -10
+
+[node name="BackgroundFill" type="ColorRect" parent="BackgroundLayer"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.035, 0.075, 0.055, 1)
+```
+
+此颜色只是无资源时的安全背景。未来森林插画、平铺纹理或视差层可以替换 `BackgroundFill` 的视觉内容，但必须保留其全屏和不拦截输入的约束。
+
+- [ ] **Step 4: 设置最小窗口尺寸并显式扩展视口**
+
+将 `scripts/main.gd` 改为：
+
+```gdscript
+extends Node2D
+
+func _ready() -> void:
+    DisplayServer.window_set_min_size(LayoutConfig.MIN_WINDOW_SIZE)
+```
+
+并在 `project.godot` 的 `[display]` 部分补充：
+
+```ini
+window/stretch/aspect="expand"
+```
+
+保留已有的 `window/stretch/mode="canvas_items"`、`viewport_width=1600` 和 `viewport_height=900`。不要改为 `ignore`，因为它会允许非等比拉伸。
+
+- [ ] **Step 5: 运行场景与项目设置测试**
+
+Run:
+
+```powershell
+$godot = 'D:\InstallPath\godot\Godot_v4.7-stable_win64_console.exe'
+& $godot --headless --path . --script tests\responsive_layout_scene_test.gd
+```
+
+Expected: PASS，退出码 `0`。
+
+- [ ] **Step 6: 提交窗口适配外围层**
+
+```powershell
+git add scenes/main.tscn scripts/main.gd project.godot tests/responsive_layout_scene_test.gd
+git commit -m "feat: adapt game layout to expanded windows"
+```
+
+Expected: 背景、窗口配置、启动保护及该任务测试在同一提交中。
+
+### Task 4: 验证模态 UI 不随玩法画布缩放并执行完整回归
+
+**Files:**
+- Modify: `tests/event_ui_scene_test.gd:1-165`
+- Modify: `tests/game_manager_combat_routing_test.gd:1-386`（仅在现有节点路径断言因玩法层级变化而需要更新时）
+
+**Interfaces:**
+- Consumes: Task 2 的 `GameManager/GameplayCanvas` 与保留在 `GameManager/EventModalLayer` 的事件 UI。
+- Produces: 对 UI 分层、全屏锚点和战斗路由的回归保证。
+- Invariant: `ShopEventView`、`TreasureEventView`、`CombatEventView` 的祖先链包含 `EventModalLayer`，不包含 `GameplayCanvas`。
+
+- [ ] **Step 1: 写入失败的 UI 分层回归断言**
+
+在 `tests/event_ui_scene_test.gd` 中添加 `GameManagerScene` 预加载，并追加以下测试：
+
+```gdscript
+func _test_event_views_are_not_children_of_gameplay_canvas() -> void:
+    var manager := GameManagerScene.instantiate()
+    root.add_child(manager)
+    await process_frame
+    var gameplay_canvas := manager.get_node_or_null("GameplayCanvas")
+    var event_layer := manager.get_node_or_null("EventModalLayer") as CanvasLayer
+    _expect(gameplay_canvas != null, "game manager has gameplay canvas")
+    _expect(event_layer != null, "game manager has event modal canvas layer")
+    for view_name in ["ShopEventView", "TreasureEventView", "CombatEventView"]:
+        var view := event_layer.get_node_or_null(view_name) as Control if event_layer != null else null
+        _expect(view != null, "%s remains under event modal layer" % view_name)
+        if view != null:
+            _expect(not gameplay_canvas.is_ancestor_of(view), "%s is not scaled with gameplay" % view_name)
+            _expect(view.anchors_preset == Control.PRESET_FULL_RECT, "%s covers the actual viewport" % view_name)
+    manager.free()
+```
+
+在 `_run_deferred_tests()` 中调用此函数。若现有测试没有 `await process_frame` 的上下文，把该测试改为 `async` 并从 deferred 方法 `await` 调用，保持当前测试文件的协程风格一致。
+
+- [ ] **Step 2: 运行 UI 测试确认失败**
+
+Run:
+
+```powershell
+$godot = 'D:\InstallPath\godot\Godot_v4.7-stable_win64_console.exe'
+& $godot --headless --path . --script tests\event_ui_scene_test.gd
+```
+
+Expected: 在 Task 2 未完成时 FAIL，原因是 `GameplayCanvas` 缺失；Task 2 已完成后，此步骤应改为确认新断言通过。
+
+- [ ] **Step 3: 只在路由测试依赖旧节点路径时更新断言**
+
+运行 `tests/game_manager_combat_routing_test.gd`。如果测试仅通过 `manager.board`、`manager.drag_layer` 等公开属性访问节点，则不要修改该文件。若其中存在硬编码路径 `$Board`、`$HandManager` 或 `$DragLayer`，将其替换为：
+
+```text
+GameplayCanvas/Board
+GameplayCanvas/HandManager
+GameplayCanvas/DragLayer
+```
+
+不要改变胜利、撤退、战败的结算时序断言：战斗结果仍必须在玩家确认结算之后应用。
+
+- [ ] **Step 4: 运行全量回归与编辑器加载检查**
+
+Run:
+
+```powershell
+$godot = 'D:\InstallPath\godot\Godot_v4.7-stable_win64_console.exe'
+$tests = @(
+  'tests\gameplay_canvas_test.gd',
+  'tests\responsive_layout_scene_test.gd',
+  'tests\layout_config_test.gd',
+  'tests\event_ui_scene_test.gd',
+  'tests\game_manager_combat_routing_test.gd',
+  'tests\combat_event_ui_scene_test.gd',
+  'tests\combatv2_card_rule_test.gd',
+  'tests\combatv2_service_test.gd',
+  'tests\event_runtime_test.gd',
+  'tests\event_trigger_test.gd'
+)
+foreach ($test in $tests) {
+  & $godot --headless --path . --script $test
+  if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+}
+& $godot --headless --path . --editor --quit
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+git diff --check
+git diff --cached --check
+```
+
+Expected: 所有脚本退出码为 `0`；`event_trigger_test.gd` 允许输出覆盖错误恢复分支的既有 `push_error` 日志，但退出码仍为 `0`；编辑器能加载所有场景和新全局类。
+
+- [ ] **Step 5: 提交 UI 分层回归测试**
+
+```powershell
+git add tests/event_ui_scene_test.gd tests/game_manager_combat_routing_test.gd
+git commit -m "test: cover responsive gameplay and ui layers"
+```
+
+若路由测试未改动，提交命令改为：
+
+```powershell
+git add tests/event_ui_scene_test.gd
+git commit -m "test: cover responsive gameplay and ui layers"
+```
+
+## Plan Self-Review
+
+- **规格覆盖：** Task 1 实现设计尺寸、最小/最大等比缩放与钳制；Task 2 将所有玩法对象置于同一变换树并保留拖拽坐标语义；Task 3 处理扩展视口、最小窗口和背景填充；Task 4 验证模态 UI 与玩法画布分离并执行所有现有战斗/事件回归。
+- **占格与美术边界：** 全部任务均不改变 `Board` 格子语义、`1×2` 占位或卡牌最终插画比例；超宽区域只由背景承担。
+- **类型一致性：** `GameplayCanvas` 在 Task 1 声明、Task 2 的场景和 `GameManager` 消费、Task 4 的 UI 分层测试验证；所有常量均由 `LayoutConfig` 定义。
+- **占位符扫描：** 未发现未定义的后续工作标记、空缺实施项或依赖其他任务才能理解的省略步骤。

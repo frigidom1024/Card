@@ -12,6 +12,11 @@ const HAND_STEP    := CARD_W + HAND_SPACING
 const BOARD_TOP_MARGIN    := 16.0
 const HAND_BOTTOM_MARGIN  := 96.0
 
+const DESIGN_VIEWPORT_SIZE := Vector2(1600, 900)
+const MIN_GAMEPLAY_SCALE := 0.8
+const MAX_GAMEPLAY_SCALE := 1.35
+const MIN_WINDOW_SIZE := Vector2i(1280, 720)
+
 
 ## 卡面在卡牌实体局部坐标下的矩形（以两格中心为原点）
 static func card_view_rect(cell_size: int) -> Rect2:

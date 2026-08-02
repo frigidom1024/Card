@@ -1,6 +1,7 @@
 extends SceneTree
 
 const LayoutConfigScript = preload("res://scripts/game/layout_config.gd")
+const GameplayCanvasScript = preload("res://scripts/game/gameplay_canvas.gd")
 const BoardScene = preload("res://scenes/game/board.tscn")
 const HandAreaScript = preload("res://scripts/game/hand.gd")
 const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
@@ -8,6 +9,21 @@ const CardViewScene = preload("res://scenes/card_view/card_view.tscn")
 const GameManagerScene = preload("res://scenes/game/game_manager.tscn")
 
 var _failure_count := 0
+
+class ViewportSizeChangedWaiter extends RefCounted:
+	signal completed
+	var _completed := false
+
+	func bind(viewport: SubViewport) -> void:
+		viewport.size_changed.connect(_on_size_changed, CONNECT_ONE_SHOT)
+
+	func wait() -> void:
+		if not _completed:
+			await completed
+
+	func _on_size_changed() -> void:
+		_completed = true
+		completed.emit()
 
 func _init() -> void:
 	_expect(LayoutConfigScript.CELL_SIZE == 86, "CELL_SIZE is 86")
@@ -51,6 +67,7 @@ func _run_deferred_tests() -> void:
 	_test_card_entity_sizing()
 	_test_card_view_label_container()
 	_test_game_manager_centering()
+	await _test_game_manager_subviewport_reflow()
 	_finish_tests()
 
 func _test_board_drop_detector() -> void:
@@ -83,20 +100,79 @@ func _test_card_view_label_container() -> void:
 func _test_game_manager_centering() -> void:
 	var gm := GameManagerScene.instantiate()
 	root.add_child(gm)
-	var view := gm.get_viewport().get_visible_rect().size
+	var gameplay_canvas := gm.get_node_or_null("GameplayCanvas")
+	_expect(gameplay_canvas is GameplayCanvasScript, "game manager owns a GameplayCanvas")
+	_expect(gm.board.get_parent() == gameplay_canvas, "board is inside gameplay canvas")
+	_expect(gm.hand_area.get_parent() == gameplay_canvas, "hand is inside gameplay canvas")
+	_expect(gm.card_manager.get_parent() == gameplay_canvas, "card manager is inside gameplay canvas")
+	_expect(gm.drag_layer.get_parent() == gameplay_canvas, "drag layer is inside gameplay canvas")
+	_expect(gm.get_node_or_null("EventModalLayer") is CanvasLayer, "event modal layer remains a screen UI layer")
+
+	var design := LayoutConfigScript.DESIGN_VIEWPORT_SIZE
 	var expected_board := LayoutConfigScript.board_origin(
-		view, gm.board.width, gm.board.height, gm.board.cell_size
+		design, gm.board.width, gm.board.height, gm.board.cell_size
 	)
-	var expected_hand := LayoutConfigScript.hand_origin(view)
-	_expect(gm.board.position == expected_board, "game manager centers the board")
-	_expect(gm.hand_area.position == expected_hand, "game manager centers the hand")
+	var expected_hand := LayoutConfigScript.hand_origin(design)
+	_expect(gm.board.position == expected_board, "board uses fixed design coordinates")
+	_expect(gm.hand_area.position == expected_hand, "hand uses fixed design coordinates")
+
+	if gameplay_canvas is GameplayCanvasScript:
+		var view := gm.get_viewport().get_visible_rect().size
+		_expect(
+			gameplay_canvas.position == (view - design * gameplay_canvas.scale.x) * 0.5,
+			"canvas is centered in the actual viewport"
+		)
+		_expect(gameplay_canvas.scale.x == gameplay_canvas.scale.y, "canvas scale remains uniform")
 	_expect(
 		gm.get_viewport().size_changed.is_connected(gm._center_layout),
-		"game manager re-centers on viewport size change"
+		"game manager reflows when the viewport changes"
 	)
-	gm.get_viewport().size_changed.emit()
-	_expect(gm.board.position == expected_board, "board stays centered after resize signal")
 	gm.queue_free()
+
+func _test_game_manager_subviewport_reflow() -> void:
+	var game_viewport := SubViewport.new()
+	game_viewport.size = Vector2i(1280, 800)
+	root.add_child(game_viewport)
+
+	var gm := GameManagerScene.instantiate()
+	game_viewport.add_child(gm)
+	if not gm.is_node_ready():
+		await gm.ready
+
+	_expect(gm.is_node_ready(), "game manager is ready inside the subviewport")
+	var design := LayoutConfigScript.DESIGN_VIEWPORT_SIZE
+	var expected_board := LayoutConfigScript.board_origin(
+		design, gm.board.width, gm.board.height, gm.board.cell_size
+	)
+	var expected_hand := LayoutConfigScript.hand_origin(design)
+	var gameplay_canvas := gm.get_node_or_null("GameplayCanvas") as GameplayCanvas
+	_expect(gameplay_canvas != null, "subviewport game manager owns a gameplay canvas")
+	if gameplay_canvas != null:
+		_expect(gm.board.position == expected_board, "board keeps design coordinates at 1280x800")
+		_expect(gm.hand_area.position == expected_hand, "hand keeps design coordinates at 1280x800")
+		_expect(is_equal_approx(gameplay_canvas.scale.x, 0.8), "canvas scale is 0.8 at 1280x800")
+		_expect(gameplay_canvas.scale.x == gameplay_canvas.scale.y, "canvas scale is uniform at 1280x800")
+		_expect(
+			gameplay_canvas.position.distance_to(Vector2(0, 40)) < 0.001,
+			"canvas is centered at 1280x800"
+		)
+
+	var resize_waiter := ViewportSizeChangedWaiter.new()
+	resize_waiter.bind(game_viewport)
+	game_viewport.size = Vector2i(1920, 1080)
+	await resize_waiter.wait()
+
+	if gameplay_canvas != null:
+		_expect(gm.board.position == expected_board, "board keeps design coordinates after subviewport resize")
+		_expect(gm.hand_area.position == expected_hand, "hand keeps design coordinates after subviewport resize")
+		_expect(is_equal_approx(gameplay_canvas.scale.x, 1.2), "canvas scale updates to 1.2 after resize")
+		_expect(gameplay_canvas.scale.x == gameplay_canvas.scale.y, "canvas scale remains uniform after resize")
+		_expect(
+			gameplay_canvas.position.distance_to(Vector2.ZERO) < 0.001,
+			"canvas is centered after subviewport resize"
+		)
+
+	game_viewport.free()
 
 func _finish_tests() -> void:
 	quit(1 if _failure_count > 0 else 0)

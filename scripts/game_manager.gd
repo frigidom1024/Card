@@ -4,10 +4,11 @@ signal combat_started(instance: EventInstance, monster: MobInstance)
 signal combat_resolved(instance: EventInstance, result: CombatResult)
 signal exploration_failed(result: CombatResult)
 
-@onready var board: Board = $Board
-@onready var card_manager: Node2D = $CardManager
-@onready var hand_area: HandArea = $HandManager
-@onready var drag_layer: DragLayer = $DragLayer
+@onready var gameplay_canvas: GameplayCanvas = $GameplayCanvas
+@onready var board: Board = $GameplayCanvas/Board
+@onready var card_manager: Node2D = $GameplayCanvas/CardManager
+@onready var hand_area: HandArea = $GameplayCanvas/HandManager
+@onready var drag_layer: DragLayer = $GameplayCanvas/DragLayer
 @onready var shop_event_view = $EventModalLayer/ShopEventView
 @onready var treasure_event_view = $EventModalLayer/TreasureEventView
 @onready var combat_event_view: CombatEventView = $EventModalLayer/CombatEventView
@@ -85,11 +86,14 @@ func init_events() -> void:
 	_event_placement_service.place_initial_events(event_lib, board)
 
 
-## 棋盘水平居中（垂直让出底部手牌区），手牌居中贴底
+## 按固定设计坐标布置玩法内容，再统一缩放和居中玩法画布
 func _center_layout() -> void:
-	var view := get_viewport().get_visible_rect().size
-	board.position = LayoutConfig.board_origin(view, board.width, board.height, board.cell_size)
-	hand_area.position = LayoutConfig.hand_origin(view)
+	var design_size := LayoutConfig.DESIGN_VIEWPORT_SIZE
+	board.position = LayoutConfig.board_origin(
+		design_size, board.width, board.height, board.cell_size
+	)
+	hand_area.position = LayoutConfig.hand_origin(design_size)
+	gameplay_canvas.fit_to_viewport(get_viewport().get_visible_rect().size)
 
 
 func _on_board_event_triggered(instance: EventInstance) -> void:
