@@ -10,6 +10,21 @@ const GameManagerScene = preload("res://scenes/game/game_manager.tscn")
 
 var _failure_count := 0
 
+class ViewportSizeChangedWaiter extends RefCounted:
+	signal completed
+	var _completed := false
+
+	func bind(viewport: SubViewport) -> void:
+		viewport.size_changed.connect(_on_size_changed, CONNECT_ONE_SHOT)
+
+	func wait() -> void:
+		if not _completed:
+			await completed
+
+	func _on_size_changed() -> void:
+		_completed = true
+		completed.emit()
+
 func _init() -> void:
 	_expect(LayoutConfigScript.CELL_SIZE == 86, "CELL_SIZE is 86")
 	_expect(LayoutConfigScript.CARD_MARGIN == 6, "CARD_MARGIN is 6")
@@ -121,7 +136,8 @@ func _test_game_manager_subviewport_reflow() -> void:
 
 	var gm := GameManagerScene.instantiate()
 	game_viewport.add_child(gm)
-	await process_frame
+	if not gm.is_node_ready():
+		await gm.ready
 
 	_expect(gm.is_node_ready(), "game manager is ready inside the subviewport")
 	var design := LayoutConfigScript.DESIGN_VIEWPORT_SIZE
@@ -141,8 +157,10 @@ func _test_game_manager_subviewport_reflow() -> void:
 			"canvas is centered at 1280x800"
 		)
 
+	var resize_waiter := ViewportSizeChangedWaiter.new()
+	resize_waiter.bind(game_viewport)
 	game_viewport.size = Vector2i(1920, 1080)
-	await process_frame
+	await resize_waiter.wait()
 
 	if gameplay_canvas != null:
 		_expect(gm.board.position == expected_board, "board keeps design coordinates after subviewport resize")
@@ -154,8 +172,7 @@ func _test_game_manager_subviewport_reflow() -> void:
 			"canvas is centered after subviewport resize"
 		)
 
-	game_viewport.queue_free()
-	await process_frame
+	game_viewport.free()
 
 func _finish_tests() -> void:
 	quit(1 if _failure_count > 0 else 0)
