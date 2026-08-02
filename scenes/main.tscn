@@ -1,15 +1,17 @@
-[gd_scene format=3 uid="uid://cbmxoqgv7eaxp"]
+[gd_scene load_steps=4 format=3 uid="uid://cbmxoqgv7eaxp"]
 
-[ext_resource type="Script" uid="uid://cjrpdllvimwe3" path="res://scripts/main.gd" id="1_sugp2"]
-[ext_resource type="PackedScene" uid="uid://kqfshm560psd" path="res://scenes/game/game_manager.tscn" id="2_0wfyh"]
+[ext_resource type="Script" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Resource" path="res://data/starting_decks/revival_starting_deck.tres" id="2_revival_deck"]
+[ext_resource type="Script" path="res://scripts/run/starting_deck_data.gd" id="3_starting_deck"]
 
-[node name="Main" type="Node2D" unique_id=700708423]
-script = ExtResource("1_sugp2")
+[node name="Main" type="Node2D"]
+script = ExtResource("1_main")
+starting_decks = Array[ExtResource("3_starting_deck")]([ExtResource("2_revival_deck")])
 
-[node name="BackgroundLayer" type="CanvasLayer" parent="." unique_id=529210917]
+[node name="BackgroundLayer" type="CanvasLayer" parent="."]
 layer = -10
 
-[node name="BackgroundFill" type="ColorRect" parent="BackgroundLayer" unique_id=1077256381]
+[node name="BackgroundFill" type="ColorRect" parent="BackgroundLayer"]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -18,4 +20,5 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.035, 0.075, 0.055, 1)
 
-[node name="GameManager" parent="." unique_id=2111395174 instance=ExtResource("2_0wfyh")]
+[node name="ScreenLayer" type="CanvasLayer" parent="."]
+layer = 0

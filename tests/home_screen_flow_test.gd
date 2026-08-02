@@ -3,6 +3,7 @@ extends SceneTree
 const MAIN_MENU_SCENE_PATH := "res://scenes/home/main_menu_screen.tscn"
 const ROOT_SELECTION_SCENE_PATH := "res://scenes/home/root_selection_screen.tscn"
 const RevivalDeck = preload("res://data/starting_decks/revival_starting_deck.tres")
+const MainScene = preload("res://scenes/main.tscn")
 
 var _failure_count := 0
 
@@ -14,6 +15,7 @@ func _init() -> void:
 func _run_tests() -> void:
 	await _test_main_menu_structure_and_single_start_request()
 	await _test_root_selection_filters_presets_and_requests_exploration_once()
+	await _test_main_routes_menu_selection_and_fresh_runs()
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -138,6 +140,70 @@ func _test_root_selection_filters_presets_and_requests_exploration_once() -> voi
 	_expect(back_requests["count"] == 1, "back button delegates navigation through a signal")
 
 	screen.queue_free()
+	await process_frame
+
+
+func _test_main_routes_menu_selection_and_fresh_runs() -> void:
+	var main := MainScene.instantiate()
+	root.add_child(main)
+	await process_frame
+
+	var menu := main.get_node_or_null("ScreenLayer/MainMenuScreen") as Control
+	_expect(menu != null, "boot shows main menu")
+	_expect(main.get_node_or_null("GameManager") == null, "boot does not create a game manager")
+	if menu != null:
+		var first_start := menu.get_node_or_null("SafeArea/Layout/ActionBlock/StartGameButton") as Button
+		if first_start != null:
+			first_start.emit_signal("pressed")
+	await process_frame
+
+	var selector := main.get_node_or_null("ScreenLayer/RootSelectionScreen") as Control
+	_expect(selector != null, "start opens root selection")
+	_expect(main.get_node_or_null("GameManager") == null, "root selection does not create a game manager")
+	if selector != null:
+		var back := selector.find_child("BackButton", true, false) as Button
+		if back != null:
+			back.emit_signal("pressed")
+	await process_frame
+
+	menu = main.get_node_or_null("ScreenLayer/MainMenuScreen") as Control
+	_expect(menu != null, "returning from root selection restores the main menu")
+	_expect(main.get_node_or_null("GameManager") == null, "returning from root selection still has no game manager")
+	if menu != null:
+		var second_start := menu.get_node_or_null("SafeArea/Layout/ActionBlock/StartGameButton") as Button
+		if second_start != null:
+			second_start.emit_signal("pressed")
+	await process_frame
+
+	selector = main.get_node_or_null("ScreenLayer/RootSelectionScreen") as Control
+	_expect(selector != null, "main menu can open root selection again after returning")
+	if selector != null:
+		var start_exploration := selector.find_child("StartExplorationButton", true, false) as Button
+		if start_exploration != null:
+			start_exploration.emit_signal("pressed")
+	await process_frame
+
+	var run_one := main.get_node_or_null("GameManager")
+	_expect(run_one != null and run_one.starting_deck == RevivalDeck, "exploration injects the selected starting deck")
+	_expect(main.get_node_or_null("ScreenLayer/RootSelectionScreen") == null, "root selection is destroyed when exploration starts")
+	var first_card: Variant = run_one.cards_inst[0] if run_one != null and not run_one.cards_inst.is_empty() else null
+
+	if run_one != null:
+		run_one.queue_free()
+	await process_frame
+	main.call("_show_root_selection")
+	await process_frame
+	selector = main.get_node_or_null("ScreenLayer/RootSelectionScreen") as Control
+	if selector != null:
+		var second_exploration_start := selector.find_child("StartExplorationButton", true, false) as Button
+		if second_exploration_start != null:
+			second_exploration_start.emit_signal("pressed")
+	await process_frame
+
+	var run_two := main.get_node_or_null("GameManager")
+	_expect(run_two != null and run_two.cards_inst[0] != first_card, "starting the same deck creates fresh card instances")
+
+	main.queue_free()
 	await process_frame
 
 
