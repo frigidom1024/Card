@@ -259,9 +259,9 @@ func _show_zoom() -> void:
 	var bg = ColorRect.new()
 	bg.name = "ZoomBg"
 	bg.color = Color(0, 0, 0, 0.65)
-	bg.size = get_viewport().get_visible_rect().size
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	_zoom_overlay.add_child(bg)
+	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	# --- 使用预制场景 ---
 	var zoom_view = zoom_view_scene.instantiate()
