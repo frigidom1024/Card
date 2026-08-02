@@ -28,16 +28,20 @@ func _run_test() -> void:
 
     var background_layer := main.get_node_or_null("BackgroundLayer") as CanvasLayer
     var background := main.get_node_or_null("BackgroundLayer/BackgroundFill") as ColorRect
+    var screen_layer := main.get_node_or_null("ScreenLayer") as CanvasLayer
     var manager := main.get_node_or_null("GameManager")
     _expect(background_layer != null, "main owns a canvas background layer")
     if background_layer != null:
-        _expect(background_layer.layer == -10, "background layer renders behind gameplay")
+        _expect(background_layer.layer == -10, "background layer renders behind all screen content")
+    _expect(screen_layer != null and screen_layer.layer == 0, "main owns a foreground screen layer for menu routing")
     _expect(
         background_layer != null
-        and manager != null
-        and main.get_children().find(background_layer) < main.get_children().find(manager),
-        "background layer appears before game manager"
+        and screen_layer != null
+        and main.get_children().find(background_layer) < main.get_children().find(screen_layer),
+        "background layer appears before the routed screen layer"
     )
+    _expect(manager == null, "main does not create gameplay before an exploration is selected")
+    _expect(screen_layer != null and screen_layer.get_node_or_null("MainMenuScreen") != null, "main routes boot into the main menu")
     _expect(background != null, "background layer owns a background fill")
     if background != null:
         _expect(background.anchors_preset == Control.PRESET_FULL_RECT, "background fill covers the window")
@@ -52,7 +56,6 @@ func _run_test() -> void:
             and background.size.is_equal_approx(root.get_viewport().get_visible_rect().size),
             "background fill resizes to the complete visible viewport after a window resize"
         )
-    _expect(manager != null and manager.get_node_or_null("GameplayCanvas") != null, "game manager exposes gameplay canvas above background")
     _expect(LayoutConfigScript.MIN_WINDOW_SIZE == Vector2i(1280, 720), "minimum desktop window is 1280x720")
     main.free()
     quit(1 if _failure_count > 0 else 0)

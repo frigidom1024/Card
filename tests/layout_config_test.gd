@@ -7,6 +7,7 @@ const HandAreaScript = preload("res://scripts/game/hand.gd")
 const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
 const CardViewScene = preload("res://scenes/card_view/card_view.tscn")
 const GameManagerScene = preload("res://scenes/game/game_manager.tscn")
+const RevivalDeck = preload("res://data/starting_decks/revival_starting_deck.tres")
 
 var _failure_count := 0
 
@@ -100,6 +101,7 @@ func _test_card_view_label_container() -> void:
 
 func _test_game_manager_centering() -> void:
 	var gm := GameManagerScene.instantiate()
+	_expect(gm.configure_run(RevivalDeck), "layout setup configures a starting deck")
 	root.add_child(gm)
 	var gameplay_canvas := gm.get_node_or_null("GameplayCanvas")
 	_expect(gameplay_canvas is GameplayCanvasScript, "game manager owns a GameplayCanvas")
@@ -136,6 +138,7 @@ func _test_game_manager_subviewport_reflow() -> void:
 	root.add_child(game_viewport)
 
 	var gm := GameManagerScene.instantiate()
+	_expect(gm.configure_run(RevivalDeck), "subviewport layout setup configures a starting deck")
 	game_viewport.add_child(gm)
 	if not gm.is_node_ready():
 		await gm.ready

@@ -6,6 +6,7 @@ const SHOP_SCENE_PATH := "res://scenes/game/event_shop.tscn"
 const TREASURE_SCENE_PATH := "res://scenes/game/event_treasure.tscn"
 const COMBAT_SCENE_PATH := "res://scenes/game/event_combat.tscn"
 const GameManagerScene = preload("res://scenes/game/game_manager.tscn")
+const RevivalDeck = preload("res://data/starting_decks/revival_starting_deck.tres")
 
 const COMBAT_NODE_NAMES := [
 	"Overlay",
@@ -102,6 +103,7 @@ func _test_combat_scene_structure() -> void:
 
 func _test_event_views_are_not_children_of_gameplay_canvas() -> void:
 	var manager := GameManagerScene.instantiate()
+	_expect(manager.configure_run(RevivalDeck), "event UI setup configures a starting deck")
 	root.add_child(manager)
 	await process_frame
 

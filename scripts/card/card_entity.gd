@@ -48,6 +48,7 @@ var card_instance: CardInstance = null
 var state: State = State.NORMAL
 var _dragging: bool = false
 var _consume_next_left_release := false
+var _display_only := false
 
 var drag_layer
 
@@ -68,11 +69,33 @@ func bind_instance(inst: CardInstance) -> void:
 		_card_view.refresh_display()
 
 
+## 让卡牌作为静态预览展示，不参与任何游戏内交互。
+func set_display_only(value: bool) -> void:
+	if value:
+		if state == State.ZOOMED:
+			_hide_zoom()
+		_dragging = false
+		state = State.NORMAL
+		set_process(false)
+		set_process_input(false)
+		if _card_view:
+			_card_view.modulate = Color.WHITE
+		if _card_info:
+			_card_info.hide_floating()
+
+	_display_only = value
+	input_pickable = not _display_only
+
+
+func is_display_only() -> bool:
+	return _display_only
+
+
 # ============================
 # 生命周期
 # ============================
 func _ready() -> void:
-	input_pickable = true
+	input_pickable = not _display_only
 	if not card_instance:
 		card_instance = CardInstance.create_debug_card()
 	_card_view.set_value(card_instance)
@@ -97,6 +120,9 @@ func _apply_layout() -> void:
 # ============================
 
 func _show_info(show_info: bool) -> void:
+	if _display_only:
+		return
+
 	if not _card_info or not card_instance or not card_instance.card_data:
 		if not _card_info:
 			print("missing _card_info")
@@ -122,6 +148,9 @@ func _show_info(show_info: bool) -> void:
 # ============================
 
 func _on_mouse_entered() -> void:
+	if _display_only:
+		return
+
 	if state == State.DRAGGING or state == State.ZOOMED:
 		return
 
@@ -132,6 +161,9 @@ func _on_mouse_entered() -> void:
 
 
 func _on_mouse_exited() -> void:
+	if _display_only:
+		return
+
 	if state == State.HOVER:
 		state = State.NORMAL
 		_show_info(false)
@@ -144,6 +176,9 @@ func _on_mouse_exited() -> void:
 # ============================
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
+	if _display_only:
+		return
+
 	if event is InputEventMouseButton:
 		match event.button_index:
 
@@ -178,6 +213,9 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 # ============================
 
 func _start_drag() -> void:
+	if _display_only:
+		return
+
 	if drag_layer and drag_layer.is_interaction_locked():
 		return
 
@@ -225,6 +263,9 @@ func _process(_delta: float) -> void:
 # ============================
 
 func _rotate_card() -> void:
+	if _display_only:
+		return
+
 	if not card_instance:
 		return
 
@@ -239,6 +280,9 @@ func _rotate_card() -> void:
 @export var zoom_view_scene:PackedScene
 
 func _show_zoom() -> void:
+	if _display_only:
+		return
+
 	if state == State.ZOOMED:
 		return
 

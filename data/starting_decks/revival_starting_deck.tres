@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="StartingDeckData" format=3]
+
+[ext_resource type="Script" path="res://scripts/run/starting_deck_data.gd" id="1_starting_deck"]
+[ext_resource type="Resource" path="res://data/cards/PlayerRoot.tres" id="2_root"]
+[ext_resource type="Resource" path="res://data/cards/VineShortblade.tres" id="3_blade"]
+[ext_resource type="Resource" path="res://data/cards/ThornBarrier.tres" id="4_barrier"]
+[ext_resource type="Resource" path="res://data/cards/ClearSpringWoodVial.tres" id="5_vial"]
+[ext_resource type="Resource" path="res://data/cards/AllThingsRevival.tres" id="6_revival"]
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="7_card_data"]
+
+[resource]
+script = ExtResource("1_starting_deck")
+deck_id = "revival"
+display_name = "复苏之根"
+description = "以生命之根稳住牌链，并用治疗、防御与武器连锁持续推进森林探索。"
+starter_cards = Array[ExtResource("7_card_data")]([ExtResource("2_root"), ExtResource("3_blade"), ExtResource("4_barrier"), ExtResource("5_vial"), ExtResource("6_revival")])
+playstyle_tags = PackedStringArray("治疗", "延续", "武器连锁")
+is_unlocked = true

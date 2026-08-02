@@ -1,0 +1,145 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/home/main_menu_screen.gd" id="1_main_menu"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start"]
+bg_color = Color(0.12, 0.31, 0.20, 0.96)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.64, 0.86, 0.54, 0.9)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 10
+content_margin_left = 28.0
+content_margin_top = 14.0
+content_margin_right = 28.0
+content_margin_bottom = 14.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_hover"]
+bg_color = Color(0.19, 0.43, 0.27, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.82, 0.96, 0.68, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0.28, 0.55, 0.30, 0.3)
+shadow_size = 14
+content_margin_left = 28.0
+content_margin_top = 14.0
+content_margin_right = 28.0
+content_margin_bottom = 14.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_pressed"]
+bg_color = Color(0.08, 0.22, 0.14, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.47, 0.70, 0.39, 1)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+content_margin_left = 28.0
+content_margin_top = 14.0
+content_margin_right = 28.0
+content_margin_bottom = 14.0
+
+[node name="MainMenuScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_main_menu")
+
+[node name="SafeArea" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 64.0
+offset_top = 48.0
+offset_right = -64.0
+offset_bottom = -48.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 28
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 28
+
+[node name="Layout" type="Control" parent="SafeArea"]
+layout_mode = 2
+
+[node name="LogoBlock" type="VBoxContainer" parent="SafeArea/Layout"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 176.0
+grow_horizontal = 2
+theme_override_constants/separation = 8
+
+[node name="GameLogo" type="Label" parent="SafeArea/Layout/LogoBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.82, 0.94, 0.70, 1)
+theme_override_colors/font_shadow_color = Color(0.01, 0.04, 0.025, 0.95)
+theme_override_constants/shadow_offset_x = 5
+theme_override_constants/shadow_offset_y = 6
+theme_override_font_sizes/font_size = 82
+text = "MONOCARD"
+horizontal_alignment = 1
+
+[node name="GameSubtitle" type="Label" parent="SafeArea/Layout/LogoBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.61, 0.75, 0.58, 1)
+theme_override_font_sizes/font_size = 18
+text = "在蔓生森林中编织你的牌链"
+horizontal_alignment = 1
+
+[node name="ActionBlock" type="CenterContainer" parent="SafeArea/Layout"]
+layout_mode = 1
+anchors_preset = 15
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -52.0
+offset_bottom = 52.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StartGameButton" type="Button" parent="SafeArea/Layout/ActionBlock"]
+custom_minimum_size = Vector2(320, 84)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.91, 1, 0.84, 1)
+theme_override_font_sizes/font_size = 28
+theme_override_styles/normal = SubResource("StyleBoxFlat_start")
+theme_override_styles/hover = SubResource("StyleBoxFlat_start_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_start_pressed")
+text = "开始游戏"
+
+[node name="FooterBlock" type="CenterContainer" parent="SafeArea/Layout"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -42.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="VersionLabel" type="Label" parent="SafeArea/Layout/FooterBlock"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.42, 0.55, 0.43, 1)
+theme_override_font_sizes/font_size = 14
+text = "v0.1.0"
