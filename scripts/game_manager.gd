@@ -3,6 +3,8 @@ extends Node
 signal combat_started(instance: EventInstance, monster: MobInstance)
 signal combat_resolved(instance: EventInstance, result: CombatResult)
 signal exploration_failed(result: CombatResult)
+signal run_initialization_failed(reason: String)
+signal run_finished
 
 @onready var gameplay_canvas: GameplayCanvas = $GameplayCanvas
 @onready var board: Board = $GameplayCanvas/Board
@@ -13,11 +15,13 @@ signal exploration_failed(result: CombatResult)
 @onready var treasure_event_view = $EventModalLayer/TreasureEventView
 @onready var combat_event_view: CombatEventView = $EventModalLayer/CombatEventView
 
+## Static base data supplied by the scene. It is duplicated before a run starts.
 @export var player_data: PlayerData
 @export var event_lib: EventLib
+var starting_deck: StartingDeckData
 var player_stats: CombatStats
 var _event_placement_service := EventPlacementService.new()
-var _encounter_combat_flow := EncounterCombatFlowCoordinator.new()
+var _encounter_combat_flow: EncounterCombatFlowCoordinator
 var _shop_event_resolver := ShopEventResolver.new()
 var _treasure_event_resolver := TreasureEventResolver.new()
 var _treasure_rng := RandomNumberGenerator.new()
@@ -31,11 +35,21 @@ var cards_inst: Array[CardInstance]
 var card_entities: Array[CardEntity]
 
 
+## Must be called before the manager enters the scene tree.
+func configure_run(preset: StartingDeckData) -> bool:
+	if is_node_ready():
+		push_error("GameManager.configure_run must be called before _ready")
+		return false
+	if preset == null or not preset.validate().is_empty():
+		push_error("GameManager received an invalid StartingDeckData")
+		return false
+	starting_deck = preset
+	return true
+
+
 func _ready() -> void:
-	if player_data and player_data.base_stats:
-		player_stats = CombatStats.from_data(player_data.base_stats)
-	else:
-		push_error("GameManager is missing PlayerData.base_stats")
+	if not _initialize_run_state():
+		return
 
 	# 注入 DragLayer 的区域引用
 	drag_layer.board = board
@@ -54,7 +68,6 @@ func _ready() -> void:
 		combat_event_view.settlement_confirmed.connect(_on_combat_settlement_confirmed)
 	_treasure_rng.randomize()
 
-	init_player_cards()
 	init_events()
 	_center_layout()
 
@@ -64,19 +77,69 @@ func _ready() -> void:
 		viewport.size_changed.connect(_center_layout)
 
 
-# 初始化玩家卡牌：创建初始卡牌并全部发到手牌区
-func init_player_cards() -> void:
-	var insts = card_manager.get_init_cards(5)
-	cards_inst = insts
+func _initialize_run_state() -> bool:
+	if starting_deck == null:
+		return _fail_run_initialization("GameManager is missing StartingDeckData")
+	if player_data == null or player_data.base_stats == null:
+		return _fail_run_initialization("GameManager is missing PlayerData.base_stats")
+
+	var runtime_player := player_data.duplicate(true) as PlayerData
+	if runtime_player == null or runtime_player.base_stats == null:
+		return _fail_run_initialization("GameManager could not duplicate PlayerData")
+	player_data = runtime_player
+	player_stats = CombatStats.from_data(player_data.base_stats)
+	if player_stats == null:
+		return _fail_run_initialization("GameManager could not create runtime combat stats")
+	if not init_player_cards():
+		return _fail_run_initialization("GameManager could not create configured starter cards")
+
+	var root_card := starting_deck.get_root_card()
+	_encounter_combat_flow = EncounterCombatFlowCoordinator.new(_create_combat_service_for_root(root_card))
+	return true
+
+
+func _fail_run_initialization(reason: String) -> bool:
+	push_error(reason)
+	call_deferred("_emit_run_initialization_failed", reason)
+	return false
+
+
+func _emit_run_initialization_failed(reason: String) -> void:
+	run_initialization_failed.emit(reason)
+
+
+## Extension point for future root-specific combat services.
+func _create_combat_service_for_root(_root_card: CardData) -> CombatService2:
+	return CombatService2.new()
+
+
+# 初始化玩家卡牌：由所选预设创建完整起始牌组并全部发到手牌区。
+func init_player_cards() -> bool:
+	cards_inst = card_manager.create_starting_instances(starting_deck)
+	if cards_inst.is_empty():
+		return false
 
 	card_entities.clear()
-	for inst in insts:
+	for inst in cards_inst:
 		var entity = card_manager.create_card_entity(inst)
-		if not entity:
-			continue
+		if entity == null:
+			_clear_initial_player_cards()
+			return false
 		entity.drag_layer = drag_layer
+		if not hand_area.add_card(entity):
+			entity.queue_free()
+			_clear_initial_player_cards()
+			return false
 		card_entities.append(entity)
-		hand_area.add_card(entity)
+	return true
+
+
+func _clear_initial_player_cards() -> void:
+	for entity in card_entities:
+		if is_instance_valid(entity):
+			entity.queue_free()
+	card_entities.clear()
+	cards_inst.clear()
 
 
 func init_events() -> void:

@@ -3,6 +3,7 @@ extends SceneTree
 const GameManagerScene = preload("res://scenes/game/game_manager.tscn")
 const EventScene = preload("res://scenes/game/event.tscn")
 const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
+const RevivalDeck = preload("res://data/starting_decks/revival_starting_deck.tres")
 
 var _failure_count := 0
 
@@ -259,6 +260,7 @@ func _confirm_combat_settlement(manager: Node) -> void:
 
 func _make_game_manager() -> Node:
 	var manager := GameManagerScene.instantiate()
+	_expect(manager.configure_run(RevivalDeck), "combat routing setup configures a starting deck")
 	root.add_child(manager)
 	await process_frame
 	for event_node in manager.board.events.duplicate():
