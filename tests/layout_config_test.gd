@@ -52,6 +52,7 @@ func _run_deferred_tests() -> void:
 	_test_card_entity_sizing()
 	_test_card_view_label_container()
 	_test_game_manager_centering()
+	await _test_game_manager_subviewport_reflow()
 	_finish_tests()
 
 func _test_board_drop_detector() -> void:
@@ -112,6 +113,49 @@ func _test_game_manager_centering() -> void:
 		"game manager reflows when the viewport changes"
 	)
 	gm.queue_free()
+
+func _test_game_manager_subviewport_reflow() -> void:
+	var game_viewport := SubViewport.new()
+	game_viewport.size = Vector2i(1280, 800)
+	root.add_child(game_viewport)
+
+	var gm := GameManagerScene.instantiate()
+	game_viewport.add_child(gm)
+	await process_frame
+
+	_expect(gm.is_node_ready(), "game manager is ready inside the subviewport")
+	var design := LayoutConfigScript.DESIGN_VIEWPORT_SIZE
+	var expected_board := LayoutConfigScript.board_origin(
+		design, gm.board.width, gm.board.height, gm.board.cell_size
+	)
+	var expected_hand := LayoutConfigScript.hand_origin(design)
+	var gameplay_canvas := gm.get_node_or_null("GameplayCanvas") as GameplayCanvas
+	_expect(gameplay_canvas != null, "subviewport game manager owns a gameplay canvas")
+	if gameplay_canvas != null:
+		_expect(gm.board.position == expected_board, "board keeps design coordinates at 1280x800")
+		_expect(gm.hand_area.position == expected_hand, "hand keeps design coordinates at 1280x800")
+		_expect(is_equal_approx(gameplay_canvas.scale.x, 0.8), "canvas scale is 0.8 at 1280x800")
+		_expect(gameplay_canvas.scale.x == gameplay_canvas.scale.y, "canvas scale is uniform at 1280x800")
+		_expect(
+			gameplay_canvas.position.distance_to(Vector2(0, 40)) < 0.001,
+			"canvas is centered at 1280x800"
+		)
+
+	game_viewport.size = Vector2i(1920, 1080)
+	await process_frame
+
+	if gameplay_canvas != null:
+		_expect(gm.board.position == expected_board, "board keeps design coordinates after subviewport resize")
+		_expect(gm.hand_area.position == expected_hand, "hand keeps design coordinates after subviewport resize")
+		_expect(is_equal_approx(gameplay_canvas.scale.x, 1.2), "canvas scale updates to 1.2 after resize")
+		_expect(gameplay_canvas.scale.x == gameplay_canvas.scale.y, "canvas scale remains uniform after resize")
+		_expect(
+			gameplay_canvas.position.distance_to(Vector2.ZERO) < 0.001,
+			"canvas is centered after subviewport resize"
+		)
+
+	game_viewport.queue_free()
+	await process_frame
 
 func _finish_tests() -> void:
 	quit(1 if _failure_count > 0 else 0)
