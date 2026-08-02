@@ -6,10 +6,10 @@
 [node name="Main" type="Node2D" unique_id=700708423]
 script = ExtResource("1_sugp2")
 
-[node name="BackgroundLayer" type="CanvasLayer" parent="."]
+[node name="BackgroundLayer" type="CanvasLayer" parent="." unique_id=529210917]
 layer = -10
 
-[node name="BackgroundFill" type="ColorRect" parent="BackgroundLayer"]
+[node name="BackgroundFill" type="ColorRect" parent="BackgroundLayer" unique_id=1077256381]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

@@ -26,30 +26,31 @@ class ViewportSizeChangedWaiter extends RefCounted:
 		completed.emit()
 
 func _init() -> void:
-	_expect(LayoutConfigScript.CELL_SIZE == 86, "CELL_SIZE is 86")
-	_expect(LayoutConfigScript.CARD_MARGIN == 6, "CARD_MARGIN is 6")
-	_expect(LayoutConfigScript.CARD_W == 80, "CARD_W derives from CELL_SIZE minus margin")
-	_expect(LayoutConfigScript.CARD_H == 166, "CARD_H covers two cells minus margin")
-	_expect(LayoutConfigScript.HAND_SPACING == 30, "HAND_SPACING derives from CELL_SIZE")
-	_expect(LayoutConfigScript.HAND_STEP == 110, "HAND_STEP is card width plus spacing")
+	_expect(LayoutConfigScript.DESIGN_VIEWPORT_SIZE == Vector2(1920, 1080), "layout uses the 1920x1080 design viewport")
+	_expect(LayoutConfigScript.CELL_SIZE == 104, "CELL_SIZE is 104 at the 1920x1080 baseline")
+	_expect(LayoutConfigScript.CARD_MARGIN == 20, "CARD_MARGIN preserves the configured card inset")
+	_expect(LayoutConfigScript.CARD_W == 84, "CARD_W derives from CELL_SIZE minus margin")
+	_expect(LayoutConfigScript.CARD_H == 188, "CARD_H covers two cells minus margin")
+	_expect(LayoutConfigScript.HAND_SPACING == 36, "HAND_SPACING derives from CELL_SIZE")
+	_expect(LayoutConfigScript.HAND_STEP == 120, "HAND_STEP is card width plus spacing")
 	_expect(
 		LayoutConfigScript.CARD_H + LayoutConfigScript.CARD_MARGIN == LayoutConfigScript.CELL_SIZE * 2,
 		"card height plus margin fills exactly two cells"
 	)
 
-	var card_rect := LayoutConfigScript.card_view_rect(86)
-	_expect(card_rect.size == Vector2(80, 166), "card view rect size follows cell size")
-	_expect(card_rect.position == Vector2(-40, -83), "card view rect is centered on the entity")
+	var card_rect := LayoutConfigScript.card_view_rect(104)
+	_expect(card_rect.size == Vector2(84, 188), "card view rect size follows cell size")
+	_expect(card_rect.position == Vector2(-42, -94), "card view rect is centered on the entity")
 
-	var board_pos := LayoutConfigScript.board_origin(Vector2(1600, 900), 10, 8, 86)
-	_expect(board_pos == Vector2(370, 16), "board origin centers the 860x688 grid horizontally")
+	var board_pos := LayoutConfigScript.board_origin(Vector2(1920, 1080), 10, 8, 104)
+	_expect(board_pos == Vector2(440, 19), "board origin centers the 1040x832 grid horizontally")
 
-	var hand_pos := LayoutConfigScript.hand_origin(Vector2(1600, 900))
-	_expect(hand_pos == Vector2(800, 804), "hand origin centers and hugs the bottom")
+	var hand_pos := LayoutConfigScript.hand_origin(Vector2(1920, 1080))
+	_expect(hand_pos == Vector2(960, 965), "hand origin centers and hugs the bottom")
 
 	# 棋盘底与手牌顶不重叠（至少留 10px）
-	var board_bottom := board_pos.y + 8 * 86
-	var hand_top := hand_pos.y - 86
+	var board_bottom := board_pos.y + 8 * 104
+	var hand_top := hand_pos.y - 104
 	_expect(board_bottom + 10 <= hand_top, "board bottom clears the hand top")
 
 	var board := BoardScene.instantiate() as Board
@@ -75,26 +76,26 @@ func _test_board_drop_detector() -> void:
 	root.add_child(board)
 	var shape_node := board.get_node_or_null("DropDetector/CollisionShape2D") as CollisionShape2D
 	var shape := shape_node.shape as RectangleShape2D
-	_expect(shape != null and shape.size == Vector2(860, 688), "drop detector matches the resized grid")
-	_expect(shape_node.position == Vector2(430, 344), "drop detector centers on the resized grid")
+	_expect(shape != null and shape.size == Vector2(1040, 832), "drop detector matches the resized grid")
+	_expect(shape_node.position == Vector2(520, 416), "drop detector centers on the resized grid")
 	board.queue_free()
 
 func _test_card_entity_sizing() -> void:
 	var card := CardEntityScene.instantiate() as CardEntity
 	root.add_child(card)
 	var shape := (card.get_node("CollisionShape2D") as CollisionShape2D).shape as RectangleShape2D
-	_expect(shape != null and shape.size == Vector2(86, 172), "card collision box covers two resized cells")
+	_expect(shape != null and shape.size == Vector2(104, 208), "card collision box covers two resized cells")
 	var card_view := card.get_node("CardView") as Control
-	_expect(card_view.size == Vector2(80, 166), "card view derives from the configured cell size")
+	_expect(card_view.size == Vector2(84, 188), "card view derives from the configured cell size")
 	card.queue_free()
 
 func _test_card_view_label_container() -> void:
 	var view := CardViewScene.instantiate() as Control
 	root.add_child(view)
-	view.size = Vector2(80, 166)
+	view.size = Vector2(84, 188)
 	var label := view.get_node("LabelContainer") as Control
-	_expect(label.offset_bottom == 166.0, "label container pins to the resized card bottom")
-	_expect(label.offset_top == 143.0, "label container bar height stays 23")
+	_expect(label.offset_bottom == 188.0, "label container pins to the resized card bottom")
+	_expect(label.offset_top == 165.0, "label container bar height stays 23")
 	view.queue_free()
 
 func _test_game_manager_centering() -> void:
@@ -150,7 +151,7 @@ func _test_game_manager_subviewport_reflow() -> void:
 	if gameplay_canvas != null:
 		_expect(gm.board.position == expected_board, "board keeps design coordinates at 1280x800")
 		_expect(gm.hand_area.position == expected_hand, "hand keeps design coordinates at 1280x800")
-		_expect(is_equal_approx(gameplay_canvas.scale.x, 0.8), "canvas scale is 0.8 at 1280x800")
+		_expect(is_equal_approx(gameplay_canvas.scale.x, 2.0 / 3.0), "canvas scale is 2/3 at 1280x800")
 		_expect(gameplay_canvas.scale.x == gameplay_canvas.scale.y, "canvas scale is uniform at 1280x800")
 		_expect(
 			gameplay_canvas.position.distance_to(Vector2(0, 40)) < 0.001,
@@ -165,7 +166,7 @@ func _test_game_manager_subviewport_reflow() -> void:
 	if gameplay_canvas != null:
 		_expect(gm.board.position == expected_board, "board keeps design coordinates after subviewport resize")
 		_expect(gm.hand_area.position == expected_hand, "hand keeps design coordinates after subviewport resize")
-		_expect(is_equal_approx(gameplay_canvas.scale.x, 1.2), "canvas scale updates to 1.2 after resize")
+		_expect(is_equal_approx(gameplay_canvas.scale.x, 1.0), "canvas scale updates to 1.0 after resize")
 		_expect(gameplay_canvas.scale.x == gameplay_canvas.scale.y, "canvas scale remains uniform after resize")
 		_expect(
 			gameplay_canvas.position.distance_to(Vector2.ZERO) < 0.001,

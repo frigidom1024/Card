@@ -6,10 +6,10 @@
 [ext_resource type="PackedScene" uid="uid://752y2d1bq6rg" path="res://scenes/card_view/card_info.tscn" id="4_3qc3j"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_p5p3o"]
-size = Vector2(80, 160)
+size = Vector2(104, 208)
 
 [node name="CardEntity" type="Area2D" unique_id=225973246]
-position = Vector2(85, 108)
+position = Vector2(104, 130)
 script = ExtResource("1_vnle4")
 zoom_view_scene = ExtResource("2_noe1h")
 
@@ -17,10 +17,17 @@ zoom_view_scene = ExtResource("2_noe1h")
 shape = SubResource("RectangleShape2D_p5p3o")
 
 [node name="CardView" parent="." unique_id=161638963 instance=ExtResource("3_ltfih")]
-offset_left = -37.0
-offset_top = -78.0
-offset_right = 37.0
-offset_bottom = 76.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -42.0
+offset_top = -75.0
+offset_right = 42.0
+offset_bottom = 75.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="CardInfo" parent="." unique_id=1809456825 instance=ExtResource("4_3qc3j")]
 offset_left = 43.0
