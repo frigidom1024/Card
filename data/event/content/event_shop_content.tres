@@ -1,6 +1,26 @@
-[gd_resource type="Resource" script_class="ShopEventContent" format=3]
+[gd_resource type="Resource" script_class="ShopEventContent" format=3 uid="uid://dvvajmounopf1"]
 
-[ext_resource type="Script" path="res://scripts/game/event/shop/shop_event_content.gd" id="1_xqlp3"]
+[ext_resource type="Script" uid="uid://16lnshifkonp" path="res://scripts/game/event/shop/shop_event_content.gd" id="1_content"]
+[ext_resource type="Script" uid="uid://dqghli5cxc22q" path="res://scripts/game/event/shop/shop_item_data.gd" id="2_item"]
+[ext_resource type="Resource" path="res://data/cards/LayeredWoodenRoundShield.tres" id="3_shield"]
+[ext_resource type="Resource" path="res://data/cards/ClearSpringWoodVial.tres" id="4_vial"]
+[ext_resource type="Resource" path="res://data/cards/ThornHeavyBlade.tres" id="5_blade"]
+
+[sub_resource type="Resource" id="ShopItem_shield"]
+script = ExtResource("2_item")
+card_data = ExtResource("3_shield")
+price = 8
+
+[sub_resource type="Resource" id="ShopItem_vial"]
+script = ExtResource("2_item")
+card_data = ExtResource("4_vial")
+price = 12
+
+[sub_resource type="Resource" id="ShopItem_blade"]
+script = ExtResource("2_item")
+card_data = ExtResource("5_blade")
+price = 16
 
 [resource]
-script = ExtResource("1_xqlp3")
+script = ExtResource("1_content")
+items = Array[ExtResource("2_item")]([SubResource("ShopItem_shield"), SubResource("ShopItem_vial"), SubResource("ShopItem_blade")])

@@ -1,4 +1,6 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/event/encounter/combat_event_view.gd" id="1_combat_view"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 bg_color = Color(0.047, 0.078, 0.118, 0.98)
@@ -87,6 +89,7 @@ content_margin_right = 18.0
 content_margin_bottom = 9.0
 
 [node name="EventCombat" type="Control"]
+script = ExtResource("1_combat_view")
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -230,3 +233,7 @@ theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_button")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 text = "确认继续"
+
+[node name="AutoAdvanceTimer" type="Timer" parent="."]
+wait_time = 0.7
+one_shot = false

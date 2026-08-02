@@ -442,6 +442,7 @@ func add_card(card: CardEntity) -> bool:
 
 	var overlapping_event := get_overlapping_unresolved_event(cells)
 	if overlapping_event:
+		print("触发事件")
 		event_triggered.emit(overlapping_event)
 
 	clear_preview()

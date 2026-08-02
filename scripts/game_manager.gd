@@ -8,13 +8,21 @@ signal exploration_failed(result: CombatResult)
 @onready var card_manager: Node2D = $CardManager
 @onready var hand_area: HandArea = $HandManager
 @onready var drag_layer: DragLayer = $DragLayer
+@onready var shop_event_view = $EventModalLayer/ShopEventView
+@onready var treasure_event_view = $EventModalLayer/TreasureEventView
+@onready var combat_event_view: CombatEventView = $EventModalLayer/CombatEventView
 
 @export var player_data: PlayerData
 @export var event_lib: EventLib
 var player_stats: CombatStats
 var _event_placement_service := EventPlacementService.new()
 var _encounter_combat_flow := EncounterCombatFlowCoordinator.new()
+var _shop_event_resolver := ShopEventResolver.new()
+var _treasure_event_resolver := TreasureEventResolver.new()
+var _treasure_rng := RandomNumberGenerator.new()
 var _active_event: EventInstance
+var _pending_combat_instance: EventInstance
+var _pending_combat_result: CombatResult
 var _is_exploration_failed := false
 
 # 所有玩家相关卡牌数据引用
@@ -33,6 +41,17 @@ func _ready() -> void:
 	drag_layer.hand_area = hand_area
 	if not board.event_triggered.is_connected(_on_board_event_triggered):
 		board.event_triggered.connect(_on_board_event_triggered)
+	if not shop_event_view.purchase_requested.is_connected(_on_shop_purchase_requested):
+		shop_event_view.purchase_requested.connect(_on_shop_purchase_requested)
+	if not shop_event_view.close_requested.is_connected(_on_shop_close_requested):
+		shop_event_view.close_requested.connect(_on_shop_close_requested)
+	if not treasure_event_view.reward_requested.is_connected(_on_treasure_reward_requested):
+		treasure_event_view.reward_requested.connect(_on_treasure_reward_requested)
+	if not treasure_event_view.close_requested.is_connected(_on_treasure_close_requested):
+		treasure_event_view.close_requested.connect(_on_treasure_close_requested)
+	if not combat_event_view.settlement_confirmed.is_connected(_on_combat_settlement_confirmed):
+		combat_event_view.settlement_confirmed.connect(_on_combat_settlement_confirmed)
+	_treasure_rng.randomize()
 
 	init_player_cards()
 	init_events()
@@ -76,9 +95,19 @@ func _center_layout() -> void:
 func _on_board_event_triggered(instance: EventInstance) -> void:
 	if _is_exploration_failed or _active_event != null or instance == null or instance.is_resolved:
 		return
-	if not _is_combat_event(instance):
-		return
 
+	match instance.get_event_type():
+		EventData.EventType.SHOP:
+			_open_shop_event(instance)
+		EventData.EventType.TREASURE:
+			_open_treasure_event(instance)
+		EventData.EventType.MONSTER, EventData.EventType.BOSS:
+			_begin_encounter(instance)
+		_:
+			push_warning("GameManager received an unsupported event type")
+
+
+func _begin_encounter(instance: EventInstance) -> void:
 	_active_event = instance
 	drag_layer.set_interaction_locked(true)
 	var monster := _encounter_combat_flow.begin(instance)
@@ -95,9 +124,143 @@ func _on_board_event_triggered(instance: EventInstance) -> void:
 	if result == null:
 		_finish_encounter()
 		return
+	_print_combat_result_detail(result)
+	_pending_combat_instance = instance
+	_pending_combat_result = result
+	combat_event_view.show_combat(instance, monster, result)
 
-	combat_resolved.emit(instance, result)
+
+func _on_combat_settlement_confirmed() -> void:
+	if _pending_combat_instance == null or _pending_combat_result == null:
+		return
+
+	var instance := _pending_combat_instance
+	var result := _pending_combat_result
+	combat_event_view.hide_combat()
+	_pending_combat_instance = null
+	_pending_combat_result = null
 	_apply_combat_result(instance, result)
+	combat_resolved.emit(instance, result)
+
+
+func _open_shop_event(instance: EventInstance) -> void:
+	if instance.get_content() is not ShopEventContent:
+		push_warning("Shop event is missing ShopEventContent")
+		return
+	_active_event = instance
+	drag_layer.set_interaction_locked(true)
+	shop_event_view.show_event(instance, player_data)
+
+
+func _open_treasure_event(instance: EventInstance) -> void:
+	if instance.get_content() is not TreasureEventContent:
+		push_warning("Treasure event is missing TreasureEventContent")
+		return
+	var options := _treasure_event_resolver.ensure_options(instance, _treasure_rng)
+	if options.is_empty():
+		push_warning("Treasure event produced no reward options")
+		return
+	_active_event = instance
+	drag_layer.set_interaction_locked(true)
+	treasure_event_view.show_event(instance, options)
+
+
+func _on_shop_purchase_requested(item_index: int) -> void:
+	if _active_event == null or _active_event.get_event_type() != EventData.EventType.SHOP:
+		return
+	if hand_area.is_full():
+		shop_event_view.show_message("手牌已满，无法购买。", true)
+		return
+
+	var result := _shop_event_resolver.purchase_item(
+		_active_event, item_index, player_data, true
+	)
+	if not result.success:
+		shop_event_view.show_message(_resolution_failure_message(result.failure), true)
+		return
+	if not _grant_card_to_hand(result.granted_card):
+		push_error("Shop purchase succeeded but card creation failed")
+		shop_event_view.show_message("卡牌创建失败。", true)
+		return
+	shop_event_view.refresh()
+	shop_event_view.show_message("购买成功。", false)
+
+
+func _on_shop_close_requested() -> void:
+	if _active_event == null or _active_event.get_event_type() != EventData.EventType.SHOP:
+		return
+	shop_event_view.hide_event()
+	_finish_event_interaction()
+
+
+func _on_treasure_reward_requested(option_index: int) -> void:
+	if _active_event == null or _active_event.get_event_type() != EventData.EventType.TREASURE:
+		return
+	var options := _treasure_event_resolver.ensure_options(_active_event, _treasure_rng)
+	if option_index < 0 or option_index >= options.size():
+		treasure_event_view.show_message("无效的奖励选项。", true)
+		return
+	var option := options[option_index]
+	if option.kind == TreasureRewardOption.Kind.CARD and hand_area.is_full():
+		treasure_event_view.show_message("手牌已满，无法领取这张卡牌。", true)
+		return
+
+	var result := _treasure_event_resolver.claim_reward(
+		_active_event,
+		option_index,
+		player_data,
+		true,
+		_treasure_rng
+	)
+	if not result.success:
+		treasure_event_view.show_message(_resolution_failure_message(result.failure), true)
+		return
+	if result.granted_card != null and not _grant_card_to_hand(result.granted_card):
+		push_error("Treasure reward succeeded but card creation failed")
+		treasure_event_view.show_message("卡牌创建失败。", true)
+		return
+	_refresh_event_display(_active_event)
+	treasure_event_view.hide_event()
+	_finish_event_interaction()
+
+
+func _on_treasure_close_requested() -> void:
+	if _active_event == null or _active_event.get_event_type() != EventData.EventType.TREASURE:
+		return
+	treasure_event_view.show_message("必须领取一项奖励后才能离开。", true)
+
+
+func _grant_card_to_hand(card_data: CardData) -> bool:
+	if card_data == null or hand_area.is_full():
+		return false
+	var card_instance := CardInstance.new(card_data)
+	card_instance.cur_zone = CardInstance.ZONE.HAND
+	var entity: CardEntity = card_manager.create_card_entity(card_instance)
+	if entity == null:
+		return false
+	entity.drag_layer = drag_layer
+	if not hand_area.add_card(entity):
+		entity.queue_free()
+		return false
+	cards_inst.append(card_instance)
+	card_entities.append(entity)
+	return true
+
+
+func _resolution_failure_message(failure: EventResolutionResult.Failure) -> String:
+	match failure:
+		EventResolutionResult.Failure.SOLD_OUT:
+			return "该商品已售罄。"
+		EventResolutionResult.Failure.INSUFFICIENT_GOLD:
+			return "金币不足。"
+		EventResolutionResult.Failure.HAND_FULL:
+			return "手牌已满。"
+		EventResolutionResult.Failure.INVALID_INDEX:
+			return "无效的选项。"
+		EventResolutionResult.Failure.ALREADY_RESOLVED:
+			return "该事件已经结束。"
+		_:
+			return "事件结算失败。"
 
 
 func _apply_combat_result(instance: EventInstance, result: CombatResult) -> void:
@@ -119,11 +282,6 @@ func _apply_combat_result(instance: EventInstance, result: CombatResult) -> void
 			_active_event = null
 			_is_exploration_failed = true
 			exploration_failed.emit(result)
-
-
-func _is_combat_event(instance: EventInstance) -> bool:
-	var event_type := instance.get_event_type()
-	return event_type == EventData.EventType.MONSTER or event_type == EventData.EventType.BOSS
 
 
 func _apply_player_combat_state(result_stats: CombatStats) -> void:
@@ -186,6 +344,56 @@ func _refresh_event_display(instance: EventInstance) -> void:
 
 
 func _finish_encounter() -> void:
+	_finish_event_interaction()
+
+
+func _finish_event_interaction() -> void:
 	_active_event = null
 	if not _is_exploration_failed:
 		drag_layer.set_interaction_locked(false)
+
+
+## 调试：打印一次战斗结算的完整详细信息
+func _print_combat_result_detail(result: CombatResult) -> void:
+	print("========== 战斗结算详细结果 ==========")
+	print("结局: ", CombatResult.Outcome.keys()[result.outcome])
+	print("处理卡牌数: ", result.processed_card_count)
+	print("玩家最终: ", _stats_desc(result.player_stats_after))
+	print("怪物最终: ", _stats_desc(result.monster_stats_after))
+
+	if result.penalties.is_empty():
+		print("[惩罚] 无")
+	else:
+		for penalty in result.penalties:
+			if penalty == null:
+				continue
+			print("[惩罚] ", CombatPenalty.Type.keys()[penalty.type], " - ", penalty.get_description())
+
+	print("[战斗步骤] 共 ", result.steps.size(), " 步")
+	for i in result.steps.size():
+		var step := result.steps[i]
+		if step == null:
+			print("  第 ", i + 1, " 步: (空)")
+			continue
+		print("  >> 第 ", i + 1, " 步 [", CombatStep.Kind.keys()[step.kind], "] ", step.source_name)
+		print("      玩家: ", _stats_desc(step.player_before), " -> ", _stats_desc(step.player_after))
+		print("      怪物: ", _stats_desc(step.monster_before), " -> ", _stats_desc(step.monster_after))
+		for effect in step.effects:
+			if effect == null:
+				continue
+			var effect_desc := "      效果: [%s] %s -> %s 数值 %d" % [
+				CombatEffect.SourceType.keys()[effect.source_type],
+				CombatEffect.Type.keys()[effect.type],
+				CombatEffect.Target.keys()[effect.target],
+				effect.value,
+			]
+			if effect.source_name != "":
+				effect_desc += " (来源: %s)" % effect.source_name
+			print(effect_desc)
+	print("=====================================")
+
+
+func _stats_desc(stats: CombatStats) -> String:
+	if stats == null:
+		return "null"
+	return "HP %d/%d 攻 %d 防 %d" % [stats.hp, stats.max_hp, stats.attack, stats.defense]

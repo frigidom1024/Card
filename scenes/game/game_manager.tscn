@@ -9,6 +9,9 @@
 [ext_resource type="PackedScene" uid="uid://bf2h2gqo4hyjl" path="res://scenes/game/board.tscn" id="7_lcbjr"]
 [ext_resource type="Resource" uid="uid://b5ybu7vxrcp4j" path="res://data/player/player_data.tres" id="8_player"]
 [ext_resource type="Resource" uid="uid://ulqs1hfc6vy3" path="res://data/event/event_lib.tres" id="9_event_lib"]
+[ext_resource type="PackedScene" path="res://scenes/game/event_shop.tscn" id="10_shop_event"]
+[ext_resource type="PackedScene" path="res://scenes/game/event_treasure.tscn" id="11_treasure_event"]
+[ext_resource type="PackedScene" path="res://scenes/game/event_combat.tscn" id="12_combat_event"]
 
 [node name="GameManager" type="Node" unique_id=2111395174]
 script = ExtResource("1_q8mjp")
@@ -27,3 +30,15 @@ script = ExtResource("6_aonbx")
 
 [node name="Board" parent="." unique_id=969095891 instance=ExtResource("7_lcbjr")]
 position = Vector2(47, 44)
+
+[node name="EventModalLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="ShopEventView" parent="EventModalLayer" instance=ExtResource("10_shop_event")]
+visible = false
+
+[node name="TreasureEventView" parent="EventModalLayer" instance=ExtResource("11_treasure_event")]
+visible = false
+
+[node name="CombatEventView" parent="EventModalLayer" instance=ExtResource("12_combat_event")]
+visible = false

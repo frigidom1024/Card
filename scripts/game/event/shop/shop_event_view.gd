@@ -1,0 +1,91 @@
+class_name ShopEventView
+extends Control
+
+signal purchase_requested(item_index: int)
+signal close_requested()
+
+var _instance: EventInstance
+var _player: PlayerData
+
+
+func _ready() -> void:
+	for item_index in range(3):
+		var button := _action_button(item_index)
+		if button != null and not button.pressed.is_connected(_on_purchase_pressed.bind(item_index)):
+			button.pressed.connect(_on_purchase_pressed.bind(item_index))
+	var close_button := find_child("CloseButton", true, false) as Button
+	if close_button != null and not close_button.pressed.is_connected(_on_close_pressed):
+		close_button.pressed.connect(_on_close_pressed)
+
+
+func show_event(instance: EventInstance, player: PlayerData) -> void:
+	_instance = instance
+	_player = player
+	_refresh()
+	show()
+
+
+func hide_event() -> void:
+	hide()
+	_instance = null
+	_player = null
+
+
+func show_message(message: String, is_error: bool = false) -> void:
+	var hint_label := find_child("HintLabel", true, false) as Label
+	if hint_label == null:
+		return
+	hint_label.text = message
+	hint_label.modulate = Color(1.0, 0.48, 0.42) if is_error else Color.WHITE
+
+
+func refresh() -> void:
+	_refresh()
+
+
+func _refresh() -> void:
+	var gold_label := find_child("GoldLabel", true, false) as Label
+	if gold_label != null:
+		gold_label.text = "金币：%d" % (_player.gold if _player != null else 0)
+
+	var content := _instance.get_content() as ShopEventContent if _instance != null else null
+	var state := _instance.runtime_state as ShopRuntimeState if _instance != null else null
+	for item_index in range(3):
+		var slot := _offer_slot(item_index)
+		if slot == null:
+			continue
+		var item: ShopItemData = content.items[item_index] if content != null and item_index < content.items.size() else null
+		slot.visible = item != null and item.card_data != null
+		if item == null or item.card_data == null:
+			continue
+
+		var preview := slot.find_child("CardPreview", true, false)
+		if preview != null:
+			preview.set_value(CardInstance.new(item.card_data))
+		var price_label := slot.find_child("PriceOrRewardLabel", true, false) as Label
+		if price_label != null:
+			price_label.text = "价格：%d 金币" % item.price
+		var button := slot.find_child("ActionButton", true, false) as Button
+		if button != null:
+			var sold := state != null and item_index < state.sold_flags.size() and state.sold_flags[item_index]
+			button.disabled = sold
+			button.text = "已售罄" if sold else "购买"
+
+	show_message("选择商品加入手牌。", false)
+
+
+func _offer_slot(item_index: int) -> Control:
+	return find_child("OfferSlot%d" % (item_index + 1), true, false) as Control
+
+
+func _action_button(item_index: int) -> Button:
+	var slot := _offer_slot(item_index)
+	return slot.find_child("ActionButton", true, false) as Button if slot != null else null
+
+
+func _on_purchase_pressed(item_index: int) -> void:
+	purchase_requested.emit(item_index)
+
+
+func _on_close_pressed() -> void:
+	close_requested.emit()
