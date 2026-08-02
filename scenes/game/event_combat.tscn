@@ -1,0 +1,232 @@
+[gd_scene load_steps=7 format=3]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.047, 0.078, 0.118, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.255, 0.525, 0.682, 0.95)
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+content_margin_left = 30.0
+content_margin_top = 26.0
+content_margin_right = 30.0
+content_margin_bottom = 26.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_status"]
+bg_color = Color(0.075, 0.137, 0.196, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.22, 0.39, 0.52, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_log"]
+bg_color = Color(0.027, 0.047, 0.071, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.137, 0.267, 0.365, 0.95)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 18.0
+content_margin_top = 14.0
+content_margin_right = 18.0
+content_margin_bottom = 14.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_result"]
+bg_color = Color(0.086, 0.165, 0.125, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.459, 0.745, 0.482, 0.85)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+content_margin_left = 18.0
+content_margin_top = 15.0
+content_margin_right = 18.0
+content_margin_bottom = 15.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button"]
+bg_color = Color(0.102, 0.341, 0.529, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+content_margin_left = 18.0
+content_margin_top = 9.0
+content_margin_right = 18.0
+content_margin_bottom = 9.0
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
+bg_color = Color(0.149, 0.455, 0.682, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+content_margin_left = 18.0
+content_margin_top = 9.0
+content_margin_right = 18.0
+content_margin_bottom = 9.0
+
+[node name="EventCombat" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Overlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+color = Color(0.012, 0.02, 0.031, 0.84)
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(960, 610)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Content" type="VBoxContainer" parent="CenterContainer/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="Header" type="HBoxContainer" parent="CenterContainer/Panel/Content"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="CenterContainer/Panel/Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.855, 0.941, 1, 1)
+theme_override_font_sizes/font_size = 28
+text = "遭遇战斗"
+
+[node name="ProgressLabel" type="Label" parent="CenterContainer/Panel/Content/Header"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.533, 0.71, 0.835, 1)
+theme_override_font_sizes/font_size = 16
+text = "0 / 0"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="HeaderDivider" type="HSeparator" parent="CenterContainer/Panel/Content"]
+layout_mode = 2
+modulate = Color(0.298, 0.541, 0.745, 0.6)
+
+[node name="StatusRow" type="HBoxContainer" parent="CenterContainer/Panel/Content"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="PlayerStatus" type="PanelContainer" parent="CenterContainer/Panel/Content/StatusRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_status")
+
+[node name="PlayerStatsLabel" type="Label" parent="CenterContainer/Panel/Content/StatusRow/PlayerStatus"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.75, 0.9, 1, 1)
+theme_override_font_sizes/font_size = 17
+text = "玩家  HP 0 / 0   护甲 0"
+
+[node name="MonsterStatus" type="PanelContainer" parent="CenterContainer/Panel/Content/StatusRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_status")
+
+[node name="MonsterStatsLabel" type="Label" parent="CenterContainer/Panel/Content/StatusRow/MonsterStatus"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.73, 0.67, 1)
+theme_override_font_sizes/font_size = 17
+text = "怪物  HP 0 / 0   护甲 0"
+horizontal_alignment = 2
+
+[node name="CombatLog" type="RichTextLabel" parent="CenterContainer/Panel/Content"]
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 0
+theme_override_colors/default_color = Color(0.82, 0.89, 0.94, 1)
+theme_override_font_sizes/normal_font_size = 17
+theme_override_styles/normal = SubResource("StyleBoxFlat_log")
+bbcode_enabled = true
+fit_content = false
+scroll_following = true
+text = "战斗记录将在这里展开。"
+
+[node name="ProgressButton" type="Button" parent="CenterContainer/Panel/Content"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.93, 0.973, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+text = "加速"
+
+[node name="ResultPanel" type="PanelContainer" parent="CenterContainer/Panel/Content"]
+visible = false
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_result")
+
+[node name="Content" type="VBoxContainer" parent="CenterContainer/Panel/Content/ResultPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ResultTitleLabel" type="Label" parent="CenterContainer/Panel/Content/ResultPanel/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.86, 0.96, 0.88, 1)
+theme_override_font_sizes/font_size = 23
+text = "战斗结算"
+
+[node name="ResultBodyLabel" type="Label" parent="CenterContainer/Panel/Content/ResultPanel/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.8, 0.9, 0.84, 1)
+theme_override_font_sizes/font_size = 16
+text = "等待战斗结算。"
+autowrap_mode = 2
+
+[node name="PenaltyList" type="VBoxContainer" parent="CenterContainer/Panel/Content/ResultPanel/Content"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ConfirmButton" type="Button" parent="CenterContainer/Panel/Content/ResultPanel/Content"]
+visible = false
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(0.93, 0.973, 1, 1)
+theme_override_font_sizes/font_size = 16
+theme_override_styles/normal = SubResource("StyleBoxFlat_button")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+text = "确认继续"

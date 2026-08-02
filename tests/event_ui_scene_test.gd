@@ -4,6 +4,23 @@ const CARD_VIEW_SCENE_PATH := "res://scenes/card_view/card_view.tscn"
 const CARD_VIEW_SCRIPT_PATH := "res://scripts/card/card_view.gd"
 const SHOP_SCENE_PATH := "res://scenes/game/event_shop.tscn"
 const TREASURE_SCENE_PATH := "res://scenes/game/event_treasure.tscn"
+const COMBAT_SCENE_PATH := "res://scenes/game/event_combat.tscn"
+
+const COMBAT_NODE_NAMES := [
+	"Overlay",
+	"Panel",
+	"TitleLabel",
+	"ProgressLabel",
+	"PlayerStatsLabel",
+	"MonsterStatsLabel",
+	"CombatLog",
+	"ProgressButton",
+	"ResultPanel",
+	"ResultTitleLabel",
+	"ResultBodyLabel",
+	"PenaltyList",
+	"ConfirmButton",
+]
 
 const COMMON_NODE_NAMES := [
 	"Overlay",
@@ -29,8 +46,10 @@ func _init() -> void:
 func _run_tests() -> void:
 	_test_shop_scene_structure()
 	_test_treasure_scene_structure()
+	_test_combat_scene_structure()
 	await _assert_runtime_modal_layout(SHOP_SCENE_PATH, "shop")
 	await _assert_runtime_modal_layout(TREASURE_SCENE_PATH, "treasure")
+	await _assert_runtime_modal_layout(COMBAT_SCENE_PATH, "combat")
 	_finish_tests()
 
 
@@ -62,6 +81,21 @@ func _test_treasure_scene_structure() -> void:
 	)
 	_assert_common_structure(scene_root, "treasure")
 	_assert_card_preview_instances(scene_root, "treasure")
+	scene_root.free()
+
+
+func _test_combat_scene_structure() -> void:
+	var scene_root := _instantiate_scene(COMBAT_SCENE_PATH)
+	if scene_root == null:
+		return
+
+	_expect(scene_root.name == "EventCombat", "combat root is named EventCombat")
+	_expect(scene_root.anchors_preset == Control.PRESET_FULL_RECT, "combat root covers the viewport")
+	for node_name in COMBAT_NODE_NAMES:
+		_expect(
+			scene_root.find_child(node_name, true, false) != null,
+			"combat exposes stable node %s" % node_name
+		)
 	scene_root.free()
 
 
