@@ -109,6 +109,9 @@ func grid_to_world_center(grid:Vector2i)->Vector2:
 # rotation 只判断方向
 # 0/180 纵向
 # 90/270 横向
+func _get_rotation_direction(rotation_degrees: float) -> int:
+	return posmod(int(round(rotation_degrees / 90.0)), 4)
+
 
 func get_card_cells(
 	center: Vector2,
@@ -116,7 +119,7 @@ func get_card_cells(
 ) -> Array[Vector2i]:
 
 
-	var dir = int(round(rotation / 90.0)) % 4
+	var dir := _get_rotation_direction(rotation)
 	var local_pos
 	if dir%2==0:
 		local_pos = to_local(center)-Vector2(0.5*cell_size,0)
@@ -325,8 +328,14 @@ func preview_card(card: CardEntity):
 
 # 获取放置失败的原因文字
 func get_placement_hint(cells: Array[Vector2i], card: CardEntity) -> String:
-	for c in cells:
-		if c.x < 0 or c.x >= width or c.y < 0 or c.y >= height:
+	var hint := _get_placement_failure_reason(cells, card)
+	_log_placement_failure(cells, card, hint)
+	return hint
+
+
+func _get_placement_failure_reason(cells: Array[Vector2i], card: CardEntity) -> String:
+	for cell in cells:
+		if cell.x < 0 or cell.x >= width or cell.y < 0 or cell.y >= height:
 			return "超出棋盘边界"
 	if has_conflict(cells):
 		return "该位置已被占用"
@@ -335,6 +344,61 @@ func get_placement_hint(cells: Array[Vector2i], card: CardEntity) -> String:
 			return "棋盘上还没有可连接的卡牌"
 		return "需放置在上一张卡的顶部朝向方向"
 	return ""
+
+
+## 仅用于定位拖拽放置失败。输出候选卡、链尾卡、连接目标及占格现场。
+func _log_placement_failure(cells: Array[Vector2i], card: CardEntity, hint: String) -> void:
+	print("=== CARD PLACEMENT FAILED ===")
+	print("reason=", hint)
+	print("candidate=", _card_debug_label(card))
+	print("candidate_global=", card.global_position if card else Vector2.ZERO)
+	print("candidate_local=", to_local(card.global_position) if card else Vector2.ZERO)
+	print("candidate_rotation=", card.rotation_degrees if card else 0.0)
+	print("candidate_cells=", cells)
+	print("candidate_cells_in_bounds=", _are_cells_in_bounds(cells))
+	print("candidate_forward_cell=", get_placement_cell(card) if card else Vector2i(-1, -1))
+
+	for cell in cells:
+		var owner := _grid_owner.get(cell) as CardEntity
+		if owner != null:
+			print("candidate_cell_owner[", cell, "]=", _card_debug_label(owner))
+
+	if cards.is_empty():
+		print("chain_tail=<none>")
+	else:
+		var tail = cards.back()
+		var required_connection_cell := get_placement_cell(tail)
+		print("chain_count=", cards.size())
+		print("chain_tail=", _card_debug_label(tail))
+		print("tail_global=", tail.global_position)
+		print("tail_local=", to_local(tail.global_position))
+		print("tail_rotation=", tail.rotation_degrees)
+		print("tail_cells=", get_card_cells(tail.global_position, tail.rotation_degrees))
+		print("required_connection_cell=", required_connection_cell)
+		print("candidate_contains_required_cell=", required_connection_cell in cells)
+		print("required_cell_in_bounds=", _are_cells_in_bounds([required_connection_cell]))
+		var required_owner := _grid_owner.get(required_connection_cell) as CardEntity
+		print("required_cell_owner=", _card_debug_label(required_owner))
+
+	print("grid_owners=")
+	for occupied_cell in _grid_owner.keys():
+		print("  ", occupied_cell, " -> ", _card_debug_label(_grid_owner[occupied_cell] as CardEntity))
+	print("=== END CARD PLACEMENT FAILED ===")
+
+
+func _card_debug_label(card: CardEntity) -> String:
+	if card == null:
+		return "<empty>"
+	var card_data := card.card_instance.card_data if card.card_instance else null
+	var card_name := card_data.card_name if card_data and not card_data.card_name.is_empty() else "unnamed"
+	var instance_direction := card.card_instance.direction if card.card_instance else -1
+	var battlefield_pos := card.card_instance.battlefield_pos if card.card_instance else Vector2i(-1, -1)
+	return "%s(id=%s, instance_dir=%s, battlefield_pos=%s)" % [
+		card_name,
+		card.get_instance_id(),
+		instance_direction,
+		battlefield_pos,
+	]
 
 
 
@@ -380,7 +444,7 @@ func _is_root_card(card: CardEntity) -> bool:
 
 # 获取指定卡牌"顶部朝向"的相邻放置格
 func get_placement_cell(card: CardEntity) -> Vector2i:
-	var dir = int(round(card.rotation_degrees / 90.0)) % 4
+	var dir := _get_rotation_direction(card.rotation_degrees)
 	var cells = get_card_cells(card.global_position, card.rotation_degrees)
 	if cells.is_empty():
 		return Vector2i(-1, -1)
