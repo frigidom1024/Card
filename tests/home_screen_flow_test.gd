@@ -40,6 +40,20 @@ func _test_main_menu_structure_and_single_start_request() -> void:
 	var version := menu.get_node_or_null("SafeArea/Layout/FooterBlock/VersionLabel") as Label
 	_expect(logo != null and logo.text == "PILGRIM'S CHAIN", "menu exposes the Pilgrim's Chain title")
 	_expect(subtitle != null and subtitle.text == "A CARD-CHAIN PILGRIMAGE", "menu exposes the card-chain subtitle")
+	_expect(
+		logo != null and logo.get_theme_color("font_color").is_equal_approx(Color(0.95, 0.69, 0.17, 1)),
+		"menu title uses bright antique gold"
+	)
+	_expect(
+		logo != null and logo.get_theme_color("font_outline_color").is_equal_approx(Color(0.16, 0.075, 0.018, 1)),
+		"menu title uses near-black brown outline"
+	)
+	_expect(logo != null and logo.get_theme_constant("outline_size") == 4, "menu title uses a substantial gold-foil outline")
+	_expect(
+		subtitle != null and subtitle.get_theme_color("font_color").is_equal_approx(Color(0.69, 0.50, 0.20, 1)),
+		"menu subtitle uses parchment gold"
+	)
+	_expect(subtitle != null and subtitle.get_theme_constant("outline_size") == 1, "menu subtitle keeps a fine outline")
 	_expect(start != null and start.text == "开始游戏", "menu exposes the only action")
 	_expect(version != null and not version.text.is_empty(), "menu exposes version footer")
 
