@@ -5,6 +5,8 @@ const ROOT_SELECTION_SCENE := preload("res://scenes/home/root_selection_screen.t
 const GAME_MANAGER_SCENE := preload("res://scenes/game/game_manager.tscn")
 
 @export var starting_decks: Array[StartingDeckData] = []
+@export var debug_start_into_game := true
+@export var debug_starting_deck: StartingDeckData
 
 @onready var background_fill: ColorRect = $BackgroundLayer/BackgroundFill
 @onready var screen_layer: CanvasLayer = $ScreenLayer
@@ -20,6 +22,9 @@ func _ready() -> void:
 	var viewport := get_viewport()
 	if not viewport.size_changed.is_connected(_fit_background_to_viewport):
 		viewport.size_changed.connect(_fit_background_to_viewport)
+	if OS.is_debug_build() and debug_start_into_game and debug_starting_deck != null:
+		_start_exploration(debug_starting_deck)
+		return
 	_show_main_menu()
 
 

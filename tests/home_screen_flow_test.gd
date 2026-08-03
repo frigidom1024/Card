@@ -15,6 +15,7 @@ func _init() -> void:
 func _run_tests() -> void:
 	await _test_main_menu_structure_and_single_start_request()
 	await _test_root_selection_filters_presets_and_requests_exploration_once()
+	await _test_debug_build_starts_configured_deck_directly()
 	await _test_main_routes_menu_selection_and_fresh_runs()
 	quit(1 if _failure_count > 0 else 0)
 
@@ -34,9 +35,11 @@ func _test_main_menu_structure_and_single_start_request() -> void:
 	await process_frame
 
 	var logo := menu.get_node_or_null("SafeArea/Layout/LogoBlock/GameLogo") as Label
+	var subtitle := menu.get_node_or_null("SafeArea/Layout/LogoBlock/GameSubtitle") as Label
 	var start := menu.get_node_or_null("SafeArea/Layout/ActionBlock/StartGameButton") as Button
 	var version := menu.get_node_or_null("SafeArea/Layout/FooterBlock/VersionLabel") as Label
-	_expect(logo != null and logo.text == "MONOCARD", "menu exposes top logo")
+	_expect(logo != null and logo.text == "PILGRIM'S CHAIN", "menu exposes the Pilgrim's Chain title")
+	_expect(subtitle != null and subtitle.text == "A CARD-CHAIN PILGRIMAGE", "menu exposes the card-chain subtitle")
 	_expect(start != null and start.text == "开始游戏", "menu exposes the only action")
 	_expect(version != null and not version.text.is_empty(), "menu exposes version footer")
 
@@ -142,9 +145,28 @@ func _test_root_selection_filters_presets_and_requests_exploration_once() -> voi
 	screen.queue_free()
 	await process_frame
 
+func _test_debug_build_starts_configured_deck_directly() -> void:
+	if not OS.is_debug_build():
+		return
+
+	var main := MainScene.instantiate()
+	main.debug_start_into_game = true
+	root.add_child(main)
+	await process_frame
+
+	var game := main.get_node_or_null("GameManager")
+	_expect(game != null, "debug boot creates a game manager directly")
+	_expect(
+		game != null and game.starting_deck == RevivalDeck,
+		"debug boot uses the configured Revival starting deck"
+	)
+	_expect(main.get_node_or_null("ScreenLayer/MainMenuScreen") == null, "debug boot skips the main menu")
+	main.free()
+	await process_frame
 
 func _test_main_routes_menu_selection_and_fresh_runs() -> void:
 	var main := MainScene.instantiate()
+	main.debug_start_into_game = false
 	root.add_child(main)
 	await process_frame
 

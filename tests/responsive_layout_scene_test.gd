@@ -17,6 +17,7 @@ func _run_test() -> void:
     _expect(config.get_value("display", "window/stretch/aspect") == "expand", "viewport expands instead of letterboxing gameplay root")
 
     var main := MainScene.instantiate()
+    main.debug_start_into_game = false
     root.add_child(main)
     await process_frame
     var actual_min_window_size := DisplayServer.window_get_min_size()
