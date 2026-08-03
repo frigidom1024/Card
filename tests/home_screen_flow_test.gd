@@ -36,8 +36,17 @@ func _test_main_menu_structure_and_single_start_request() -> void:
 
 	var logo := menu.get_node_or_null("SafeArea/Layout/LogoBlock/GameLogo") as Label
 	var subtitle := menu.get_node_or_null("SafeArea/Layout/LogoBlock/GameSubtitle") as Label
-	var start := menu.get_node_or_null("SafeArea/Layout/ActionBlock/StartGameButton") as Button
+	var action_panel := menu.get_node_or_null(
+		"SafeArea/Layout/ActionBlock/ActionPanel"
+	) as PanelContainer
+	var menu_list := menu.get_node_or_null(
+		"SafeArea/Layout/ActionBlock/ActionPanel/MenuList"
+	) as VBoxContainer
+	var start := menu.get_node_or_null(
+		"SafeArea/Layout/ActionBlock/ActionPanel/MenuList/StartGameButton"
+	) as Button
 	var version := menu.get_node_or_null("SafeArea/Layout/FooterBlock/VersionLabel") as Label
+	var top_gradient := menu.get_node_or_null("TopGradientOverlay") as TextureRect
 	_expect(logo != null and logo.text == "PILGRIM'S CHAIN", "menu exposes the Pilgrim's Chain title")
 	_expect(subtitle != null and subtitle.text == "A CARD-CHAIN PILGRIMAGE", "menu exposes the card-chain subtitle")
 	_expect(
@@ -54,7 +63,28 @@ func _test_main_menu_structure_and_single_start_request() -> void:
 		"menu subtitle uses parchment gold"
 	)
 	_expect(subtitle != null and subtitle.get_theme_constant("outline_size") == 1, "menu subtitle keeps a fine outline")
-	_expect(start != null and start.text == "开始游戏", "menu exposes the only action")
+	_expect(
+		action_panel != null and action_panel.custom_minimum_size == Vector2(430, 150),
+		"menu centers its action within the approved translucent action panel"
+	)
+	_expect(menu_list != null and menu_list.get_child_count() == 1, "action panel contains only the primary menu action")
+	_expect(start != null and start.text == "BEGIN PILGRIMAGE", "menu exposes the pilgrimage action in English")
+	_expect(menu.get_node_or_null("AtmosphereOverlay") == null, "menu leaves the illustration free of a full-screen dark overlay")
+	_expect(
+		top_gradient != null and top_gradient.mouse_filter == Control.MOUSE_FILTER_IGNORE,
+		"menu has a non-interactive top readability gradient"
+	)
+	_expect(
+		start != null and start.get_theme_stylebox("normal") != null
+			and start.get_theme_stylebox("hover") != null
+			and start.get_theme_stylebox("pressed") != null
+			and start.get_theme_stylebox("disabled") != null
+			and start.get_theme_stylebox("focus") != null,
+		"pilgrimage CTA exposes all interaction-state styles"
+	)
+	_expect(start != null and start.get_theme_font_size("font_size") == 26, "pilgrimage CTA uses the approved restrained type scale")
+	_expect(logo != null and logo.get_theme_font_size("font_size") == 150, "menu preserves the configured title scale")
+	_expect(subtitle != null and subtitle.get_theme_font_size("font_size") == 60, "menu preserves the configured subtitle scale")
 	_expect(version != null and not version.text.is_empty(), "menu exposes version footer")
 
 	var calls := {"count": 0}
@@ -100,7 +130,10 @@ func _test_root_selection_filters_presets_and_requests_exploration_once() -> voi
 	presets.append(duplicate_root_deck)
 	presets.append(invalid_deck)
 	screen.call("configure", presets)
+	root.size = Vector2i(1920, 1080)
 	root.add_child(screen)
+	await process_frame
+	await process_frame
 	await process_frame
 
 	var option_list := screen.find_child("RootOptionList", true, false)
@@ -108,23 +141,100 @@ func _test_root_selection_filters_presets_and_requests_exploration_once() -> voi
 	var starter_preview_row := screen.find_child("RemainingStarterCardPreviewRow", true, false)
 	var unlock_hint := screen.find_child("UnlockHintLabel", true, false) as Label
 	var start := screen.find_child("StartExplorationButton", true, false) as Button
+	var back := screen.find_child("BackButton", true, false) as Button
+	var title := screen.find_child("TitleLabel", true, false) as Label
+	var section_title := screen.find_child("SectionTitle", true, false) as Label
+	var starter_title := screen.find_child("StarterTitle", true, false) as Label
+	var content := screen.get_node_or_null("SafeArea/Content") as MarginContainer
+	var choice_panel := screen.find_child("ChoicePanel", true, false) as PanelContainer
+	var preview_panel := screen.find_child("PreviewPanel", true, false) as PanelContainer
+	var background := screen.get_node_or_null("Background") as TextureRect
+	var top_gradient := screen.get_node_or_null("TopGradientOverlay") as TextureRect
+	_expect(
+		background != null and background.mouse_filter == Control.MOUSE_FILTER_IGNORE,
+		"root selection reuses the non-interactive pilgrimage illustration background"
+	)
+	_expect(
+		top_gradient != null and top_gradient.mouse_filter == Control.MOUSE_FILTER_IGNORE,
+		"root selection has a non-interactive top readability gradient"
+	)
+	_expect(screen.get_node_or_null("AtmosphereOverlay") == null, "root selection avoids darkening the full illustration")
+	_expect(title != null and title.text == "CHOOSE A ROOT", "root selection uses an English title")
+	_expect(section_title != null and section_title.text == "AVAILABLE ROOTS", "root list uses an English section title")
+	_expect(starter_title != null and starter_title.text == "REMAINING STARTING CARDS", "starter preview uses an English section title")
+	_expect(
+		title != null and title.get_theme_color("font_color").is_equal_approx(Color(0.95, 0.69, 0.17, 1)),
+		"root selection title uses the home screen antique gold"
+	)
+	_expect(
+		choice_panel != null and choice_panel.get_theme_stylebox("panel") != null
+			and preview_panel != null and preview_panel.get_theme_stylebox("panel") != null,
+		"root selection uses framed pilgrimage panels for choice and preview"
+	)
+	_expect(
+		content != null and content.size_flags_horizontal == Control.SIZE_EXPAND_FILL,
+		"root selection content expands across the available wide-screen space"
+	)
+	_expect(
+		choice_panel != null and preview_panel != null
+			and preview_panel.size_flags_stretch_ratio > choice_panel.size_flags_stretch_ratio,
+		"root selection allocates additional wide-screen space to the card previews"
+	)
+	_expect(back != null and back.text == "BACK", "root selection uses an understated English back action")
+	_expect(start != null and start.text == "BEGIN EXPEDITION", "root selection uses the English pilgrimage CTA")
+	_expect(
+		start != null and start.get_theme_stylebox("normal") != null
+			and start.get_theme_stylebox("hover") != null
+			and start.get_theme_stylebox("pressed") != null
+			and start.get_theme_stylebox("disabled") != null
+			and start.get_theme_stylebox("focus") != null,
+		"root selection CTA exposes every interaction state"
+	)
 	_expect(option_list != null and option_list.get_child_count() == 2, "valid unlocked and locked presets are visible; invalid and duplicate entries are suppressed")
 	if option_list != null and option_list.get_child_count() > 0:
-		var selected_option_button := option_list.get_child(0).get_node_or_null("Button") as Button
+		var selected_option := option_list.get_child(0) as RootOptionEntry
+		var selected_option_button := selected_option.get_node_or_null("Button") as Button if selected_option != null else null
+		var selected_option_name := selected_option.find_child("NameLabel", true, false) as Label if selected_option != null else null
+		var selected_option_tag_badge := selected_option.find_child("TagBadge", true, false) as PanelContainer if selected_option != null else null
+		var selected_option_tag_label := selected_option.find_child("TagLabel", true, false) as Label if selected_option != null else null
 		_expect(
-			selected_option_button != null and selected_option_button.text.contains("复苏之根"),
-			"root option renders the selected preset name"
+			selected_option_name != null and selected_option_name.text == "REVIVAL ROOT",
+			"root option renders its name separately from playstyle tags"
+		)
+		_expect(
+			selected_option_tag_badge != null and selected_option_tag_badge.get_theme_stylebox("panel") != null
+				and selected_option_tag_label != null
+				and selected_option_tag_label.text == "HEALING · ENDURANCE · WEAPON CHAIN"
+				and selected_option_tag_label.get_theme_font_size("font_size") == 12,
+			"root option renders compact playstyle tags in a muted badge"
+		)
+		_expect(
+			selected_option_button != null and selected_option_button.get_theme_stylebox("normal") != null
+				and selected_option_button.get_theme_stylebox("hover") != null
+				and selected_option_button.get_theme_stylebox("pressed") != null,
+			"root option uses the gilt interaction treatment"
 		)
 	_expect(screen.get("selected_preset") == RevivalDeck, "first valid unlocked preset is selected")
 	_expect(root_preview_slot != null and root_preview_slot.get_child_count() == 1, "selected root has one real card preview")
 	if root_preview_slot != null and root_preview_slot.get_child_count() == 1:
 		_expect(root_preview_slot.get_child(0).call("is_display_only"), "root preview uses display-only CardEntity")
 	_expect(starter_preview_row != null and starter_preview_row.get_child_count() == 4, "remaining complete starting deck is previewed without the root")
+	if starter_preview_row != null and starter_preview_row.get_child_count() == 4:
+		var first_starter_preview := starter_preview_row.get_child(0) as Node2D
+		var last_starter_preview := starter_preview_row.get_child(3) as Node2D
+		_expect(
+			first_starter_preview != null and last_starter_preview != null
+				and is_equal_approx(
+					(first_starter_preview.position.x + last_starter_preview.position.x) * 0.5,
+					starter_preview_row.size.x * 0.5
+				),
+			"remaining starter card previews stay centered after the layout settles"
+		)
 
 	var locked_entry = screen.call("_entry_for_preset", locked_deck)
 	screen.call("_on_root_option_pressed", locked_entry)
 	_expect(screen.get("selected_preset") == RevivalDeck, "locked option cannot replace valid selection")
-	_expect(unlock_hint != null and not unlock_hint.text.is_empty(), "locked option shows an unlock hint")
+	_expect(unlock_hint != null and unlock_hint.text.begins_with("THIS ROOT"), "locked option shows an English unlock hint")
 
 	var requests := {"count": 0, "preset": null}
 	_expect(screen.has_signal("exploration_requested"), "root selection exposes exploration_requested signal")
@@ -151,7 +261,7 @@ func _test_root_selection_filters_presets_and_requests_exploration_once() -> voi
 	_expect(screen.has_signal("back_requested"), "root selection exposes back_requested signal")
 	if screen.has_signal("back_requested"):
 		screen.connect("back_requested", func() -> void: back_requests["count"] += 1)
-	var back := screen.find_child("BackButton", true, false) as Button
+
 	if back != null:
 		back.emit_signal("pressed")
 	_expect(back_requests["count"] == 1, "back button delegates navigation through a signal")
@@ -188,7 +298,7 @@ func _test_main_routes_menu_selection_and_fresh_runs() -> void:
 	_expect(menu != null, "boot shows main menu")
 	_expect(main.get_node_or_null("GameManager") == null, "boot does not create a game manager")
 	if menu != null:
-		var first_start := menu.get_node_or_null("SafeArea/Layout/ActionBlock/StartGameButton") as Button
+		var first_start := menu.get_node_or_null("SafeArea/Layout/ActionBlock/ActionPanel/MenuList/StartGameButton") as Button
 		if first_start != null:
 			first_start.emit_signal("pressed")
 	await process_frame
@@ -206,7 +316,7 @@ func _test_main_routes_menu_selection_and_fresh_runs() -> void:
 	_expect(menu != null, "returning from root selection restores the main menu")
 	_expect(main.get_node_or_null("GameManager") == null, "returning from root selection still has no game manager")
 	if menu != null:
-		var second_start := menu.get_node_or_null("SafeArea/Layout/ActionBlock/StartGameButton") as Button
+		var second_start := menu.get_node_or_null("SafeArea/Layout/ActionBlock/ActionPanel/MenuList/StartGameButton") as Button
 		if second_start != null:
 			second_start.emit_signal("pressed")
 	await process_frame

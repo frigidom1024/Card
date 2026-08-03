@@ -1,9 +1,13 @@
 class_name RootOptionEntry
-extends PanelContainer
+extends Control
 
 signal pressed(entry: RootOptionEntry)
 
 @onready var _button: Button = $Button
+@onready var _name_label: Label = $Content/Layout/NameLabel
+@onready var _tag_badge: PanelContainer = $Content/Layout/MetaRow/TagBadge
+@onready var _tag_label: Label = $Content/Layout/MetaRow/TagBadge/TagLabel
+@onready var _status_label: Label = $Content/Layout/MetaRow/StatusLabel
 
 var preset: StartingDeckData
 var is_locked := false
@@ -23,12 +27,17 @@ func configure(value: StartingDeckData, validation_error := "") -> void:
 		return
 
 	if not validation_error.is_empty() or preset == null or preset.get_root_card() == null:
-		_button.text = "配置无效"
+		_name_label.text = "INVALID PRESET"
+		_tag_badge.hide()
+		_status_label.hide()
 		_button.disabled = true
 		return
 
-	var status := "未解锁" if is_locked else "可用"
-	_button.text = "%s\n%s · %s" % [preset.display_name, ", ".join(preset.playstyle_tags), status]
+	_name_label.text = preset.display_name
+	_tag_label.text = " · ".join(preset.playstyle_tags)
+	_tag_badge.visible = not preset.playstyle_tags.is_empty()
+	_status_label.text = "LOCKED" if is_locked else "AVAILABLE"
+	_status_label.show()
 	_button.disabled = false
 
 

@@ -20,6 +20,7 @@ var selected_preset: StartingDeckData
 var _configured_presets: Array[StartingDeckData] = []
 var _entries_by_preset: Dictionary = {}
 var _exploration_requested := false
+var _preview_position_refresh_queued := false
 
 
 func configure(presets: Array[StartingDeckData]) -> void:
@@ -33,10 +34,10 @@ func _ready() -> void:
 		_back_button.pressed.connect(_on_back_pressed)
 	if not _start_exploration_button.pressed.is_connected(_on_start_exploration_pressed):
 		_start_exploration_button.pressed.connect(_on_start_exploration_pressed)
-	if not _root_preview_slot.resized.is_connected(_refresh_preview_positions):
-		_root_preview_slot.resized.connect(_refresh_preview_positions)
-	if not _remaining_starter_preview_row.resized.is_connected(_refresh_preview_positions):
-		_remaining_starter_preview_row.resized.connect(_refresh_preview_positions)
+	if not _root_preview_slot.resized.is_connected(_queue_preview_position_refresh):
+		_root_preview_slot.resized.connect(_queue_preview_position_refresh)
+	if not _remaining_starter_preview_row.resized.is_connected(_queue_preview_position_refresh):
+		_remaining_starter_preview_row.resized.connect(_queue_preview_position_refresh)
 
 	var viewport := get_viewport()
 	if not viewport.size_changed.is_connected(_on_viewport_size_changed):
@@ -99,7 +100,7 @@ func _on_root_option_pressed(entry: RootOptionEntry) -> void:
 	if entry == null or entry.preset == null:
 		return
 	if entry.is_locked:
-		_unlock_hint_label.text = "该牌根尚未解锁。完成更多探索以解开它。"
+		_unlock_hint_label.text = "THIS ROOT IS LOCKED. COMPLETE MORE EXPEDITIONS TO UNLOCK IT."
 		_refresh_selection_ui()
 		return
 
@@ -132,7 +133,7 @@ func _refresh_previews() -> void:
 	_add_preview(_root_preview_slot, selected_preset.get_root_card())
 	for card_data in selected_preset.get_remaining_starter_cards():
 		_add_preview(_remaining_starter_preview_row, card_data)
-	call_deferred("_refresh_preview_positions")
+	_queue_preview_position_refresh()
 
 
 func _clear_preview_container(container: Control) -> void:
@@ -145,6 +146,19 @@ func _add_preview(parent: Control, card_data: CardData) -> void:
 	card.bind_instance(CardInstance.new(card_data))
 	card.set_display_only(true)
 	parent.add_child(card)
+
+
+func _queue_preview_position_refresh() -> void:
+	if _preview_position_refresh_queued:
+		return
+	_preview_position_refresh_queued = true
+	_refresh_preview_positions_after_layout()
+
+
+func _refresh_preview_positions_after_layout() -> void:
+	await get_tree().process_frame
+	_preview_position_refresh_queued = false
+	_refresh_preview_positions()
 
 
 func _refresh_preview_positions() -> void:
@@ -185,6 +199,3 @@ func _on_start_exploration_pressed() -> void:
 	_exploration_requested = true
 	_start_exploration_button.disabled = true
 	exploration_requested.emit(selected_preset)
-
-
-

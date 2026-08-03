@@ -3,7 +3,7 @@ extends Control
 
 signal start_game_requested
 
-@onready var _start_game_button: Button = $SafeArea/Layout/ActionBlock/StartGameButton
+@onready var _start_game_button: Button = $SafeArea/Layout/ActionBlock/ActionPanel/MenuList/StartGameButton
 
 var _transition_requested := false
 

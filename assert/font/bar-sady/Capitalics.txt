@@ -1,0 +1,53 @@
+End User Licence Agreement
+Version 1.0. Last modification: 16-08-2016
+General provisions
+All words, phrases and acronyms used in this document, and beginning with a capital letter (eg. Seller, Online Store/Store, Sales agreement etc.) should be understood in accordance with the definition contained in the Terms available on the Online Store.
+1. Licence conditions - this document specifying in particular the conditions and the scope of the License granted Shop, hereinafter referred to as "Terms of the license."
+2. Shop declares that it has sufficient permissions to grant Licensee the powers set out in this document. Licensor declares that the use of the Product and its parts under the terms of the license does not infringe any intellectual property rights of third parties, and especially do not need to obtain any authorization from a third party. Offered licenses concern the use of certain fields of use by (1) a limited number of users, (2) on the web pages of a certain number of views, (3) the use of a certain number of electronic publications, (4) the use of a certain number of applications (collectively "options license") on the terms set out below. All licenses are granted in four basic types of standard licenses (hereinafter referred to collectively as "standard Licences"), unless the invoice clearly stated that the license granted subject to other terms and conditions of the license.
+3. The subject of the license are the products offered in the store, which are protected by Polish law - the provisions of the Act of 4 February 1994 on Copyright and Related Rights (consolidated text. 2006. No. 90, item. 631, as amended. D.) And international agreements on the protection of intellectual property and legal, the license fee is included in the price of the Product.
+4. The customer under the contract, making the selection Product selection is made at the same time the scope of use of the Product / s, which is the range referred to in paragraph. 2. above, which is equivalent to the choices of licenses, whereby through selection in the Order Form window type "check box", declares that he is familiar with the terms of the license and accept its provisions.
+5. Using products within the License does not mean the purchase by you of any intangible property rights to the Product. You may use the Product only to the extent and under the conditions set forth in this License, according to the type of license purchased option.
+6. User - a natural person using the Desktop license within one geographical location and one device, business or household purchasing the font except for temporary use by third parties
+7. The shop is entitled to terminate the license with immediate effect in the event of breach by the Licensee. Termination requires the written form. In the event of termination of the License, Shop has the right to seek compensation for the loss of the Licensee under this head of damage.
+8. You may not use the Product to the extent that include other licenses.
+9. Licensee has the right to temporarily make available the Product to a third party on behalf of the Licensee will perform for him using
+the Product derivative works, and Licensee obtains from the person a written statement in which it undertakes to use the Product and / or its individual components only to perform agreement with the Licensee under the terms of the License Desktop and does not retain any copies of the Product and / or its individual components, as well as the derivative work after the completion of the agreement with the Licensee.
+10. You may import the graphic programs and modify these programs, the characters available in the Product as bezier curves, but can not make any modifications to (eg. Decompile, add your own characters) Product without permission.
+11. You may not convert to other formats Product fonts without permission.
+Desktop License
+License for a specific number of users is unlimited in time and geographically unrestricted, non-exclusive and non-transferrable license.
+Desktop license entitles you to commercial and non-commercial use of Product as part of a single economic entity or household. A total number of users may not be greater then the number selected by the Customer in the Order Form.
+Desktop license authorizes the use of the Product by installing on the computer and use it to:
+create graphics displayed on computer screens, television screens, printed on paper and other surfaces on which the image of the Product will be fixed size.
+Embedding in the documents (eg. PDF, Microsoft Word, Microsoft Powerpoint) read-only - no editing by third parties.
+Embedding in Flash and Silverlight to display text, but not editable by the end user.
+You may not use the Product to create alphabet or letterform products for sale in the form of stamps, stickers or other product template from which to create their own compositions text.
+You may not embed the Product software that enables the use of the Product to end users.
+Shop grants Desktop License without the right to sub-license by the Licensee in an amount greater than the indicated number of users.
+   
+Web License
+License to use the Product on the websites of a certain number of views is unlimited in time and geographically unrestricted, non-exclusive and non-transferrable license.
+Web license entitles you to commercial and non-commercial use of Product under all websites he ownes. A total number of page views per month is not greater than the number selected by the Customer in the Order Form.
+Web license entitles you to use the Product solely to link to the website by using the @font-face selector in CSS file. Other use is not permitted. Linked product should be adequately protected against access by third parties.
+Ebook License
+License to use the Product for a specific number of electronic publications is unlimited in time and geographically unrestricted, non-exclusive and non-transferrable license.
+Ebook license entitles you to commercial and non-commercial use of Product within electronic publications. A total number of titles may not be greater then the number selected by the Customer in the Order Form.
+Ebook license entitles you to use of the Product by embedding the file (PDF, EPUB, KF8), which will be correctly interpreted by programs or devices for reading electronic publications.
+Within a title is allowed:
+unlimited number of installations
+unlimited number of versions of publications
+Embedded product should be adequately protected against access by third parties.
+You may not install the Product in a system that is running for reading electronic publications.
+App License
+License to use the Product for a specific number of applications is unlimited in time and geographically unrestricted, non-exclusive and non- transferrable license.
+Ebook license entitles you to commercial and non-commercial use of Product within applications. A total number of titles may not be greater then the number selected by the Customer in the Order Form.
+App license entitles you to use of the Product by embedding in applications. Within a title is allowed:
+unlimited number of installations
+unlimited number of versions of publications
+Embedded product should be adequately protected against access by third parties.
+The product may not be available with source code of the application.
+You may not use the Product to create templates that the end user can use to create their own compositions text. You may not install the Product in a system where the application is running.
+Test License
+License for a test use is unlimited in time and geographically unrestricted, non-exclusive and non-transferrable license.
+Licensee cannot use the Product in any commercial projects nor in a production enviroment. However, it is allowed to use the Product for presenting graphics, ebook, mobile or web application to a client, without a need for buying full license.
+Test license entitles you to use of Product as part of a single economic entity or household. Only registered users can downlodad test fonts from the website https://capitalics.wtf.
