@@ -3,7 +3,6 @@
 [ext_resource type="Script" uid="uid://ctkwunxu5hwdh" path="res://scripts/card/card_entity.gd" id="1_vnle4"]
 [ext_resource type="PackedScene" uid="uid://ci3a5pao1bwvx" path="res://scenes/card_view/zoom_view.tscn" id="2_noe1h"]
 [ext_resource type="PackedScene" uid="uid://0t2nmkt0asxh" path="res://scenes/card_view/card_view.tscn" id="3_ltfih"]
-[ext_resource type="PackedScene" uid="uid://752y2d1bq6rg" path="res://scenes/card_view/card_info.tscn" id="4_3qc3j"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_p5p3o"]
 size = Vector2(104, 208)
@@ -29,11 +28,6 @@ offset_bottom = 75.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="CardInfo" parent="." unique_id=1809456825 instance=ExtResource("4_3qc3j")]
-offset_left = 43.0
-offset_top = -80.0
-offset_right = 44.0
-offset_bottom = -45.0
 
 [connection signal="input_event" from="." to="." method="_on_input_event"]
 [connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]

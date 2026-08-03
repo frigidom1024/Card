@@ -93,17 +93,6 @@ func _update_tags(tags: Array) -> void:
 		tag_container.add_child(tag_label)
 
 
-## 以悬浮面板形式展示（显示 + 定位，local_pos 为父节点局部坐标的左上角位置）
-func show_as_floating(inst: CardInstance, local_pos: Vector2) -> void:
-	set_card(inst)
-	visible = true
-	# 等待一帧让容器完成尺寸计算，再定位
-	await get_tree().process_frame
-	position = local_pos
-
-
-func hide_floating() -> void:
-	visible = false
 
 
 static func _tag_name(tag: int) -> String:

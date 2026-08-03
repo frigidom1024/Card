@@ -51,9 +51,9 @@ var _consume_next_left_release := false
 var _display_only := false
 
 var drag_layer
+var card_info_overlay
 
 @onready var _card_view: ColorRect = $CardView
-@onready var _card_info: PanelContainer = $CardInfo
 
 # UI 元素（放大）
 var _zoom_overlay: CanvasLayer = null
@@ -80,8 +80,7 @@ func set_display_only(value: bool) -> void:
 		set_process_input(false)
 		if _card_view:
 			_card_view.modulate = Color.WHITE
-		if _card_info:
-			_card_info.hide_floating()
+		_show_info(false)
 
 	_display_only = value
 	input_pickable = not _display_only
@@ -120,27 +119,28 @@ func _apply_layout() -> void:
 # ============================
 
 func _show_info(show_info: bool) -> void:
-	if _display_only:
-		return
-
-	if not _card_info or not card_instance or not card_instance.card_data:
-		if not _card_info:
-			print("missing _card_info")
-		if not card_instance:
-			print("missing card_instance")
-		if not card_instance.card_data:
-			print("card_instance.card_data")
+	if card_info_overlay == null or not is_instance_valid(card_info_overlay):
 		return
 
 	if show_info:
-		# 定位到卡牌右侧，顶部对齐（局部坐标）
-		var offset = Vector2(
-			_card_view.offset_left + _card_view.size.x + 8,
-			_card_view.offset_top - 4
-		)
-		_card_info.show_as_floating(card_instance, offset)
+		if _display_only or card_instance == null or card_instance.card_data == null:
+			return
+		card_info_overlay.show_for_card(self)
 	else:
-		_card_info.hide_floating()
+		card_info_overlay.hide_for_card(self)
+
+
+func get_card_view_screen_rect() -> Rect2:
+	var transform := _card_view.get_global_transform_with_canvas()
+	var screen_rect := Rect2(transform * Vector2.ZERO, Vector2.ZERO)
+	for corner in [
+		Vector2.ZERO,
+		Vector2(_card_view.size.x, 0.0),
+		Vector2(0.0, _card_view.size.y),
+		_card_view.size,
+	]:
+		screen_rect = screen_rect.expand(transform * corner)
+	return screen_rect
 
 
 # ============================
@@ -344,6 +344,7 @@ func _hide_zoom() -> void:
 # ============================
 
 func _exit_tree() -> void:
+	_show_info(false)
 	if _zoom_overlay:
 		_zoom_overlay.queue_free()
 		_zoom_overlay = null
