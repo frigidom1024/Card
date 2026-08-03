@@ -1,0 +1,12 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/card/card_info_overlay.gd" id="1_overlay"]
+[ext_resource type="PackedScene" uid="uid://752y2d1bq6rg" path="res://scenes/card_view/card_info.tscn" id="2_card_info"]
+
+[node name="CardInfoOverlay" type="CanvasLayer"]
+layer = 5
+script = ExtResource("1_overlay")
+
+[node name="CardInfo" parent="." instance=ExtResource("2_card_info")]
+visible = false
+mouse_filter = 2

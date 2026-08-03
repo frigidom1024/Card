@@ -11,6 +11,7 @@ signal run_finished
 @onready var card_manager: Node2D = $GameplayCanvas/CardManager
 @onready var hand_area: HandArea = $GameplayCanvas/HandManager
 @onready var drag_layer: DragLayer = $GameplayCanvas/DragLayer
+@onready var card_info_overlay = $CardInfoOverlay
 @onready var shop_event_view = $EventModalLayer/ShopEventView
 @onready var treasure_event_view = $EventModalLayer/TreasureEventView
 @onready var combat_event_view: CombatEventView = $EventModalLayer/CombatEventView
@@ -126,6 +127,7 @@ func init_player_cards() -> bool:
 			_clear_initial_player_cards()
 			return false
 		entity.drag_layer = drag_layer
+		entity.card_info_overlay = card_info_overlay
 		if not hand_area.add_card(entity):
 			entity.queue_free()
 			_clear_initial_player_cards()
@@ -306,6 +308,7 @@ func _grant_card_to_hand(card_data: CardData) -> bool:
 	if entity == null:
 		return false
 	entity.drag_layer = drag_layer
+	entity.card_info_overlay = card_info_overlay
 	if not hand_area.add_card(entity):
 		entity.queue_free()
 		return false

@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" path="res://scenes/game/event_treasure.tscn" id="11_treasure_event"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_combat.tscn" id="12_combat_event"]
 [ext_resource type="Script" path="res://scripts/game/gameplay_canvas.gd" id="13_gameplay_canvas"]
+[ext_resource type="PackedScene" path="res://scenes/card_view/card_info_overlay.tscn" id="14_card_info_overlay"]
 
 [node name="GameManager" type="Node" unique_id=2111395174]
 script = ExtResource("1_q8mjp")
@@ -32,6 +33,8 @@ card_lib = ExtResource("5_0rse5")
 script = ExtResource("6_aonbx")
 
 [node name="Board" parent="GameplayCanvas" unique_id=969095891 instance=ExtResource("7_lcbjr")]
+
+[node name="CardInfoOverlay" parent="." instance=ExtResource("14_card_info_overlay")]
 
 [node name="EventModalLayer" type="CanvasLayer" parent="."]
 layer = 10
