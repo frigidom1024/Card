@@ -1,9 +1,10 @@
 [gd_scene format=3 uid="uid://bf2h2gqo4hyjl"]
 
 [ext_resource type="Script" uid="uid://dh5vjxc0y58eg" path="res://scripts/game/board.gd" id="1_bw3vb"]
+[ext_resource type="Texture2D" uid="uid://c0we1wix8xe5g" path="res://assert/board/board.png" id="2_3eqlr"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_8ba60"]
-size = Vector2(800, 640)
+size = Vector2(1040, 832)
 
 [node name="Board" type="Node2D" unique_id=969095891]
 script = ExtResource("1_bw3vb")
@@ -13,7 +14,10 @@ collision_layer = 0
 collision_mask = 0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="DropDetector" unique_id=616528054]
-position = Vector2(400, 320)
+position = Vector2(524, 419)
 shape = SubResource("RectangleShape2D_8ba60")
 
-[node name="TileMapLayer" type="TileMapLayer" parent="." unique_id=755822014]
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1032334282]
+position = Vector2(526, 452.5)
+scale = Vector2(0.29813087, 0.3286967)
+texture = ExtResource("2_3eqlr")
