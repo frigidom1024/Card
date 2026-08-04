@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="MobData" format=3 uid="uid://bk6x13ymnbir7"]
+
+[ext_resource type="Script" uid="uid://p3onjjcmpt8k" path="res://scripts/game/event/encounter/mob_action.gd" id="action"]
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_data"]
+[ext_resource type="Script" uid="uid://b3vemd5otcaea" path="res://scripts/game/event/encounter/mob_data.gd" id="mob"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_white_horn_relic.tres" id="reward_balanced"]
+[ext_resource type="Resource" uid="uid://dqqsd5b2kiqcy" path="res://data/levels/ribwood/cards/ribwood_sternum_plate.tres" id="reward_defense"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_guardian_ember.tres" id="reward_heal"]
+[ext_resource type="Script" uid="uid://cweljpn1qxxyh" path="res://scripts/combatv2/combat_stats_data.gd" id="stats"]
+
+[sub_resource type="Resource" id="HartAction_charge"]
+script = ExtResource("action")
+value = 3
+description = "骨角冲锋：造成 3 点伤害。"
+
+[sub_resource type="Resource" id="HartAction_crouch"]
+script = ExtResource("action")
+type = 1
+value = 3
+description = "守墓低伏：获得 3 点护甲。"
+
+[sub_resource type="Resource" id="HartAction_wail"]
+script = ExtResource("action")
+value = 4
+description = "空腔哀鸣：造成 4 点伤害。"
+
+[sub_resource type="Resource" id="HartStats"]
+script = ExtResource("stats")
+max_hp = 26
+attack = 3
+
+[resource]
+script = ExtResource("mob")
+mob_name = "抱肋者·白角守墓鹿"
+base_stats = SubResource("HartStats")
+actions = Array[ExtResource("action")]([SubResource("HartAction_charge"), SubResource("HartAction_crouch"), SubResource("HartAction_wail")])
+gold_reward = 20
+card_rewards = Array[ExtResource("card_data")]([ExtResource("reward_balanced"), ExtResource("reward_defense"), ExtResource("reward_heal")])

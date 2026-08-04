@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+[resource]
+script = ExtResource("card_script")
+artwork_path = "res://assert/card/ribwood_scar_bottle.png"
+card_id = 1024
+card_name = "结痂药瓶"
+card_type = 1
+heal = 3
+description = "装着苦涩药膏的小瓶，抹在伤口上能让血很快停下。"
+tags = Array[int]([2, 6])
+rarity = 0

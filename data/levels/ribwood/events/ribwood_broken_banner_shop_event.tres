@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/game/event/core/event_data.gd" id="event"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/event_content/ribwood_broken_banner_shop_content.tres" id="content"]
+
+[resource]
+script = ExtResource("event")
+event_id = "ribwood_broken_banner_shop"
+event_type = 0
+content = ExtResource("content")

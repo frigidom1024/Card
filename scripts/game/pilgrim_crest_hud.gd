@@ -143,28 +143,28 @@ func _apply_visuals() -> void:
 	var crest := get_node_or_null("CrestGlyph") as Label
 	if crest != null:
 		crest.position = Vector2(24, 22)
-		crest.size = Vector2(28, 24)
+		crest.size = Vector2(30, 26)
 		crest.text = crest_glyph
 		crest.add_theme_color_override("font_color", trim_color)
 
 	var identity := get_node_or_null("IdentityLabel") as Label
 	if identity != null:
-		identity.position = Vector2(58, 20)
-		identity.size = Vector2(plaque_width - 82, 22)
+		identity.position = Vector2(58, 18)
+		identity.size = Vector2(plaque_width - 82, 26)
 		identity.text = pilgrim_title
 		identity.add_theme_color_override("font_color", text_color)
 
 	var subtitle := get_node_or_null("SubtitleLabel") as Label
 	if subtitle != null:
-		subtitle.position = Vector2(58, 43)
-		subtitle.size = Vector2(plaque_width - 82, 18)
+		subtitle.position = Vector2(58, 45)
+		subtitle.size = Vector2(plaque_width - 82, 20)
 		subtitle.text = pilgrim_subtitle
 		subtitle.add_theme_color_override("font_color", muted_text_color)
 
 	var map_label := get_node_or_null("MapLabel") as Label
 	if map_label != null:
 		map_label.position = Vector2(24, 70)
-		map_label.size = Vector2(plaque_width - 48, 18)
+		map_label.size = Vector2(plaque_width - 48, 20)
 		map_label.text = map_name
 		map_label.add_theme_color_override("font_color", trim_color)
 
@@ -195,14 +195,14 @@ func _apply_visuals() -> void:
 
 	var faith_seal := get_node_or_null("FaithSeal") as Panel
 	if faith_seal != null:
-		faith_seal.position = Vector2(24, 197)
-		faith_seal.size = Vector2(114, 22)
+		faith_seal.position = Vector2(24, 194)
+		faith_seal.size = Vector2(124, 26)
 		faith_seal.add_theme_stylebox_override("panel", _make_panel_style(Color("352d20"), 4, trim_color, 1))
 
 	var faith_value := get_node_or_null("FaithSeal/FaithValue") as Label
 	if faith_value != null:
 		faith_value.position = Vector2.ZERO
-		faith_value.size = faith_seal.size if faith_seal != null else Vector2(114, 22)
+		faith_value.size = faith_seal.size if faith_seal != null else Vector2(124, 26)
 		faith_value.add_theme_color_override("font_color", trim_color)
 
 	var status_row := get_node_or_null("StatusRow") as Panel

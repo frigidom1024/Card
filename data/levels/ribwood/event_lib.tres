@@ -1,0 +1,46 @@
+[gd_resource type="Resource" script_class="EventLib" format=3 uid="uid://5lnyr257q51n"]
+
+[ext_resource type="Resource" path="res://data/levels/ribwood/events/ribwood_bone_stitcher_treasure_event.tres" id="bone_stitcher"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/events/ribwood_broken_banner_shop_event.tres" id="broken_banner"]
+[ext_resource type="Script" uid="uid://plerpkq2tkrr" path="res://scripts/game/event/core/event_entry.gd" id="entry"]
+[ext_resource type="PackedScene" uid="uid://cc6i15eoybvik" path="res://scenes/game/event.tscn" id="event_scene"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/events/ribwood_fallen_rib_wolf_event.tres" id="fallen_wolf"]
+[ext_resource type="Script" uid="uid://cpss1bfonsemn" path="res://scripts/game/event/core/event_lib.gd" id="lib"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/events/ribwood_marrow_lamp_treasure_event.tres" id="marrow_lamp"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/events/ribwood_marrow_rat_event.tres" id="marrow_rat"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/events/ribwood_white_horn_hart_boss_event.tres" id="white_horn_hart"]
+
+[sub_resource type="Resource" id="Entry_marrow_lamp"]
+script = ExtResource("entry")
+event_data = ExtResource("marrow_lamp")
+max_count = 1
+
+[sub_resource type="Resource" id="Entry_marrow_rat"]
+script = ExtResource("entry")
+event_data = ExtResource("marrow_rat")
+max_count = 1
+
+[sub_resource type="Resource" id="Entry_broken_banner"]
+script = ExtResource("entry")
+event_data = ExtResource("broken_banner")
+max_count = 1
+
+[sub_resource type="Resource" id="Entry_fallen_wolf"]
+script = ExtResource("entry")
+event_data = ExtResource("fallen_wolf")
+max_count = 1
+
+[sub_resource type="Resource" id="Entry_bone_stitcher"]
+script = ExtResource("entry")
+event_data = ExtResource("bone_stitcher")
+max_count = 1
+
+[sub_resource type="Resource" id="Entry_white_horn_hart"]
+script = ExtResource("entry")
+event_data = ExtResource("white_horn_hart")
+max_count = 1
+
+[resource]
+script = ExtResource("lib")
+entries = Array[ExtResource("entry")]([SubResource("Entry_marrow_lamp"), SubResource("Entry_marrow_rat"), SubResource("Entry_broken_banner"), SubResource("Entry_fallen_wolf"), SubResource("Entry_bone_stitcher"), SubResource("Entry_white_horn_hart")])
+event_scene = ExtResource("event_scene")

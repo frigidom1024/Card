@@ -39,6 +39,7 @@ func _init() -> void:
 func _run_scene_interaction_tests() -> void:
 	await process_frame
 	_test_board_event_does_not_intercept_mouse_or_enable_selection()
+	_test_drag_input_bypasses_event_controls_and_suspends_card_previews()
 	_test_drag_lock_blocks_card_input_and_restores_an_active_drag()
 	_test_lock_consumes_mouse_release_after_active_drag_cancel()
 	_test_lock_restores_non_root_card_transform_and_occupancy()
@@ -138,7 +139,42 @@ func _test_board_event_does_not_intercept_mouse_or_enable_selection() -> void:
 		"BoardEvent root ignores mouse input"
 	)
 	_expect(event_node.select_button.disabled, "BoardEvent select button remains disabled")
+	_expect(
+		event_node.select_button.mouse_filter == Control.MOUSE_FILTER_IGNORE,
+		"BoardEvent disabled selection button passes mouse input through"
+	)
 
+
+func _test_drag_input_bypasses_event_controls_and_suspends_card_previews() -> void:
+	var board := _make_board(5, 2)
+	_attach_event(board, "pass-through", Vector2i(3, 0), Vector2i.ONE)
+	var drag_layer := DragLayerScript.new() as DragLayer
+	drag_layer.board = board
+	root.add_child(drag_layer)
+	var dragged_card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
+	var hovered_card := _make_card_at(board, Vector2(-120.0, -120.0), 0.0, CardDataScript.CardType.NORMAL)
+	dragged_card.drag_layer = drag_layer
+	hovered_card.drag_layer = drag_layer
+	_expect(board.add_card(dragged_card), "drag input setup card is placed on the Board")
+
+	_card_left_click(dragged_card, true)
+	_expect(drag_layer.has_method("is_drag_active"), "DragLayer exposes active-drag state")
+	if drag_layer.has_method("is_drag_active"):
+		_expect(drag_layer.is_drag_active(), "DragLayer reports an active card drag")
+
+	hovered_card._on_mouse_entered()
+	_expect(hovered_card.state == CardEntity.State.NORMAL, "other cards do not enter hover state during a drag")
+	_expect(hovered_card.get_node_or_null("CardInfoOverlay") == null, "other cards do not open previews during a drag")
+
+	var direction_before := dragged_card.card_instance.direction
+	var right_click := InputEventMouseButton.new()
+	right_click.button_index = MOUSE_BUTTON_RIGHT
+	right_click.pressed = true
+	drag_layer.call("_input", right_click)
+	_expect(
+		dragged_card.card_instance.direction == (direction_before + 1) % 4,
+		"DragLayer rotates the dragged card even above an event control"
+	)
 
 func _test_drag_lock_blocks_card_input_and_restores_an_active_drag() -> void:
 	var board := _make_board(5, 2)

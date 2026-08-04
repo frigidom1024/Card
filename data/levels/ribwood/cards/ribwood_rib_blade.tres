@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+[resource]
+script = ExtResource("card_script")
+artwork_path = "res://assert/card/ribwood_rib_blade.png"
+card_id = 1002
+card_name = "肋骨短刃"
+card_type = 1
+damage = 2
+description = "从灰白肋骨上削下的短刃，刃口仍带着骨髓的暖光。"
+tags = Array[int]([0, 6])
+rarity = 0

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+[resource]
+script = ExtResource("card_script")
+artwork_path = "res://assert/card/ribwood_last_stand_strike.png"
+card_id = 1033
+card_name = "末路重击"
+card_type = 1
+damage = 4
+description = "把全身重量压在一次挥击上。没有花巧，只有在退无可退时留下的痕迹。"
+tags = Array[int]([0, 6])
+rarity = 0

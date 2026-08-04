@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://c743ld02n57c0"]
+
+[ext_resource type="Script" uid="uid://bvx1h805ben8h" path="res://scripts/combatv2/card/card_rule.gd" id="1_vm6hr"]
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_script"]
+[ext_resource type="Script" uid="uid://cx2huaf5nvaqb" path="res://scripts/combatv2/card/rules/last_card_defense_bonus_rule.gd" id="rule_script"]
+
+[sub_resource type="Resource" id="CardRule_main"]
+script = ExtResource("rule_script")
+
+[resource]
+script = ExtResource("card_script")
+artwork_path = "res://assert/card/ribwood_folded_rib_shield.png"
+card_id = 1004
+card_name = "折叠肋盾"
+defense = 2
+effect_rules = Array[ExtResource("1_vm6hr")]([SubResource("CardRule_main")])
+description = "用布带折叠的肋骨盾。若本牌是牌链最后一张，额外获得 2 点护甲。"
+tags = Array[int]([1, 6])

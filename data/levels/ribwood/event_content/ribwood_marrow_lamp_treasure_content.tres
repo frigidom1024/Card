@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="TreasureEventContent" format=3]
+
+[ext_resource type="Script" path="res://scripts/game/event/treasure/treasure_event_content.gd" id="content"]
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_data"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_rib_nail.tres" id="attack"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_shield_fragment.tres" id="defense"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_amber_marrow_bottle.tres" id="heal"]
+
+[resource]
+script = ExtResource("content")
+gold_range = Vector2i(5, 5)
+card_rewards = Array[ExtResource("card_data")]([ExtResource("attack"), ExtResource("defense"), ExtResource("heal")])
+card_draw_count = 3
+choices = 3

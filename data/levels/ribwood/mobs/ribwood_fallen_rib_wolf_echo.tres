@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="MobData" format=3 uid="uid://csxn2n53f5nxr"]
+
+[ext_resource type="Script" uid="uid://p3onjjcmpt8k" path="res://scripts/game/event/encounter/mob_action.gd" id="action"]
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_data"]
+[ext_resource type="Script" uid="uid://b3vemd5otcaea" path="res://scripts/game/event/encounter/mob_data.gd" id="mob"]
+[ext_resource type="Resource" uid="uid://dqrv4ajgxhcih" path="res://data/levels/ribwood/cards/ribwood_ember_blade.tres" id="reward_attack"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_bone_armor_round_shield.tres" id="reward_defense"]
+[ext_resource type="Script" uid="uid://cweljpn1qxxyh" path="res://scripts/combatv2/combat_stats_data.gd" id="stats"]
+
+[sub_resource type="Resource" id="WolfAction_bite"]
+script = ExtResource("action")
+value = 2
+description = "撕咬：造成 2 点伤害。"
+
+[sub_resource type="Resource" id="WolfAction_guard"]
+script = ExtResource("action")
+type = 1
+value = 2
+description = "伏骨：获得 2 点护甲。"
+
+[sub_resource type="Resource" id="WolfStats"]
+script = ExtResource("stats")
+max_hp = 10
+attack = 2
+
+[resource]
+script = ExtResource("mob")
+mob_name = "腐肋幼狼"
+base_stats = SubResource("WolfStats")
+actions = Array[ExtResource("action")]([SubResource("WolfAction_bite"), SubResource("WolfAction_guard")])
+gold_reward = 12
+card_rewards = Array[ExtResource("card_data")]([ExtResource("reward_attack"), ExtResource("reward_defense")])

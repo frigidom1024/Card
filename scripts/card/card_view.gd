@@ -7,6 +7,8 @@ const FRAME_SCENES := {
 	CardData.Rarity.LEGENDARY: preload("res://scenes/card_view/frames/card_frame_legendary.tscn"),
 }
 
+@onready var artwork: TextureRect = $Artwork
+@onready var artwork_placeholder: Control = $ArtworkPlaceholder
 @onready var frame_host: Control = $FrameHost
 @onready var labelcontainer: HBoxContainer = $LabelContainer
 
@@ -31,8 +33,10 @@ func _pin_label_container() -> void:
 
 func refresh_display() -> void:
 	if card_inst == null or card_inst.card_data == null:
+		_update_artwork()
 		return
 	_update_frame()
+	_update_artwork()
 
 
 func set_value(value: CardInstance) -> void:
@@ -40,6 +44,29 @@ func set_value(value: CardInstance) -> void:
 	refresh_display()
 
 
+
+
+func _update_artwork() -> void:
+	artwork.texture = null
+	artwork.visible = false
+	artwork_placeholder.visible = true
+
+	if card_inst == null or card_inst.card_data == null:
+		return
+
+	var artwork_path := card_inst.card_data.artwork_path
+	if artwork_path.is_empty():
+		return
+	if not ResourceLoader.exists(artwork_path, "Texture2D"):
+		return
+
+	var loaded_texture := ResourceLoader.load(artwork_path, "Texture2D") as Texture2D
+	if loaded_texture == null:
+		return
+
+	artwork.texture = loaded_texture
+	artwork.visible = true
+	artwork_placeholder.visible = false
 
 
 func _update_frame() -> void:

@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="ShopEventContent" format=3 uid="uid://bt2p2edohfwqn"]
+
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_grave_beetle.tres" id="beetle"]
+[ext_resource type="Resource" uid="uid://dqrv4ajgxhcih" path="res://data/levels/ribwood/cards/ribwood_ember_blade.tres" id="blade"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_scar_bottle.tres" id="bottle"]
+[ext_resource type="Resource" uid="uid://c5bnwon15sure" path="res://data/levels/ribwood/cards/ribwood_warmth_charm.tres" id="charm"]
+[ext_resource type="Script" uid="uid://16lnshifkonp" path="res://scripts/game/event/shop/shop_event_content.gd" id="content"]
+[ext_resource type="Script" uid="uid://dqghli5cxc22q" path="res://scripts/game/event/shop/shop_item_data.gd" id="item"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_bone_armor_round_shield.tres" id="shield"]
+
+[sub_resource type="Resource" id="ShopItem_shield"]
+script = ExtResource("item")
+card_data = ExtResource("shield")
+price = 8
+
+[sub_resource type="Resource" id="ShopItem_blade"]
+script = ExtResource("item")
+card_data = ExtResource("blade")
+price = 10
+
+[sub_resource type="Resource" id="ShopItem_charm"]
+script = ExtResource("item")
+card_data = ExtResource("charm")
+price = 10
+
+[sub_resource type="Resource" id="ShopItem_bottle"]
+script = ExtResource("item")
+card_data = ExtResource("bottle")
+price = 8
+
+[sub_resource type="Resource" id="ShopItem_beetle"]
+script = ExtResource("item")
+card_data = ExtResource("beetle")
+price = 14
+
+[resource]
+script = ExtResource("content")
+items = Array[ExtResource("item")]([SubResource("ShopItem_shield"), SubResource("ShopItem_blade"), SubResource("ShopItem_charm"), SubResource("ShopItem_bottle"), SubResource("ShopItem_beetle")])

@@ -1,4 +1,5 @@
 import io
+from contextlib import redirect_stderr
 import json
 import os
 import tempfile
@@ -10,7 +11,6 @@ from unittest.mock import patch
 
 from tools.runninghub_generate import (
     API_BASE_URL,
-    DEFAULT_CONFIG,
     GenerationResult,
     RunningHubClient,
     RunningHubError,
@@ -20,7 +20,6 @@ from tools.runninghub_generate import (
     default_env_path,
     get_api_key,
     load_env_file,
-    load_config,
     make_output_path,
     parse_args,
     redact_secret,
@@ -51,13 +50,14 @@ class CliInputTests(unittest.TestCase):
             self.assertEqual(collect_prompts(args), ["one"])
 
     def test_shared_dimensions_are_encoded_for_each_prompt(self):
-        nodes = build_node_info_list("knife", 768, 1024, DEFAULT_CONFIG, [])
+        nodes = build_node_info_list("knife", 768, 1024)
         self.assertIn({"nodeId": "620", "fieldName": "width", "fieldValue": "768", "description": "width"}, nodes)
         self.assertIn({"nodeId": "620", "fieldName": "height", "fieldValue": "1024", "description": "height"}, nodes)
 
-    def test_extra_node_override_is_encoded(self):
-        nodes = build_node_info_list("knife", 512, 512, DEFAULT_CONFIG, ["77.seed=42"])
-        self.assertIn({"nodeId": "77", "fieldName": "seed", "fieldValue": "42", "description": "seed"}, nodes)
+    def test_embedded_workflow_generates_only_prompt_and_dimension_nodes(self):
+        nodes = build_node_info_list("knife", 512, 512)
+        self.assertEqual(len(nodes), 3)
+        self.assertEqual(nodes[0]["fieldValue"], "knife")
 
 
 class EnvFileTests(unittest.TestCase):
@@ -83,6 +83,35 @@ class EnvFileTests(unittest.TestCase):
     def test_default_env_path_is_next_to_the_tool_script(self):
         self.assertEqual(default_env_path(), Path(__file__).resolve().parents[1] / "tools" / ".env")
 
+class FixedWorkflowConfigurationTests(unittest.TestCase):
+    def test_external_workflow_configuration_options_are_not_supported(self):
+        for argv in (
+            ("--config", "config.json"),
+            ("--workflow-id", "wf"),
+            ("--prompt-node", "134.text"),
+            ("--width-node", "620.width"),
+            ("--height-node", "620.height"),
+            ("--node", "77.seed=42"),
+            ("--instance-type", "plus"),
+            ("--use-personal-queue",),
+            ("--no-personal-queue",),
+            ("--retain-seconds", "10"),
+        ):
+            with self.subTest(argv=argv):
+                with redirect_stderr(io.StringIO()):
+                    with self.assertRaises(SystemExit):
+                        parse_args(list(argv))
+
+    def test_dry_run_uses_embedded_workflow_without_workflow_argument(self):
+        from tools import runninghub_generate
+        with patch.object(runninghub_generate, "RunningHubClient") as client_class:
+            exit_code = runninghub_generate.main([
+                "--dry-run", "--prompt", "one", "--width", "512", "--height", "512",
+            ])
+        self.assertEqual(exit_code, 0)
+        client_class.assert_not_called()
+
+
 class ConfigurationTests(unittest.TestCase):
     def test_missing_api_key_is_actionable(self):
         with self.assertRaisesRegex(ValueError, "RUNNINGHUB_API_KEY"):
@@ -99,17 +128,10 @@ class ConfigurationTests(unittest.TestCase):
             validate_concurrency(0)
 
     def test_payload_contains_common_options_without_stringifying_booleans(self):
-        payload = build_submit_payload("wf", [], {"instance_type": "default", "use_personal_queue": False})
+        payload = build_submit_payload([])
         self.assertEqual(payload["nodeInfoList"], [])
         self.assertEqual(payload["instanceType"], "default")
         self.assertIs(payload["usePersonalQueue"], False)
-
-    def test_load_config_rejects_invalid_json_object(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            path = Path(temp_dir) / "config.json"
-            path.write_text("[]", encoding="utf-8")
-            with self.assertRaises(ValueError):
-                load_config(path)
 
 
 class FakeTransport:
@@ -200,11 +222,29 @@ class BatchTests(unittest.TestCase):
             destination.write_bytes(url.encode())
             self.downloaded.append(destination)
 
+    def test_batch_submits_to_embedded_workflow_with_fixed_request_options(self):
+        client = self.FakeClient()
+        args = parse_args(["--width", "512", "--height", "768"])
+        with tempfile.TemporaryDirectory() as temp_dir:
+            run_batch(client, ["embedded workflow check"], args, Path(temp_dir))
+
+        workflow_id, payload = client.payloads[0]
+        self.assertEqual(workflow_id, "2084605200131780610")
+        self.assertEqual(payload["instanceType"], "default")
+        self.assertIs(payload["usePersonalQueue"], False)
+        fields = {(node["nodeId"], node["fieldName"]): node["fieldValue"] for node in payload["nodeInfoList"]}
+        self.assertEqual(fields, {
+            ("134", "text"): "embedded workflow check",
+            ("620", "width"): "512",
+            ("620", "height"): "768",
+        })
+
+
     def test_each_prompt_is_submitted_once_with_same_dimensions(self):
         client = self.FakeClient()
-        args = parse_args(["--workflow-id", "wf", "--width", "512", "--height", "768", "--concurrency", "2"])
+        args = parse_args(["--width", "512", "--height", "768", "--concurrency", "2"])
         with tempfile.TemporaryDirectory() as temp_dir:
-            results = run_batch(client, ["a", "b"], args, DEFAULT_CONFIG, Path(temp_dir))
+            results = run_batch(client, ["a", "b"], args, Path(temp_dir))
         self.assertEqual(len(results), 2)
         self.assertEqual(len(client.payloads), 2)
         for _, payload in client.payloads:
@@ -214,18 +254,18 @@ class BatchTests(unittest.TestCase):
 
     def test_batch_uses_requested_concurrency_and_collects_all_results(self):
         client = self.FakeClient()
-        args = parse_args(["--workflow-id", "wf", "--width", "512", "--height", "512", "--concurrency", "2"])
+        args = parse_args(["--width", "512", "--height", "512", "--concurrency", "2"])
         with tempfile.TemporaryDirectory() as temp_dir:
-            results = run_batch(client, ["a", "b", "c", "d"], args, DEFAULT_CONFIG, Path(temp_dir))
+            results = run_batch(client, ["a", "b", "c", "d"], args, Path(temp_dir))
         self.assertEqual(len(results), 4)
         self.assertLessEqual(client.max_active, 2)
         self.assertTrue(all(result.status == "SUCCESS" for result in results))
 
     def test_one_failed_prompt_does_not_hide_successful_prompt(self):
         client = self.FakeClient(fail_prompt="bad")
-        args = parse_args(["--workflow-id", "wf", "--width", "512", "--height", "512"])
+        args = parse_args(["--width", "512", "--height", "512"])
         with tempfile.TemporaryDirectory() as temp_dir:
-            results = run_batch(client, ["bad", "good"], args, DEFAULT_CONFIG, Path(temp_dir))
+            results = run_batch(client, ["bad", "good"], args, Path(temp_dir))
         self.assertEqual({result.status for result in results}, {"FAILED", "SUCCESS"})
 
     def test_output_names_are_unique_and_include_task_id(self):
@@ -238,7 +278,7 @@ class MainTests(unittest.TestCase):
         from tools import runninghub_generate
         with patch.object(runninghub_generate, "RunningHubClient") as client_class:
             exit_code = runninghub_generate.main([
-                "--dry-run", "--workflow-id", "wf", "--prompt", "one", "--prompt", "two",
+                "--dry-run", "--prompt", "one", "--prompt", "two",
                 "--width", "512", "--height", "512", "--concurrency", "100",
             ])
         self.assertEqual(exit_code, 0)

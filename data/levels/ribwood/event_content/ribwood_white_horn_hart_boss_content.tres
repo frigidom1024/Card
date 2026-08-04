@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="BossEventContent" format=3]
+
+[ext_resource type="Script" path="res://scripts/game/event/encounter/boss_event_content.gd" id="content"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/mobs/ribwood_white_horn_hart_boss.tres" id="mob"]
+
+[resource]
+script = ExtResource("content")
+mob = ExtResource("mob")
+count = 1

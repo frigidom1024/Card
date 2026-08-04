@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="EventData" format=3]
+
+[ext_resource type="Script" path="res://scripts/game/event/core/event_data.gd" id="event"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/event_content/ribwood_bone_stitcher_treasure_content.tres" id="content"]
+
+[resource]
+script = ExtResource("event")
+event_id = "ribwood_bone_stitcher"
+event_type = 1
+content = ExtResource("content")

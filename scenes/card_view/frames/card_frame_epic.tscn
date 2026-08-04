@@ -8,7 +8,7 @@ corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxPaperCore"]
-bg_color = Color(0.070588, 0.05098, 0.078431, 0.96)
+bg_color = Color(0.070588, 0.05098, 0.078431, 0)
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.027451, 0.019608, 0.035294, 0.9)

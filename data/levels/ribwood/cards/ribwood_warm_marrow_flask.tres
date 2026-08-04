@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+[resource]
+script = ExtResource("card_script")
+artwork_path = "res://assert/card/ribwood_warm_marrow_flask.png"
+card_id = 1005
+card_name = "温髓水囊"
+card_type = 1
+heal = 2
+description = "装着温热骨髓水的旧水囊，足以让疲惫的旅人再走一段。"
+tags = Array[int]([2, 6])
+rarity = 0

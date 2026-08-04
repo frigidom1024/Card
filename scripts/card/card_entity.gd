@@ -270,6 +270,9 @@ func get_card_view_screen_rect() -> Rect2:
 # ============================
 
 func _on_mouse_entered() -> void:
+	if drag_layer and drag_layer.is_drag_active():
+		return
+
 	if _display_only:
 		if _display_info_enabled:
 			_show_info(true)
@@ -330,7 +333,7 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 				if event.pressed:
 					_show_info(false)  # 先关闭信息窗口
 					if _dragging:
-						_rotate_card()
+						rotate_while_dragging()
 					elif state != State.ZOOMED and state != State.DRAGGING:
 						# 拖拽路过时误触其他卡牌的右键 → 不放大
 						if drag_layer and drag_layer._dragged_card != null:
@@ -394,6 +397,14 @@ func _process(_delta: float) -> void:
 # ============================
 # 旋转
 # ============================
+
+func rotate_while_dragging() -> bool:
+	if not _dragging:
+		return false
+	_show_info(false)
+	_rotate_card()
+	return true
+
 
 func _rotate_card() -> void:
 	if _display_only:

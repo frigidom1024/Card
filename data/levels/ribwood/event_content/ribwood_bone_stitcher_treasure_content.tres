@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="TreasureEventContent" format=3]
+
+[ext_resource type="Script" path="res://scripts/game/event/treasure/treasure_event_content.gd" id="content"]
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_data"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_bone_stitch_needle.tres" id="needle"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_old_chest_cloak.tres" id="cloak"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_last_stand_strike.tres" id="strike"]
+
+[resource]
+script = ExtResource("content")
+gold_range = Vector2i(8, 8)
+card_rewards = Array[ExtResource("card_data")]([ExtResource("needle"), ExtResource("cloak"), ExtResource("strike")])
+card_draw_count = 3
+choices = 3

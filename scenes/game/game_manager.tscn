@@ -8,7 +8,7 @@
 [ext_resource type="Script" uid="uid://d4g532r3gevbr" path="res://scripts/game/drag_layer.gd" id="6_aonbx"]
 [ext_resource type="PackedScene" uid="uid://bf2h2gqo4hyjl" path="res://scenes/game/board.tscn" id="7_lcbjr"]
 [ext_resource type="Resource" uid="uid://b5ybu7vxrcp4j" path="res://data/player/player_data.tres" id="8_player"]
-[ext_resource type="Resource" uid="uid://ulqs1hfc6vy3" path="res://data/event/event_lib.tres" id="9_event_lib"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/event_lib.tres" id="9_event_lib"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_shop.tscn" id="10_shop_event"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_treasure.tscn" id="11_treasure_event"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_combat.tscn" id="12_combat_event"]

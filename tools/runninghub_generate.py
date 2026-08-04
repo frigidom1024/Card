@@ -15,8 +15,8 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 API_BASE_URL = "https://www.runninghub.cn/openapi/v2"
-DEFAULT_CONFIG: dict[str, Any] = {
-    "workflow_id": "",
+FIXED_WORKFLOW_CONFIG: dict[str, Any] = {
+    "workflow_id": "2084605200131780610",
     "prompt_node": "134.text",
     "width_node": "620.width",
     "height_node": "620.height",
@@ -25,6 +25,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
     "retain_seconds": None,
     "extra_nodes": [],
 }
+
 
 Transport = Callable[[str, str, Mapping[str, str], bytes | None, float], tuple[int, bytes]]
 
@@ -46,11 +47,9 @@ class GenerationResult:
 
 def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Batch-generate images with a RunningHub AI App workflow.",
+        description="Batch-generate images with the embedded RunningHub AI App workflow.",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parser.add_argument("--config", type=Path, help="Path to a non-secret workflow JSON config.")
-    parser.add_argument("--workflow-id", help="RunningHub AI App workflow ID.")
     parser.add_argument("--prompt", action="append", default=[], help="Prompt to generate; repeat for a batch.")
     parser.add_argument(
         "--prompts-file",
@@ -61,40 +60,12 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--width", type=int, help="Shared output width for every prompt.")
     parser.add_argument("--height", type=int, help="Shared output height for every prompt.")
-    parser.add_argument("--prompt-node", help="Prompt node mapping, formatted NODE_ID.FIELD_NAME.")
-    parser.add_argument("--width-node", help="Width node mapping, formatted NODE_ID.FIELD_NAME.")
-    parser.add_argument("--height-node", help="Height node mapping, formatted NODE_ID.FIELD_NAME.")
-    parser.add_argument(
-        "--node",
-        action="append",
-        default=[],
-        help="Extra node override, formatted NODE_ID.FIELD_NAME=VALUE; repeat as needed.",
-    )
     parser.add_argument("--concurrency", type=int, default=8, help="Maximum active tasks, from 1 to 100.")
     parser.add_argument("--poll-interval", type=float, default=5.0, help="Seconds between task status queries.")
     parser.add_argument("--timeout", type=float, default=900.0, help="Maximum seconds to wait for one task.")
     parser.add_argument("--output-dir", type=Path, default=Path("art/generated"), help="Downloaded image directory.")
-    parser.add_argument("--instance-type", choices=("default", "plus"), help="RunningHub instance type.")
-    parser.add_argument("--use-personal-queue", dest="use_personal_queue", action="store_true", help="Use a personal queue.")
-    parser.add_argument("--no-personal-queue", dest="use_personal_queue", action="store_false", help="Do not use a personal queue.")
-    parser.set_defaults(use_personal_queue=None)
-    parser.add_argument("--retain-seconds", type=int, help="Optional paid instance retention time, 10 to 180 seconds.")
     parser.add_argument("--dry-run", action="store_true", help="Validate and print the planned batch without network calls.")
     return parser.parse_args(argv)
-
-
-def load_config(path: Path | None) -> dict[str, Any]:
-    if path is None:
-        return {}
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except OSError as exc:
-        raise ValueError(f"Unable to read config file {path}: {exc}") from exc
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Config file {path} is not valid JSON: {exc.msg}") from exc
-    if not isinstance(data, dict):
-        raise ValueError("Config file must contain a JSON object.")
-    return data
 
 
 def default_env_path() -> Path:
@@ -173,69 +144,27 @@ def _node_entry(node_id: str, field_name: str, value: object, description: str |
     }
 
 
-def _parse_node_override(value: str) -> tuple[str, str, str]:
-    if "=" not in value:
-        raise ValueError(f"--node must use NODE_ID.FIELD_NAME=VALUE format, received {value!r}.")
-    reference, field_value = value.split("=", 1)
-    node_id, field_name = _parse_node_reference(reference, "--node")
-    return node_id, field_name, field_value
-
-
-def build_node_info_list(
-    prompt: str,
-    width: int,
-    height: int,
-    config: Mapping[str, Any],
-    overrides: Sequence[str],
-) -> list[dict[str, str]]:
-    prompt_id, prompt_field = _parse_node_reference(str(config["prompt_node"]), "prompt_node")
-    width_id, width_field = _parse_node_reference(str(config["width_node"]), "width_node")
-    height_id, height_field = _parse_node_reference(str(config["height_node"]), "height_node")
-    nodes = [
+def build_node_info_list(prompt: str, width: int, height: int) -> list[dict[str, str]]:
+    """Build this tool's fixed workflow inputs for one prompt."""
+    prompt_id, prompt_field = _parse_node_reference(FIXED_WORKFLOW_CONFIG["prompt_node"], "prompt_node")
+    width_id, width_field = _parse_node_reference(FIXED_WORKFLOW_CONFIG["width_node"], "width_node")
+    height_id, height_field = _parse_node_reference(FIXED_WORKFLOW_CONFIG["height_node"], "height_node")
+    return [
         _node_entry(prompt_id, prompt_field, prompt, "prompt"),
         _node_entry(width_id, width_field, width, "width"),
         _node_entry(height_id, height_field, height, "height"),
     ]
-    for raw_node in config.get("extra_nodes", []):
-        if not isinstance(raw_node, Mapping):
-            raise ValueError("Each extra_nodes item must be an object.")
-        node_id = raw_node.get("nodeId")
-        field_name = raw_node.get("fieldName")
-        if node_id is None or field_name is None or "fieldValue" not in raw_node:
-            raise ValueError("Each extra_nodes item needs nodeId, fieldName, and fieldValue.")
-        nodes.append(_node_entry(str(node_id), str(field_name), raw_node["fieldValue"], raw_node.get("description")))
-
-    positions = {(node["nodeId"], node["fieldName"]): index for index, node in enumerate(nodes)}
-    for raw_override in overrides:
-        node_id, field_name, field_value = _parse_node_override(raw_override)
-        entry = _node_entry(node_id, field_name, field_value, field_name)
-        key = (node_id, field_name)
-        if key in positions:
-            nodes[positions[key]] = entry
-        else:
-            positions[key] = len(nodes)
-            nodes.append(entry)
-    return nodes
 
 
-def build_submit_payload(
-    workflow_id: str,
-    node_info_list: list[dict[str, str]],
-    config: Mapping[str, Any],
-) -> dict[str, object]:
-    if not workflow_id.strip():
-        raise ValueError("A workflow ID is required.")
+def build_submit_payload(node_info_list: list[dict[str, str]]) -> dict[str, object]:
+    """Build the non-editable request payload for the embedded workflow."""
     payload: dict[str, object] = {"nodeInfoList": node_info_list}
-    instance_type = config.get("instance_type")
+    instance_type = FIXED_WORKFLOW_CONFIG["instance_type"]
     if instance_type:
         payload["instanceType"] = instance_type
-    if "use_personal_queue" in config and config["use_personal_queue"] is not None:
-        payload["usePersonalQueue"] = bool(config["use_personal_queue"])
-    retain_seconds = config.get("retain_seconds")
+    payload["usePersonalQueue"] = FIXED_WORKFLOW_CONFIG["use_personal_queue"]
+    retain_seconds = FIXED_WORKFLOW_CONFIG["retain_seconds"]
     if retain_seconds is not None:
-        retain_seconds = int(retain_seconds)
-        if not 10 <= retain_seconds <= 180:
-            raise ValueError("retain_seconds must be from 10 to 180.")
         payload["retainSeconds"] = retain_seconds
     return payload
 
@@ -368,15 +297,14 @@ def run_one(
     index: int,
     prompt: str,
     args: argparse.Namespace,
-    config: Mapping[str, Any],
     output_dir: Path,
 ) -> GenerationResult:
     started_at = time.monotonic()
     task_id: str | None = None
     try:
-        workflow_id = str(args.workflow_id or config.get("workflow_id") or "").strip()
-        node_info_list = build_node_info_list(prompt, args.width, args.height, config, args.node)
-        task_id = client.submit_task(workflow_id, build_submit_payload(workflow_id, node_info_list, config))
+        workflow_id = FIXED_WORKFLOW_CONFIG["workflow_id"]
+        node_info_list = build_node_info_list(prompt, args.width, args.height)
+        task_id = client.submit_task(workflow_id, build_submit_payload(node_info_list))
         completed = client.wait_for_task(task_id, args.poll_interval, args.timeout)
         files: list[Path] = []
         for result_index, output in enumerate(completed["results"], start=1):
@@ -396,7 +324,6 @@ def run_batch(
     client: RunningHubClient,
     prompts: Sequence[str],
     args: argparse.Namespace,
-    config: Mapping[str, Any],
     output_dir: Path,
 ) -> list[GenerationResult]:
     concurrency = validate_concurrency(args.concurrency)
@@ -404,7 +331,7 @@ def run_batch(
     results: list[GenerationResult] = []
     with ThreadPoolExecutor(max_workers=concurrency, thread_name_prefix="runninghub") as executor:
         futures = {
-            executor.submit(run_one, client, index, prompt, args, config, output_dir): index
+            executor.submit(run_one, client, index, prompt, args, output_dir): index
             for index, prompt in enumerate(prompts, start=1)
         }
         for future in as_completed(futures):
@@ -425,21 +352,7 @@ def format_summary(results: Sequence[GenerationResult]) -> str:
     return "\n".join(lines)
 
 
-def _merge_config(args: argparse.Namespace) -> dict[str, Any]:
-    config = dict(DEFAULT_CONFIG)
-    config.update(load_config(args.config))
-    for option in ("prompt_node", "width_node", "height_node", "instance_type", "use_personal_queue", "retain_seconds"):
-        value = getattr(args, option)
-        if value is not None:
-            config[option] = value
-    if args.workflow_id:
-        config["workflow_id"] = args.workflow_id
-    return config
-
-
-def _validate_run_inputs(args: argparse.Namespace, config: Mapping[str, Any]) -> None:
-    if not str(args.workflow_id or config.get("workflow_id") or "").strip():
-        raise ValueError("Provide --workflow-id or set workflow_id in the config file.")
+def _validate_run_inputs(args: argparse.Namespace) -> None:
     if args.width is None or args.width <= 0:
         raise ValueError("--width must be a positive integer.")
     if args.height is None or args.height <= 0:
@@ -454,14 +367,13 @@ def _validate_run_inputs(args: argparse.Namespace, config: Mapping[str, Any]) ->
 def main(argv: Sequence[str] | None = None) -> int:
     args = parse_args(argv)
     try:
-        config = _merge_config(args)
         prompts = collect_prompts(args)
-        _validate_run_inputs(args, config)
-        workflow_id = str(args.workflow_id or config["workflow_id"])
+        _validate_run_inputs(args)
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)
         return 2
 
+    workflow_id = FIXED_WORKFLOW_CONFIG["workflow_id"]
     print(
         f"Batch plan: {len(prompts)} prompt(s), {args.width}x{args.height}, "
         f"concurrency={args.concurrency}, workflow={workflow_id}."
@@ -480,7 +392,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 2
 
     client = RunningHubClient(api_key)
-    results = run_batch(client, prompts, args, config, args.output_dir)
+    results = run_batch(client, prompts, args, args.output_dir)
     print(format_summary(results))
     return 0 if all(result.status == "SUCCESS" for result in results) else 1
 

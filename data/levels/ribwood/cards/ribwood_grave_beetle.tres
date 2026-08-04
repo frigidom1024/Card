@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardData" format=3]
+
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+[resource]
+script = ExtResource("card_script")
+artwork_path = "res://assert/card/ribwood_grave_beetle.png"
+card_id = 1025
+card_name = "守墓甲虫"
+card_type = 1
+damage = 2
+defense = 3
+description = "甲壳像一块小型墓碑的甲虫，会跟着巡礼者守住行囊。"
+tags = Array[int]([0, 1, 5])
+rarity = 0

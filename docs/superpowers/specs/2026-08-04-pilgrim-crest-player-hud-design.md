@@ -24,6 +24,9 @@ Replace the ad hoc faith-only gameplay readout with a compact, combat-first play
 
 ## Visual Design
 
+### Readability Refinement
+
+The plaque keeps its existing compact footprint. Vitality numbers remain at 28 px, while supporting information uses a clearer readability-first hierarchy: identity 17 px, subtitle 12 px, map label and `VITALITY` caption 13 px, faith value 14 px, and temporary-status text 13 px. The crest glyph may increase from 20 px to 22 px. Supporting labels retain their existing muted bone and antique-gold palette so they remain secondary to HP without becoming unreadable at normal gameplay scale.
 ### Placement and Size
 
 - Anchor the panel to the top-left of `GameplayCanvas` within the 1920×1080 design viewport.

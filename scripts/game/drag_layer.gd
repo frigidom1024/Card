@@ -27,6 +27,22 @@ func is_interaction_locked() -> bool:
 	return interaction_locked
 
 
+func is_drag_active() -> bool:
+	return _dragged_card != null
+
+
+func _input(event: InputEvent) -> void:
+	if interaction_locked or _dragged_card == null:
+		return
+	if not event is InputEventMouseButton or not event.pressed:
+		return
+	if event.button_index != MOUSE_BUTTON_RIGHT:
+		return
+
+	if _dragged_card.rotate_while_dragging():
+		get_viewport().set_input_as_handled()
+
+
 func set_interaction_locked(locked: bool) -> void:
 	if interaction_locked == locked:
 		return

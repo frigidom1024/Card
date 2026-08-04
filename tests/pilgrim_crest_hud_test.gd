@@ -19,6 +19,15 @@ func _run_tests() -> void:
 	hud.set_faith(3)
 	hud.set_temporary_status("")
 
+	_expect((hud.get_node("IdentityLabel") as Label).get_theme_font_size("font_size") == 17, "HUD enlarges identity text")
+	_expect((hud.get_node("SubtitleLabel") as Label).get_theme_font_size("font_size") == 12, "HUD enlarges subtitle text")
+	_expect((hud.get_node("MapLabel") as Label).get_theme_font_size("font_size") == 13, "HUD enlarges map text")
+	_expect((hud.get_node("VitalityTitle") as Label).get_theme_font_size("font_size") == 13, "HUD enlarges vitality caption")
+	_expect((hud.get_node("VitalityValue") as Label).get_theme_font_size("font_size") == 28, "HUD preserves vitality emphasis")
+	_expect((hud.get_node("FaithSeal/FaithValue") as Label).get_theme_font_size("font_size") == 14, "HUD enlarges faith text")
+	_expect((hud.get_node("StatusRow/StatusLabel") as Label).get_theme_font_size("font_size") == 13, "HUD enlarges status text")
+	_expect((hud.get_node("FaithSeal") as Panel).size == Vector2(124, 26), "HUD expands faith seal for readable text")
+
 	_expect((hud.get_node("VitalityValue") as Label).text == "34 / 50", "HUD formats vitality")
 	_expect((hud.get_node("VitalityBar") as ProgressBar).value == 34.0, "HUD fills vitality bar")
 	_expect((hud.get_node("FaithSeal/FaithValue") as Label).text == "FAITH · 3", "HUD formats faith")

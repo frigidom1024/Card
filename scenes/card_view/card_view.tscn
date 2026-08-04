@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://0t2nmkt0asxh"]
 
 [ext_resource type="Script" uid="uid://bf1npd88cyjge" path="res://scripts/card/card_view.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://0lvd6foamt4r" path="res://assert/card/ribwood_guardian_root.png" id="2_2nlio"]
 
 [node name="CardView" type="ColorRect" unique_id=161638963]
 offset_right = 74.0
@@ -22,6 +23,60 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0.105882, 0.145098, 0.164706, 0.82)
+
+[node name="ArtworkPlaceholder" type="Control" parent="." unique_id=472000183]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 7.0
+offset_right = -5.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Backdrop" type="ColorRect" parent="ArtworkPlaceholder" unique_id=952100545]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.0666667, 0.0823529, 0.0941176, 0.96)
+
+[node name="Title" type="Label" parent="ArtworkPlaceholder" unique_id=1348594111]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.576471, 0.611765, 0.603922, 0.78)
+theme_override_font_sizes/font_size = 8
+text = "UNILLUSTRATED"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Artwork" type="TextureRect" parent="." unique_id=1138040254]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 7.0
+offset_right = -5.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_2nlio")
+expand_mode = 1
+stretch_mode = 6
 
 [node name="FrameHost" type="Control" parent="." unique_id=1999924736]
 layout_mode = 1
