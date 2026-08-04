@@ -1,12 +1,10 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://hmtgd6qd5q1o"]
 
-[ext_resource type="Script" path="res://scripts/card/card_info_overlay.gd" id="1_overlay"]
-[ext_resource type="PackedScene" uid="uid://752y2d1bq6rg" path="res://scenes/card_view/card_info.tscn" id="2_card_info"]
+[ext_resource type="Script" uid="uid://dt68a1stx5who" path="res://scripts/card/card_info_overlay.gd" id="1_overlay"]
+[ext_resource type="PackedScene" path="res://scenes/card_view/card_info.tscn" id="2_card_info"]
 
-[node name="CardInfoOverlay" type="CanvasLayer"]
-layer = 5
+[node name="CardInfoOverlay" type="CanvasLayer" unique_id=1564052753]
 script = ExtResource("1_overlay")
 
-[node name="CardInfo" parent="." instance=ExtResource("2_card_info")]
+[node name="CardInfo" parent="." unique_id=1457597635 instance=ExtResource("2_card_info")]
 visible = false
-mouse_filter = 2

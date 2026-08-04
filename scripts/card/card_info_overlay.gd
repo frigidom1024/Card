@@ -10,6 +10,7 @@ var _active_card
 
 
 func _ready() -> void:
+	layer = RenderPriority.CARD_INFO_OVERLAY
 	_card_info.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_card_info.hide()
 

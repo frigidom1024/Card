@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://c6j6lgcbmdqrv"]
 
 [ext_resource type="Script" uid="uid://ctkwunxu5hwdh" path="res://scripts/card/card_entity.gd" id="1_vnle4"]
-[ext_resource type="PackedScene" uid="uid://ci3a5pao1bwvx" path="res://scenes/card_view/zoom_view.tscn" id="2_noe1h"]
+[ext_resource type="PackedScene" path="res://scenes/card_view/zoom_view.tscn" id="2_noe1h"]
 [ext_resource type="PackedScene" uid="uid://0t2nmkt0asxh" path="res://scenes/card_view/card_view.tscn" id="3_ltfih"]
+[ext_resource type="PackedScene" path="res://scenes/card_view/card_combat_tag_bar.tscn" id="4_tags"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_p5p3o"]
 size = Vector2(104, 208)
@@ -27,6 +28,10 @@ offset_right = 42.0
 offset_bottom = 75.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="CombatTagAnchor" parent="." instance=ExtResource("4_tags")]
+top_level = true
+z_as_relative = false
 
 
 [connection signal="input_event" from="." to="." method="_on_input_event"]

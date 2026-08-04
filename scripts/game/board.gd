@@ -23,6 +23,9 @@ var _grid_owner: Dictionary = {}
 var _event_grid_owner: Dictionary[Vector2i, BoardEvent] = {}
 
 func _ready() -> void:
+	var background := get_node_or_null("Sprite2D") as Sprite2D
+	if background != null:
+		background.z_index = RenderPriority.BOARD_BACKGROUND
 	_apply_drop_detector_size()
 
 
@@ -496,7 +499,7 @@ func add_card(card: CardEntity) -> bool:
 
 	# 重新父节点到棋盘
 	card.reparent(self)
-	card.z_index = len(cards)
+	card.z_index = RenderPriority.CARD_BASE + len(cards)
 
 
 	# 记录占用

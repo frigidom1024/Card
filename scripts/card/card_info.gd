@@ -1,21 +1,26 @@
 extends PanelContainer
 
-var card_instance:CardInstance = null
+const CardDetailStatSealScene = preload("res://scenes/card_view/card_detail_stat_seal.tscn")
 
-@onready var header := $VBoxContainer/Header as HBoxContainer
-@onready var attr_box := $VBoxContainer/AttrBox as VBoxContainer
-@onready var description_label := $VBoxContainer/DescriptionLabel as Label
-@onready var tag_container := $VBoxContainer/TagContainer as FlowContainer
+var card_instance: CardInstance = null
+
+@onready var meta_label: Label = $MarginContainer/Content/MetaLabel
+@onready var title_label: Label = $MarginContainer/Content/TitleLabel
+@onready var stats: HBoxContainer = $MarginContainer/Content/Stats
+@onready var description_label: Label = $MarginContainer/Content/DescriptionLabel
+@onready var tags: FlowContainer = $MarginContainer/Content/Tags
 
 
 func _ready() -> void:
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if card_instance:
 		refresh_display()
 
 
 func set_card(inst: CardInstance) -> void:
 	card_instance = inst
-	refresh_display()
+	if is_node_ready():
+		refresh_display()
 
 
 func refresh_display() -> void:
@@ -23,100 +28,64 @@ func refresh_display() -> void:
 		return
 
 	var data := card_instance.card_data
-
-	# 渲染卡牌名称
-	_update_header(data.card_name, data.rarity)
-
-	# 渲染战斗属性
-	_update_attrs(data.damage, data.defense, data.heal)
-
-	# 渲染描述
+	meta_label.text = "%s · %s" % [
+		CardDetailFormat.rarity_name(data.rarity),
+		CardDetailFormat.card_type_name(data.card_type),
+	]
+	title_label.text = data.card_name
+	_update_stats(data)
 	_update_description(data.description)
-
-	# 渲染标签
 	_update_tags(data.tags)
 
 
-func _update_header(name_text: String, rarity: int) -> void:
-	# 清空 header 重新填充
-	for child in header.get_children():
-		child.queue_free()
-
-	var name_label := Label.new()
-	name_label.text = name_text
-
-	# 稀有度染色
-	match rarity:
-		CardData.Rarity.COMMON:
-			name_label.modulate = Color.WHITE
-		CardData.Rarity.RARE:
-			name_label.modulate = Color(0.2, 0.6, 1.0)  # 蓝色
-		CardData.Rarity.EPIC:
-			name_label.modulate = Color(0.7, 0.2, 1.0)  # 紫色
-		CardData.Rarity.LEGENDARY:
-			name_label.modulate = Color(1.0, 0.6, 0.0)  # 金色
-
-	header.add_child(name_label)
-
-
-func _update_attrs(damage: int, defense: int, heal: int) -> void:
-	for child in attr_box.get_children():
-		child.queue_free()
-
-	var hbox := HBoxContainer.new()
-	for entry in [
-		{"value": damage,  "icon": "⚔", "color": Color("red")},
-		{"value": defense, "icon": "🛡", "color": Color("yellow")},
-		{"value": heal,    "icon": "❤", "color": Color("green")},
-	]:
-		if entry.value>0:
-			var label := Label.new()
-			label.text = entry.icon + str(entry.value)
-			label.modulate = entry.color
-			hbox.add_child(label)
-
-	attr_box.add_child(hbox)
+func _update_stats(data: CardData) -> void:
+	_clear_children(stats)
+	for entry in CardDetailFormat.stat_entries(data):
+		var seal := CardDetailStatSealScene.instantiate() as CardDetailStatSeal
+		stats.add_child(seal)
+		seal.configure(entry["attribute"], entry["value"])
+	stats.visible = not stats.get_child_count() == 0
 
 
 func _update_description(text: String) -> void:
-	description_label.text = text
-	description_label.visible = not text.is_empty()
+	var compact := CardDetailFormat.compact_description(text)
+	description_label.text = compact
+	description_label.visible = not compact.is_empty()
 
 
-func _update_tags(tags: Array) -> void:
-	for child in tag_container.get_children():
+func _update_tags(card_tags: Array) -> void:
+	_clear_children(tags)
+	for tag in card_tags:
+		tags.add_child(_create_tag_label(CardDetailFormat.tag_name(tag)))
+	tags.visible = not tags.get_child_count() == 0
+
+
+func _create_tag_label(label_text: String) -> Label:
+	var tag_label := Label.new()
+	var style := StyleBoxFlat.new()
+	style.content_margin_left = 6.0
+	style.content_margin_top = 2.0
+	style.content_margin_right = 6.0
+	style.content_margin_bottom = 2.0
+	style.bg_color = Color("111c28")
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.border_color = Color("4b6174")
+	style.corner_radius_top_left = 3
+	style.corner_radius_top_right = 3
+	style.corner_radius_bottom_right = 3
+	style.corner_radius_bottom_left = 3
+	tag_label.text = label_text
+	tag_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tag_label.add_theme_color_override("font_color", Color("cfc4a8"))
+	tag_label.add_theme_font_size_override("font_size", 11)
+	tag_label.add_theme_stylebox_override("normal", style)
+	return tag_label
+
+
+func _clear_children(container: Container) -> void:
+	for child in container.get_children():
+		container.remove_child(child)
 		child.queue_free()
-
-	for tag in tags:
-		var tag_label := Label.new()
-		tag_label.text = _tag_name(tag)
-		tag_container.add_child(tag_label)
-
-
-
-
-static func _tag_name(tag: int) -> String:
-	match tag:
-		CardData.CardTag.WEAPON:
-			return "武器"
-		CardData.CardTag.DEFENSE:
-			return "防御"
-		CardData.CardTag.HEAL:
-			return "治疗"
-		CardData.CardTag.RESOURCE:
-			return "资源"
-		CardData.CardTag.LOCATION:
-			return "地点"
-		CardData.CardTag.CREATURE:
-			return "生物"
-		CardData.CardTag.ITEM:
-			return "物品"
-		CardData.CardTag.EVENT:
-			return "事件"
-		CardData.CardTag.HOLY:
-			return "圣光"
-		CardData.CardTag.DARK:
-			return "暗影"
-		CardData.CardTag.NATURE:
-			return "自然"
-	return "未知"

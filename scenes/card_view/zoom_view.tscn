@@ -1,118 +1,146 @@
-[gd_scene format=3 uid="uid://ci3a5pao1bwvx"]
+[gd_scene load_steps=3 format=3]
 
-[ext_resource type="Script" uid="uid://b5wxtpaexku0j" path="res://scripts/card/card_zoom_view.gd" id="1_5rnk8"]
-[ext_resource type="PackedScene" uid="uid://b60x80yx6px2r" path="res://scenes/card_view/tag_label.tscn" id="2_cnmp2"]
+[ext_resource type="Script" path="res://scripts/card/card_zoom_view.gd" id="1_script"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_5rnk8"]
-content_margin_left = 5.0
-content_margin_top = 5.0
-content_margin_right = 5.0
-content_margin_bottom = 5.0
-bg_color = Color(0.99999315, 0.16095865, 0.09796531, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_outer"]
+bg_color = Color(0.0392157, 0.0627451, 0.0941176, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.45098, 0.360784, 0.196078, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.46)
+shadow_size = 12
+shadow_offset = Vector2(0, 5)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_cnmp2"]
-content_margin_left = 5.0
-content_margin_top = 5.0
-content_margin_right = 5.0
-content_margin_bottom = 5.0
-bg_color = Color(1, 0.84705883, 0.2, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_sheet"]
+bg_color = Color(0.0784314, 0.121569, 0.176471, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.658824, 0.52549, 0.294118, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hilrb"]
-content_margin_left = 5.0
-content_margin_top = 5.0
-content_margin_right = 5.0
-content_margin_bottom = 5.0
-bg_color = Color(0, 0.8352941, 0.02745098, 1)
+[node name="ZoomView" type="PanelContainer"]
+custom_minimum_size = Vector2(860, 510)
+mouse_filter = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_outer")
+script = ExtResource("1_script")
 
-[node name="ZoomView" type="PanelContainer" unique_id=1126622578]
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -186.5
-offset_top = -152.5
-offset_right = 186.5
-offset_bottom = 152.5
+[node name="SheetMargin" type="MarginContainer" parent="."]
+layout_mode = 2
+mouse_filter = 0
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 6
+
+[node name="Sheet" type="Panel" parent="SheetMargin"]
+layout_mode = 2
+mouse_filter = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_sheet")
+
+[node name="ContentRow" type="HBoxContainer" parent="SheetMargin/Sheet"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -54.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_5rnk8")
-tag_label_template = ExtResource("2_cnmp2")
+mouse_filter = 0
+theme_override_constants/separation = 20
 
-[node name="BackGround" type="ColorRect" parent="." unique_id=1401976345]
+[node name="CardPreviewHost" type="CenterContainer" parent="SheetMargin/Sheet/ContentRow"]
+custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
-color = Color(0.12, 0.12, 0.16, 1)
+mouse_filter = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1389718199]
+[node name="DetailColumn" type="VBoxContainer" parent="SheetMargin/Sheet/ContentRow"]
 layout_mode = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 0
+theme_override_constants/separation = 10
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1915606866]
+[node name="MetaLabel" type="Label" parent="SheetMargin/Sheet/ContentRow/DetailColumn"]
 layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.764706, 0.717647, 0.619608, 1)
+theme_override_font_sizes/font_size = 14
+text = "COMMON · CARD"
 
-[node name="RarityLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=52658273]
+[node name="TitleLabel" type="Label" parent="SheetMargin/Sheet/ContentRow/DetailColumn"]
 layout_mode = 2
-theme_override_font_sizes/font_size = 26
-text = "COMMON"
-horizontal_alignment = 1
-
-[node name="Title" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1125957734]
-layout_mode = 2
-theme_override_font_sizes/font_size = 40
-text = "All Things Revival"
-
-[node name="ID" type="Label" parent="MarginContainer/VBoxContainer" unique_id=695121251]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.6, 0.6, 0.75, 1)
-text = "28"
-
-[node name="AttrContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1823272407]
-layout_mode = 2
-
-[node name="DamageLabel" type="Label" parent="MarginContainer/VBoxContainer/AttrContainer" unique_id=1350264133]
-custom_minimum_size = Vector2(90, 0)
-layout_mode = 2
-theme_override_font_sizes/font_size = 42
-theme_override_styles/normal = SubResource("StyleBoxFlat_5rnk8")
-text = "1"
-horizontal_alignment = 1
-
-[node name="DefenseLabel" type="Label" parent="MarginContainer/VBoxContainer/AttrContainer" unique_id=1085785896]
-custom_minimum_size = Vector2(90, 0)
-layout_mode = 2
-theme_override_font_sizes/font_size = 42
-theme_override_styles/normal = SubResource("StyleBoxFlat_cnmp2")
-text = "1"
-horizontal_alignment = 1
-
-[node name="HealLabel" type="Label" parent="MarginContainer/VBoxContainer/AttrContainer" unique_id=1339955416]
-custom_minimum_size = Vector2(90, 0)
-layout_mode = 2
-theme_override_font_sizes/font_size = 42
-theme_override_styles/normal = SubResource("StyleBoxFlat_hilrb")
-text = "1"
-horizontal_alignment = 1
-
-[node name="HLine2" type="ColorRect" parent="MarginContainer/VBoxContainer" unique_id=328814066]
-custom_minimum_size = Vector2(0, 2)
-layout_mode = 2
-color = Color(0.35, 0.35, 0.5, 0.5)
-
-[node name="Description" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1816332826]
-layout_mode = 2
-theme_override_font_sizes/font_size = 20
-text = "这个是测试"
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.933333, 0.898039, 0.811765, 1)
+theme_override_font_sizes/font_size = 34
+text = "CARD TITLE"
 autowrap_mode = 3
 
-[node name="HLine3" type="ColorRect" parent="MarginContainer/VBoxContainer" unique_id=259469948]
-custom_minimum_size = Vector2(0, 2)
+[node name="CardIdLabel" type="Label" parent="SheetMargin/Sheet/ContentRow/DetailColumn"]
 layout_mode = 2
-color = Color(0.35, 0.35, 0.5, 0.5)
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.764706, 0.717647, 0.619608, 1)
+theme_override_font_sizes/font_size = 14
+text = "RECORD 000"
 
-[node name="Tags" type="FlowContainer" parent="MarginContainer/VBoxContainer" unique_id=279490577]
+[node name="GoldRuleTop" type="ColorRect" parent="SheetMargin/Sheet/ContentRow/DetailColumn"]
+custom_minimum_size = Vector2(0, 1)
 layout_mode = 2
+mouse_filter = 2
+color = Color(0.658824, 0.52549, 0.294118, 1)
 
-[node name="TagLabelTemplate" parent="MarginContainer/VBoxContainer/Tags" unique_id=741959313 instance=ExtResource("2_cnmp2")]
+[node name="Stats" type="HBoxContainer" parent="SheetMargin/Sheet/ContentRow/DetailColumn"]
 layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="DescriptionLabel" type="Label" parent="SheetMargin/Sheet/ContentRow/DetailColumn"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.847059, 0.811765, 0.733333, 1)
+theme_override_font_sizes/font_size = 17
+text = "Card description"
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="GoldRuleBottom" type="ColorRect" parent="SheetMargin/Sheet/ContentRow/DetailColumn"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.658824, 0.52549, 0.294118, 1)
+
+[node name="Tags" type="FlowContainer" parent="SheetMargin/Sheet/ContentRow/DetailColumn"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/h_separation = 6
+theme_override_constants/v_separation = 6
+
+[node name="CloseHint" type="Label" parent="SheetMargin/Sheet"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -27.0
+offset_bottom = -9.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.635294, 0.596078, 0.509804, 1)
+theme_override_font_sizes/font_size = 12
+text = "CLICK OUTSIDE OR PRESS ESC TO CLOSE"
+horizontal_alignment = 1

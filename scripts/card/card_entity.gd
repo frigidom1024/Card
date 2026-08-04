@@ -39,6 +39,12 @@ const TAG_NAMES := {
 	CardData.CardTag.NATURE:    "NATURE",
 }
 
+const STAT_TAG_SCENES := {
+	"damage": preload("res://scenes/card_view/stat_tags/card_stat_tag_damage.tscn"),
+	"guard": preload("res://scenes/card_view/stat_tags/card_stat_tag_guard.tscn"),
+	"heal": preload("res://scenes/card_view/stat_tags/card_stat_tag_heal.tscn"),
+}
+const CARD_INFO_OVERLAY_SCENE := preload("res://scenes/card_view/card_info_overlay.tscn")
 # ============================
 # 状态
 # ============================
@@ -49,11 +55,15 @@ var state: State = State.NORMAL
 var _dragging: bool = false
 var _consume_next_left_release := false
 var _display_only := false
+var _display_info_enabled := false
+var _display_zoom_enabled := false
 
 var drag_layer
-var card_info_overlay
+var _card_info_overlay: CardInfoOverlay = null
 
 @onready var _card_view: ColorRect = $CardView
+@onready var _combat_tag_anchor: Control = $CombatTagAnchor
+@onready var _tag_container: HBoxContainer = $CombatTagAnchor/TagContainer
 
 # UI 元素（放大）
 var _zoom_overlay: CanvasLayer = null
@@ -67,10 +77,11 @@ func bind_instance(inst: CardInstance) -> void:
 	if _card_view and is_inside_tree():
 		_card_view.set_value(inst)
 		_card_view.refresh_display()
+		_refresh_combat_tags()
 
 
 ## 让卡牌作为静态预览展示，不参与任何游戏内交互。
-func set_display_only(value: bool) -> void:
+func set_display_only(value: bool, show_info_on_hover := false, allow_zoom_on_right_click := false) -> void:
 	if value:
 		if state == State.ZOOMED:
 			_hide_zoom()
@@ -83,7 +94,10 @@ func set_display_only(value: bool) -> void:
 		_show_info(false)
 
 	_display_only = value
-	input_pickable = not _display_only
+	_display_info_enabled = _display_only and show_info_on_hover
+	_display_zoom_enabled = _display_only and allow_zoom_on_right_click
+	input_pickable = not _display_only or _display_info_enabled or _display_zoom_enabled
+	_configure_card_view_pointer_input()
 
 
 func is_display_only() -> bool:
@@ -94,11 +108,47 @@ func is_display_only() -> bool:
 # 生命周期
 # ============================
 func _ready() -> void:
-	input_pickable = not _display_only
+	input_pickable = not _display_only or _display_info_enabled or _display_zoom_enabled
+	set_notify_transform(true)
+	_combat_tag_anchor.z_index = RenderPriority.CARD_COMBAT_TAG
 	if not card_instance:
 		card_instance = CardInstance.create_debug_card()
 	_card_view.set_value(card_instance)
+	_configure_card_view_pointer_input()
 	_apply_layout()
+	_refresh_combat_tags()
+
+
+func _configure_card_view_pointer_input() -> void:
+	if _card_view == null:
+		return
+
+	var accepts_preview_pointer_input := _display_only and (
+		_display_info_enabled or _display_zoom_enabled
+	)
+	_card_view.mouse_filter = (
+		Control.MOUSE_FILTER_STOP
+		if accepts_preview_pointer_input
+		else Control.MOUSE_FILTER_IGNORE
+	)
+	if not _card_view.mouse_entered.is_connected(_on_card_view_mouse_entered):
+		_card_view.mouse_entered.connect(_on_card_view_mouse_entered)
+	if not _card_view.mouse_exited.is_connected(_on_card_view_mouse_exited):
+		_card_view.mouse_exited.connect(_on_card_view_mouse_exited)
+	if not _card_view.gui_input.is_connected(_on_card_view_gui_input):
+		_card_view.gui_input.connect(_on_card_view_gui_input)
+
+
+func _on_card_view_mouse_entered() -> void:
+	_on_mouse_entered()
+
+
+func _on_card_view_mouse_exited() -> void:
+	_on_mouse_exited()
+
+
+func _on_card_view_gui_input(event: InputEvent) -> void:
+	_on_input_event(get_viewport(), event, 0)
 
 
 ## 卡牌尺寸由 LayoutConfig.CELL_SIZE 派生（碰撞盒 1×2 格，卡面居中）
@@ -112,22 +162,94 @@ func _apply_layout() -> void:
 	_card_view.offset_top = rect.position.y
 	_card_view.offset_right = rect.position.x + rect.size.x
 	_card_view.offset_bottom = rect.position.y + rect.size.y
+	call_deferred("_position_combat_tags")
 
 
+func _refresh_combat_tags() -> void:
+	if _tag_container == null:
+		return
+
+	for child in _tag_container.get_children():
+		child.queue_free()
+
+	if card_instance == null or card_instance.card_data == null:
+		return
+
+	var data := card_instance.card_data
+	var stat_entries := [
+		{"scene": STAT_TAG_SCENES["damage"], "value": data.damage},
+		{"scene": STAT_TAG_SCENES["guard"], "value": data.defense},
+		{"scene": STAT_TAG_SCENES["heal"], "value": data.heal},
+	]
+	for entry in stat_entries:
+		var value: int = entry["value"]
+		if value <= 0:
+			continue
+		var tag := (entry["scene"] as PackedScene).instantiate() as Control
+		(tag.get_node("ValueLabel") as Label).text = str(value)
+		_tag_container.add_child(tag)
+
+	call_deferred("_position_combat_tags")
+
+
+func _position_combat_tags() -> void:
+	if _combat_tag_anchor == null or _tag_container == null:
+		return
+
+	var tag_size := _tag_container.get_combined_minimum_size()
+	_combat_tag_anchor.size = tag_size
+	_tag_container.size = tag_size
+	var card_rect := LayoutConfig.card_view_rect(LayoutConfig.CELL_SIZE)
+	var global_bottom_center: Vector2 = _global_bottom_edge_center(card_rect) + Vector2(0.0, 2.0)
+	_combat_tag_anchor.rotation = 0.0
+	_combat_tag_anchor.global_position = global_bottom_center - tag_size * 0.5
+
+
+func _global_bottom_edge_center(card_rect: Rect2) -> Vector2:
+	var global_corners: Array[Vector2] = [
+		to_global(card_rect.position),
+		to_global(card_rect.position + Vector2(card_rect.size.x, 0.0)),
+		to_global(card_rect.position + card_rect.size),
+		to_global(card_rect.position + Vector2(0.0, card_rect.size.y)),
+	]
+	var global_bottom_center: Vector2 = (global_corners[0] + global_corners[1]) * 0.5
+	for corner_index in range(global_corners.size()):
+		var next_corner_index := (corner_index + 1) % global_corners.size()
+		var candidate_center: Vector2 = (global_corners[corner_index] + global_corners[next_corner_index]) * 0.5
+		if candidate_center.y > global_bottom_center.y:
+			global_bottom_center = candidate_center
+	return global_bottom_center
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSFORM_CHANGED and is_node_ready():
+		_position_combat_tags()
 # ============================
 # 信息提示（悬浮）
 # ============================
 
 func _show_info(show_info: bool) -> void:
-	if card_info_overlay == null or not is_instance_valid(card_info_overlay):
-		return
-
 	if show_info:
-		if _display_only or card_instance == null or card_instance.card_data == null:
+		if (_display_only and not _display_info_enabled) or card_instance == null or card_instance.card_data == null:
 			return
-		card_info_overlay.show_for_card(self)
-	else:
-		card_info_overlay.hide_for_card(self)
+		var overlay := _get_card_info_overlay()
+		if overlay != null:
+			overlay.show_for_card(self)
+	elif _card_info_overlay != null and is_instance_valid(_card_info_overlay):
+		_card_info_overlay.hide_for_card(self)
+
+
+func _get_card_info_overlay() -> CardInfoOverlay:
+	if _card_info_overlay != null and is_instance_valid(_card_info_overlay):
+		return _card_info_overlay
+
+	_card_info_overlay = CARD_INFO_OVERLAY_SCENE.instantiate() as CardInfoOverlay
+	if _card_info_overlay == null:
+		push_error("CardEntity could not instantiate CardInfoOverlay")
+		return null
+	_card_info_overlay.name = "CardInfoOverlay"
+	add_child(_card_info_overlay)
+	return _card_info_overlay
 
 
 func get_card_view_screen_rect() -> Rect2:
@@ -149,6 +271,8 @@ func get_card_view_screen_rect() -> Rect2:
 
 func _on_mouse_entered() -> void:
 	if _display_only:
+		if _display_info_enabled:
+			_show_info(true)
 		return
 
 	if state == State.DRAGGING or state == State.ZOOMED:
@@ -162,6 +286,8 @@ func _on_mouse_entered() -> void:
 
 func _on_mouse_exited() -> void:
 	if _display_only:
+		if _display_info_enabled:
+			_show_info(false)
 		return
 
 	if state == State.HOVER:
@@ -177,6 +303,10 @@ func _on_mouse_exited() -> void:
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
 	if _display_only:
+		if _display_zoom_enabled and event is InputEventMouseButton \
+				and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
+			_show_info(false)
+			_show_zoom()
 		return
 
 	if event is InputEventMouseButton:
@@ -218,6 +348,8 @@ func _start_drag() -> void:
 
 	if drag_layer and drag_layer.is_interaction_locked():
 		return
+	if drag_layer and not drag_layer.can_start_drag(self):
+		return
 
 	_dragging = true
 	state = State.DRAGGING
@@ -256,6 +388,7 @@ func cancel_drag() -> void:
 func _process(_delta: float) -> void:
 	if _dragging:
 		global_position = get_global_mouse_position()
+		_position_combat_tags()
 
 
 # ============================
@@ -271,6 +404,7 @@ func _rotate_card() -> void:
 
 	card_instance.direction = (card_instance.direction + 1) % 4
 	rotation_degrees = card_instance.direction * 90.0
+	_position_combat_tags()
 
 
 # ============================
@@ -280,7 +414,7 @@ func _rotate_card() -> void:
 @export var zoom_view_scene:PackedScene
 
 func _show_zoom() -> void:
-	if _display_only:
+	if _display_only and not _display_zoom_enabled:
 		return
 
 	if state == State.ZOOMED:
@@ -291,7 +425,7 @@ func _show_zoom() -> void:
 
 	# --- 创建覆盖层 ---
 	_zoom_overlay = CanvasLayer.new()
-	_zoom_overlay.layer = 128
+	_zoom_overlay.layer = RenderPriority.CARD_ZOOM_OVERLAY
 	_zoom_overlay.name = "CardZoomOverlay"
 
 	var root = get_tree().current_scene
@@ -302,7 +436,7 @@ func _show_zoom() -> void:
 	# 背景遮罩
 	var bg = ColorRect.new()
 	bg.name = "ZoomBg"
-	bg.color = Color(0, 0, 0, 0.65)
+	bg.color = Color("070b12b8")
 	bg.mouse_filter = Control.MOUSE_FILTER_STOP
 	_zoom_overlay.add_child(bg)
 	bg.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -312,8 +446,10 @@ func _show_zoom() -> void:
 	zoom_view.name = "ZoomView"
 	zoom_view.set_data(card_instance)
 	bg.add_child(zoom_view)
-	# 居中显示
-	zoom_view.set_anchors_preset(Control.PRESET_CENTER, Control.PRESET_MODE_MINSIZE)
+	zoom_view.set_anchors_preset(Control.PRESET_TOP_LEFT, Control.PRESET_MODE_MINSIZE)
+	_center_zoom_view(zoom_view, bg)
+	zoom_view.resized.connect(_center_zoom_view.bind(zoom_view, bg))
+	bg.resized.connect(_center_zoom_view.bind(zoom_view, bg))
 	# refresh_display 会在 _ready() 中自动调用
 
 	# --- 点击遮罩关闭 ---
@@ -321,9 +457,19 @@ func _show_zoom() -> void:
 	set_process_input(true)
 
 
-func _on_zoom_bg_input(event: InputEvent, _bg: ColorRect) -> void:
-	if event is InputEventMouseButton and event.pressed:
-		_hide_zoom()
+func _center_zoom_view(zoom_view: Control, bg: Control) -> void:
+	zoom_view.position = (bg.size - zoom_view.size) * 0.5
+
+
+func _on_zoom_bg_input(event: InputEvent, bg: ColorRect) -> void:
+	if not event is InputEventMouseButton or not event.pressed:
+		return
+
+	var zoom_view := bg.get_node_or_null("ZoomView") as Control
+	if zoom_view and zoom_view.get_global_rect().has_point(event.position):
+		return
+
+	_hide_zoom()
 
 
 func _input(event: InputEvent) -> void:

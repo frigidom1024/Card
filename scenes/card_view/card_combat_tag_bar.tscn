@@ -1,0 +1,10 @@
+[gd_scene format=3]
+
+[node name="CombatTagAnchor" type="Control"]
+mouse_filter = 2
+
+[node name="TagContainer" type="HBoxContainer" parent="."]
+layout_mode = 0
+theme_override_constants/separation = 3
+alignment = 1
+mouse_filter = 2

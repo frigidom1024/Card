@@ -1,124 +1,104 @@
 extends PanelContainer
 
-# ============================
-# 稀有度颜色
-# ============================
-const RARITY_COLORS := {
-	CardData.Rarity.COMMON:    Color(0.7, 0.7, 0.75),
-	CardData.Rarity.RARE:      Color(0.3, 0.5, 0.95),
-	CardData.Rarity.EPIC:      Color(0.6, 0.3, 0.9),
-	CardData.Rarity.LEGENDARY: Color(0.95, 0.75, 0.2),
-}
+const CardViewScene = preload("res://scenes/card_view/card_view.tscn")
+const CardDetailStatSealScene = preload("res://scenes/card_view/card_detail_stat_seal.tscn")
 
-const RARITY_NAMES := {
-	CardData.Rarity.COMMON:    "COMMON",
-	CardData.Rarity.RARE:      "RARE",
-	CardData.Rarity.EPIC:      "EPIC",
-	CardData.Rarity.LEGENDARY: "LEGENDARY",
-}
+var card_inst: CardInstance
 
-const TAG_NAMES := {
-	CardData.CardTag.WEAPON:    "WEAPON",
-	CardData.CardTag.DEFENSE:   "DEFENSE",
-	CardData.CardTag.HEAL:      "HEAL",
-	CardData.CardTag.RESOURCE:  "RESOURCE",
-	CardData.CardTag.LOCATION:  "LOCATION",
-	CardData.CardTag.CREATURE:  "CREATURE",
-	CardData.CardTag.ITEM:      "ITEM",
-	CardData.CardTag.EVENT:     "EVENT",
-	CardData.CardTag.HOLY:      "HOLY",
-	CardData.CardTag.DARK:      "DARK",
-	CardData.CardTag.NATURE:    "NATURE",
-}
+@onready var card_preview_host: CenterContainer = $SheetMargin/Sheet/ContentRow/CardPreviewHost
+@onready var meta_label: Label = $SheetMargin/Sheet/ContentRow/DetailColumn/MetaLabel
+@onready var title_label: Label = $SheetMargin/Sheet/ContentRow/DetailColumn/TitleLabel
+@onready var card_id_label: Label = $SheetMargin/Sheet/ContentRow/DetailColumn/CardIdLabel
+@onready var stats: HBoxContainer = $SheetMargin/Sheet/ContentRow/DetailColumn/Stats
+@onready var description_label: Label = $SheetMargin/Sheet/ContentRow/DetailColumn/DescriptionLabel
+@onready var tags: FlowContainer = $SheetMargin/Sheet/ContentRow/DetailColumn/Tags
 
 
-var card_inst:CardInstance
-
-@onready var  rarity_label = $MarginContainer/VBoxContainer/RarityLabel
-@onready var title = $MarginContainer/VBoxContainer/Title
-@onready var id_label = $MarginContainer/VBoxContainer/ID
-
-@onready var damage_label = $MarginContainer/VBoxContainer/AttrContainer/DamageLabel
-@onready var defense_label = $MarginContainer/VBoxContainer/AttrContainer/DefenseLabel
-@onready var heal_label = $MarginContainer/VBoxContainer/AttrContainer/HealLabel
-
-@onready var description_label = $MarginContainer/VBoxContainer/Description
-@onready var tags_container = $MarginContainer/VBoxContainer/Tags
-@export var tag_label_template :PackedScene
-
-# Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	if not card_inst:
 		card_inst = CardInstance.create_debug_card()
 	refresh_display()
 
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	pass
+func set_data(card_instance: CardInstance) -> void:
+	card_inst = card_instance
+	if is_node_ready():
+		refresh_display()
 
-func set_data(card_inst:CardInstance):
-	self.card_inst = card_inst
 
-func refresh_display():
-	_update_rarity_label()
-	_update_title()
-	_update_id_label()
-	_update_attr_labels()
-	_updata_description_label()
-	_updata_tags()
-	
-func _update_rarity_label():
-	var data = card_inst.card_data
-	var rarity_color = RARITY_COLORS.get(data.rarity if data else CardData.Rarity.COMMON, RARITY_COLORS[CardData.Rarity.COMMON])
-	var rarity_name = RARITY_NAMES.get(data.rarity if data else CardData.Rarity.COMMON, "COMMON")
-	
-	
-	rarity_label.add_theme_color_override("font_color", rarity_color)
-	rarity_label.text = "★ " + rarity_name
-	
-func _update_title():
-	title.text = card_inst.card_data.card_name if  card_inst.card_data.card_name else "Card"
+func refresh_display() -> void:
+	if not card_inst or not card_inst.card_data:
+		return
 
-func _update_id_label():
-	var data = card_inst.card_data
-	if data:
-		id_label.text = "ID: %d" % data.card_id
-	else:
-		id_label.text = "ID: -"
-		
-func _update_attr_labels():
-	var data = card_inst.card_data
-	if data and data.damage>0:
-		damage_label.visible = true
-		damage_label.text = "%d" % data.damage
-	else:
-		damage_label.visible = false
-		
-	if data and data.defense>0:
-		defense_label.visible = true
-		defense_label.text = "%d" % data.defense
-	else:
-		defense_label.visible = false
-		
-	if data and data.heal>0:
-		heal_label.visible = true
-		heal_label.text = "%d" % data.heal
-	else:
-		heal_label.visible = false
+	var data := card_inst.card_data
+	_update_preview()
+	meta_label.text = "%s · %s" % [
+		CardDetailFormat.rarity_name(data.rarity),
+		CardDetailFormat.card_type_name(data.card_type),
+	]
+	title_label.text = data.card_name
+	card_id_label.text = "RECORD %03d" % data.card_id
+	_update_stats(data)
+	description_label.text = data.description
+	description_label.visible = not data.description.strip_edges().is_empty()
+	_update_tags(data.tags)
 
-func _updata_description_label():
-	var data = card_inst.card_data
-	if description_label and data:
-		description_label.text=data.description
 
-func _updata_tags():
-	for child in tags_container.get_children():
+func _update_preview() -> void:
+	var preview := card_preview_host.get_node_or_null("CardPreview") as Control
+	if not preview:
+		preview = CardViewScene.instantiate() as Control
+		preview.name = "CardPreview"
+		card_preview_host.add_child(preview)
+	preview.custom_minimum_size = Vector2(252, 378)
+	preview.size = Vector2(252, 378)
+	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	preview.set_value(card_inst)
+	preview.refresh_display()
+
+
+func _update_stats(data: CardData) -> void:
+	_clear_children(stats)
+	for entry in CardDetailFormat.stat_entries(data):
+		var seal := CardDetailStatSealScene.instantiate() as CardDetailStatSeal
+		stats.add_child(seal)
+		seal.configure(entry["attribute"], entry["value"])
+	stats.visible = stats.get_child_count() > 0
+
+
+func _update_tags(card_tags: Array) -> void:
+	_clear_children(tags)
+	for tag in card_tags:
+		tags.add_child(_create_tag_label(CardDetailFormat.tag_name(tag)))
+	tags.visible = tags.get_child_count() > 0
+
+
+func _create_tag_label(label_text: String) -> Label:
+	var tag_label := Label.new()
+	var style := StyleBoxFlat.new()
+	style.content_margin_left = 7.0
+	style.content_margin_top = 3.0
+	style.content_margin_right = 7.0
+	style.content_margin_bottom = 3.0
+	style.bg_color = Color("111c28")
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.border_color = Color("4b6174")
+	style.corner_radius_top_left = 3
+	style.corner_radius_top_right = 3
+	style.corner_radius_bottom_right = 3
+	style.corner_radius_bottom_left = 3
+	tag_label.text = label_text
+	tag_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	tag_label.add_theme_color_override("font_color", Color("cfc4a8"))
+	tag_label.add_theme_font_size_override("font_size", 12)
+	tag_label.add_theme_stylebox_override("normal", style)
+	return tag_label
+
+
+func _clear_children(container: Container) -> void:
+	for child in container.get_children():
+		container.remove_child(child)
 		child.queue_free()
-	var data = card_inst.card_data
-	for tag in data.tags:
-		var new_tag_label = tag_label_template.instantiate()
-		new_tag_label.text = TAG_NAMES.get(tag,"unknow")
-		tags_container.add_child(new_tag_label)
-	
-	

@@ -104,6 +104,33 @@ func _test_game_manager_centering() -> void:
 	_expect(gm.configure_run(RevivalDeck), "layout setup configures a starting deck")
 	root.add_child(gm)
 	var gameplay_canvas := gm.get_node_or_null("GameplayCanvas")
+	var hand_tray := gm.get_node_or_null("GameplayCanvas/HandTray") as HandTray
+	_expect(hand_tray != null, "game manager owns a hand tray inside the gameplay canvas")
+	_expect(hand_tray != null and hand_tray.get_parent() == gameplay_canvas, "hand tray scales with the gameplay canvas")
+	_expect(hand_tray != null and hand_tray.z_index == -1, "hand tray uses the required render layer")
+	var hand_tray_index := gameplay_canvas.get_children().find(hand_tray) if gameplay_canvas != null else -1
+	var hand_manager_index := gameplay_canvas.get_children().find(gm.hand_area) if gameplay_canvas != null else -1
+	_expect(hand_tray_index >= 0 and hand_manager_index == hand_tray_index + 1, "hand tray is immediately before hand manager in the gameplay canvas")
+	_expect(hand_tray != null and hand_tray.mouse_filter == Control.MOUSE_FILTER_IGNORE, "hand tray does not block card input")
+	var hand_count := hand_tray.get_node_or_null("HandCount") as Label if hand_tray != null else null
+	_expect(
+		hand_count != null and hand_count.text == "HAND · %d / %d" % [gm.hand_area.get_card_count(), gm.hand_area.max_hand_size],
+		"game manager syncs the initial hand count to the tray"
+	)
+	_expect(
+		gm.hand_area.hand_count_changed.is_connected(gm._sync_hand_tray),
+		"game manager connects hand count changes to the hand tray"
+	)
+	var hand_tray_connection_count := 0
+	for connection in gm.hand_area.hand_count_changed.get_connections():
+		if connection.get("callable") == gm._sync_hand_tray:
+			hand_tray_connection_count += 1
+	_expect(hand_tray_connection_count == 1, "game manager connects the hand tray exactly once")
+	gm.hand_area.hand_count_changed.emit(2, gm.hand_area.max_hand_size)
+	_expect(
+		hand_count != null and hand_count.text == "HAND · 2 / %d" % gm.hand_area.max_hand_size,
+		"game manager syncs post-initialization hand count changes to the tray"
+	)
 	_expect(gameplay_canvas is GameplayCanvasScript, "game manager owns a GameplayCanvas")
 	_expect(gm.board.get_parent() == gameplay_canvas, "board is inside gameplay canvas")
 	_expect(gm.hand_area.get_parent() == gameplay_canvas, "hand is inside gameplay canvas")
