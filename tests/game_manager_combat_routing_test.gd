@@ -182,7 +182,7 @@ func _test_shop_event_routes_purchase_and_close() -> void:
 	_expect(not treasure_view.visible, "shop overlap keeps treasure modal hidden")
 	_expect(manager.drag_layer.is_interaction_locked(), "shop modal locks exploration")
 	var gold_label := shop_view.find_child("GoldLabel", true, false) as Label
-	_expect(gold_label != null and gold_label.text == "金币：10", "shop displays the current player gold")
+	_expect(gold_label != null and gold_label.text == "GOLD  10", "shop displays the current player gold")
 
 	var buy_button := shop_view.find_child("OfferSlot1", true, false).find_child("ActionButton", true, false) as Button
 	_expect(buy_button != null, "shop first offer exposes a purchase button")
@@ -193,7 +193,7 @@ func _test_shop_event_routes_purchase_and_close() -> void:
 	_expect((event_node.event_instance.runtime_state as ShopRuntimeState).sold_flags[0], "shop purchase marks the item sold")
 	_expect(manager.cards_inst.size() == cards_before + 1, "shop purchase grants a persistent card instance")
 	_expect(manager.hand_area.cards.size() == hand_before + 1, "shop purchase adds the card to hand")
-	_expect(buy_button != null and buy_button.disabled and buy_button.text == "已售罄", "sold shop item is disabled and labelled sold out")
+	_expect(buy_button != null and buy_button.disabled and buy_button.text == "SOLD OUT", "sold shop item is disabled and labelled sold out")
 	_expect(shop_view.visible and manager.drag_layer.is_interaction_locked(), "shop remains open and locked after a purchase")
 
 	var close_button := shop_view.find_child("CloseButton", true, false) as Button

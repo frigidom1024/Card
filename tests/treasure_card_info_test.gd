@@ -1,0 +1,63 @@
+extends SceneTree
+
+const TreasureScene = preload("res://scenes/game/event_treasure.tscn")
+
+var _failure_count := 0
+
+
+func _init() -> void:
+	call_deferred("_run_test")
+
+
+func _run_test() -> void:
+	var treasure := TreasureScene.instantiate() as TreasureEventView
+	_expect(treasure != null, "treasure scene instantiates as TreasureEventView")
+	if treasure == null:
+		_finish_tests()
+		return
+
+	root.add_child(treasure)
+	current_scene = treasure
+	await process_frame
+	await process_frame
+
+	var artwork := treasure.get_node_or_null("CenterContainer/Panel/Content/MainContent/TreasureArtworkFrame/TreasureArtwork") as TextureRect
+	_expect(artwork != null, "treasure exposes an inspector-editable artwork slot")
+	_expect(artwork == null or artwork.mouse_filter == Control.MOUSE_FILTER_IGNORE, "treasure artwork never blocks reward input")
+
+	var preview := treasure.get_node_or_null("CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot1/Content/CardPreviewHolder/CardPreview") as CardEntity
+	_expect(preview != null, "treasure card reward uses CardEntity for shared card interactions")
+	if preview != null:
+		_expect(preview.is_display_only(), "treasure card preview remains display-only")
+		_expect(preview.input_pickable, "treasure card preview accepts hover and right-click input")
+		var card_view := preview.get_node_or_null("CardView") as Control
+		_expect(card_view != null and card_view.mouse_filter == Control.MOUSE_FILTER_STOP, "treasure card face receives UI pointer events")
+		if card_view != null:
+			card_view.emit_signal("mouse_entered")
+			await process_frame
+			await process_frame
+			var overlay := preview.get_node_or_null("CardInfoOverlay") as CardInfoOverlay
+			var info_panel := overlay.get_node_or_null("CardInfo") as PanelContainer if overlay != null else null
+			_expect(info_panel != null and info_panel.visible, "hovering a treasure card opens card information")
+
+			var right_click := InputEventMouseButton.new()
+			right_click.button_index = MOUSE_BUTTON_RIGHT
+			right_click.pressed = true
+			card_view.emit_signal("gui_input", right_click)
+			await process_frame
+			_expect(preview._zoom_overlay != null, "right-clicking a treasure card opens the zoom overlay")
+			preview._hide_zoom()
+
+	treasure.free()
+	await process_frame
+	_finish_tests()
+
+
+func _finish_tests() -> void:
+	quit(1 if _failure_count > 0 else 0)
+
+
+func _expect(condition: bool, message: String) -> void:
+	if not condition:
+		_failure_count += 1
+		push_error(message)

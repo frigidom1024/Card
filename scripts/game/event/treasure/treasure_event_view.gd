@@ -12,6 +12,9 @@ func _ready() -> void:
 		var button := _action_button(option_index)
 		if button != null and not button.pressed.is_connected(_on_reward_pressed.bind(option_index)):
 			button.pressed.connect(_on_reward_pressed.bind(option_index))
+		var preview := _card_preview(option_index)
+		if preview != null:
+			preview.set_display_only(true, true, true)
 	var close_button := find_child("CloseButton", true, false) as Button
 	if close_button != null and not close_button.pressed.is_connected(_on_close_pressed):
 		close_button.pressed.connect(_on_close_pressed)
@@ -46,21 +49,22 @@ func _refresh() -> void:
 		if option == null:
 			continue
 
-		var card_preview := slot.find_child("CardPreview", true, false)
+		var card_preview := _card_preview(option_index)
 		var gold_preview := slot.find_child("GoldRewardPreview", true, false) as Control
 		var detail_label := slot.find_child("PriceOrRewardLabel", true, false) as Label
 		var button := slot.find_child("ActionButton", true, false) as Button
 		if button != null:
 			button.disabled = false
-			button.text = "领取"
+			button.text = "CLAIM"
 		if option.kind == TreasureRewardOption.Kind.CARD:
 			if card_preview != null:
 				card_preview.visible = true
-				card_preview.set_value(CardInstance.new(option.card_data))
+				card_preview.bind_instance(CardInstance.new(option.card_data))
+				card_preview.set_display_only(true, true, true)
 			if gold_preview != null:
 				gold_preview.visible = false
 			if detail_label != null:
-				detail_label.text = "卡牌奖励"
+				detail_label.text = "CARD RELIC"
 		else:
 			if card_preview != null:
 				card_preview.visible = false
@@ -68,11 +72,13 @@ func _refresh() -> void:
 				gold_preview.visible = true
 				var amount_label := gold_preview.find_child("AmountLabel", true, false) as Label
 				if amount_label != null:
-					amount_label.text = "+%d 金币" % option.gold_amount
+					amount_label.text = "+%d GOLD" % option.gold_amount
 			if detail_label != null:
-				detail_label.text = "金币奖励"
+				detail_label.text = "GOLDEN REMNANT"
+			if button != null:
+				button.text = "TAKE GOLD"
 
-	show_message("只能带走一项奖励。", false)
+	show_message("One relic may accompany you.", false)
 
 
 func _offer_slot(option_index: int) -> Control:
@@ -82,6 +88,11 @@ func _offer_slot(option_index: int) -> Control:
 func _action_button(option_index: int) -> Button:
 	var slot := _offer_slot(option_index)
 	return slot.find_child("ActionButton", true, false) as Button if slot != null else null
+
+
+func _card_preview(option_index: int) -> CardEntity:
+	var slot := _offer_slot(option_index)
+	return slot.find_child("CardPreview", true, false) as CardEntity if slot != null else null
 
 
 func _on_reward_pressed(option_index: int) -> void:

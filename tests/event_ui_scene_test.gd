@@ -85,7 +85,7 @@ func _test_treasure_scene_structure() -> void:
 		"treasure exposes a dedicated GoldRewardPreview"
 	)
 	_assert_common_structure(scene_root, "treasure")
-	_assert_card_view_preview_instances(scene_root, "treasure")
+	_assert_treasure_card_preview_instances(scene_root)
 	scene_root.free()
 
 
@@ -194,6 +194,19 @@ func _assert_shop_card_preview_instances(scene_root: Control) -> void:
 		_expect(
 			card_entity_script != null and card_entity_script.resource_path == CARD_ENTITY_SCRIPT_PATH,
 			"shop CardPreview uses CardEntity interaction handling"
+		)
+
+
+func _assert_treasure_card_preview_instances(scene_root: Control) -> void:
+	for card_preview in _find_all(scene_root, "CardPreview"):
+		_expect(
+			card_preview.scene_file_path == CARD_ENTITY_SCENE_PATH,
+			"treasure CardPreview directly instances card_entity.tscn"
+		)
+		var card_entity_script := card_preview.get_script() as Script
+		_expect(
+			card_entity_script != null and card_entity_script.resource_path == CARD_ENTITY_SCRIPT_PATH,
+			"treasure CardPreview uses CardEntity interaction handling"
 		)
 
 

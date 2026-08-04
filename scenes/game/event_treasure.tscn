@@ -1,82 +1,143 @@
 [gd_scene format=3]
 
-[ext_resource type="PackedScene" uid="uid://0t2nmkt0asxh" path="res://scenes/card_view/card_view.tscn" id="1_card_view"]
+[ext_resource type="PackedScene" uid="uid://c6j6lgcbmdqrv" path="res://scenes/card_view/card_entity.tscn" id="1_card_entity"]
 [ext_resource type="Script" path="res://scripts/game/event/treasure/treasure_event_view.gd" id="2_event_view"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-content_margin_left = 30.0
-content_margin_top = 26.0
-content_margin_right = 30.0
-content_margin_bottom = 24.0
-bg_color = Color(0.14902, 0.0901961, 0.0352941, 0.98)
+content_margin_left = 28.0
+content_margin_top = 24.0
+content_margin_right = 28.0
+content_margin_bottom = 22.0
+bg_color = Color(0.0392157, 0.0705882, 0.109804, 0.987)
 border_width_left = 2
 border_width_top = 2
 border_width_right = 2
 border_width_bottom = 2
-border_color = Color(0.960784, 0.682353, 0.258824, 0.92)
-corner_radius_top_left = 20
-corner_radius_top_right = 20
-corner_radius_bottom_right = 20
-corner_radius_bottom_left = 20
-shadow_color = Color(0, 0, 0, 0.45)
-shadow_size = 18
+border_color = Color(0.65098, 0.462745, 0.227451, 0.94)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.64)
+shadow_size = 24
+shadow_offset = Vector2(0, 8)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_offer"]
-content_margin_left = 18.0
-content_margin_top = 18.0
-content_margin_right = 18.0
-content_margin_bottom = 18.0
-bg_color = Color(0.239216, 0.145098, 0.054902, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_artwork_frame"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 8.0
+bg_color = Color(0.0588235, 0.101961, 0.145098, 1)
 border_width_left = 1
 border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
-border_color = Color(0.654902, 0.415686, 0.141176, 1)
-corner_radius_top_left = 12
-corner_radius_top_right = 12
-corner_radius_bottom_right = 12
-corner_radius_bottom_left = 12
+border_color = Color(0.478431, 0.333333, 0.14902, 0.88)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_offer"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.054902, 0.101961, 0.14902, 0.97)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.509804, 0.352941, 0.160784, 0.9)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+shadow_color = Color(0, 0, 0, 0.28)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card_holder"]
+bg_color = Color(0.0196078, 0.0392157, 0.0666667, 0.78)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.309804, 0.247059, 0.141176, 0.84)
+corner_radius_top_left = 5
+corner_radius_top_right = 5
+corner_radius_bottom_right = 5
+corner_radius_bottom_left = 5
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gold_preview"]
-content_margin_left = 18.0
-content_margin_top = 18.0
-content_margin_right = 18.0
-content_margin_bottom = 18.0
-bg_color = Color(0.32549, 0.207843, 0.0588235, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(1, 0.807843, 0.298039, 1)
-corner_radius_top_left = 14
-corner_radius_top_right = 14
-corner_radius_bottom_right = 14
-corner_radius_bottom_left = 14
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.178431, 0.117647, 0.0352941, 0.96)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.854902, 0.623529, 0.270588, 0.95)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.764706, 0.509804, 0.14902, 0.1)
+shadow_size = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_reward_label"]
+content_margin_left = 8.0
+content_margin_top = 6.0
+content_margin_right = 8.0
+content_margin_bottom = 6.0
+bg_color = Color(0.121569, 0.0901961, 0.0470588, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.560784, 0.388235, 0.176471, 0.82)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_normal"]
-bg_color = Color(0.772549, 0.415686, 0.101961, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+content_margin_top = 3.0
+content_margin_bottom = 3.0
+bg_color = Color(0.337255, 0.207843, 0.0823529, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.792157, 0.568627, 0.262745, 0.95)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
-bg_color = Color(0.921569, 0.545098, 0.152941, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+content_margin_top = 3.0
+content_margin_bottom = 3.0
+bg_color = Color(0.498039, 0.329412, 0.137255, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.792157, 0.435294, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hint"]
-content_margin_left = 16.0
-content_margin_top = 10.0
-content_margin_right = 16.0
-content_margin_bottom = 10.0
-bg_color = Color(0.0862745, 0.0431373, 0.0156863, 0.72)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+content_margin_left = 14.0
+content_margin_top = 9.0
+content_margin_right = 14.0
+content_margin_bottom = 9.0
+bg_color = Color(0.0235294, 0.0431373, 0.0705882, 0.92)
+border_width_top = 1
+border_color = Color(0.509804, 0.352941, 0.160784, 0.58)
 
 [node name="EventTreasure" type="Control"]
 layout_mode = 3
@@ -96,7 +157,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 0
-color = Color(0.054902, 0.0235294, 0.00392157, 0.84)
+color = Color(0.00784314, 0.0156863, 0.027451, 0.86)
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
@@ -108,21 +169,21 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="Panel" type="PanelContainer" parent="CenterContainer"]
-custom_minimum_size = Vector2(960, 610)
+custom_minimum_size = Vector2(1170, 660)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="Content" type="VBoxContainer" parent="CenterContainer/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 18
+theme_override_constants/separation = 16
 
 [node name="Header" type="VBoxContainer" parent="CenterContainer/Panel/Content"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
 [node name="TopRow" type="HBoxContainer" parent="CenterContainer/Panel/Content/Header"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 14
 
 [node name="TitleBlock" type="VBoxContainer" parent="CenterContainer/Panel/Content/Header/TopRow"]
 layout_mode = 2
@@ -131,154 +192,227 @@ theme_override_constants/separation = 2
 
 [node name="TitleLabel" type="Label" parent="CenterContainer/Panel/Content/Header/TopRow/TitleBlock"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.882353, 0.592157, 1)
-theme_override_font_sizes/font_size = 28
-text = "遗失宝藏"
+theme_override_colors/font_color = Color(0.94902, 0.756863, 0.423529, 1)
+theme_override_colors/font_shadow_color = Color(0.0117647, 0.0196078, 0.027451, 0.94)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 29
+text = "RELIC OF THE FIRMAMENT"
 
 [node name="SubtitleLabel" type="Label" parent="CenterContainer/Panel/Content/Header/TopRow/TitleBlock"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.858824, 0.67451, 0.411765, 1)
-theme_override_font_sizes/font_size = 15
-text = "选择一项奖励"
+theme_override_colors/font_color = Color(0.764706, 0.717647, 0.631373, 1)
+theme_override_font_sizes/font_size = 14
+text = "Choose one remnant to bear onward"
 
 [node name="CloseButton" type="Button" parent="CenterContainer/Panel/Content/Header/TopRow"]
-custom_minimum_size = Vector2(42, 42)
+custom_minimum_size = Vector2(84, 34)
 layout_mode = 2
 focus_mode = 0
-theme_override_colors/font_color = Color(1, 0.839216, 0.603922, 1)
-theme_override_font_sizes/font_size = 22
-text = "×"
+theme_override_colors/font_color = Color(0.819608, 0.756863, 0.631373, 1)
+theme_override_colors/font_hover_color = Color(0.972549, 0.776471, 0.439216, 1)
+theme_override_font_sizes/font_size = 13
+text = "LEAVE"
 flat = true
 
 [node name="HeaderDivider" type="HSeparator" parent="CenterContainer/Panel/Content/Header"]
 layout_mode = 2
-modulate = Color(0.870588, 0.560784, 0.2, 0.65)
+modulate = Color(0.745098, 0.517647, 0.231373, 0.62)
 
-[node name="OfferContainer" type="HBoxContainer" parent="CenterContainer/Panel/Content"]
+[node name="MainContent" type="HBoxContainer" parent="CenterContainer/Panel/Content"]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 18
-alignment = 1
 
-[node name="OfferSlot1" type="PanelContainer" parent="CenterContainer/Panel/Content/OfferContainer"]
+[node name="TreasureArtworkFrame" type="PanelContainer" parent="CenterContainer/Panel/Content/MainContent"]
+custom_minimum_size = Vector2(246, 420)
 layout_mode = 2
-size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_offer")
+theme_override_styles/panel = SubResource("StyleBoxFlat_artwork_frame")
 
-[node name="Content" type="VBoxContainer" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot1"]
+[node name="TreasureArtwork" type="TextureRect" parent="CenterContainer/Panel/Content/MainContent/TreasureArtworkFrame"]
 layout_mode = 2
-theme_override_constants/separation = 12
-alignment = 1
-
-[node name="CardPreview" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot1/Content" instance=ExtResource("1_card_view")]
-custom_minimum_size = Vector2(148, 308)
-layout_mode = 2
-size_flags_horizontal = 4
 mouse_filter = 2
-color = Color(0.278431, 0.164706, 0.0470588, 1)
+expand_mode = 1
+stretch_mode = 6
 
-[node name="PriceOrRewardLabel" type="Label" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot1/Content"]
+[node name="VerticalDivider" type="VSeparator" parent="CenterContainer/Panel/Content/MainContent"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.835294, 0.435294, 1)
-theme_override_font_sizes/font_size = 16
-text = "卡牌奖励"
-horizontal_alignment = 1
+modulate = Color(0.701961, 0.47451, 0.207843, 0.52)
 
-[node name="ActionButton" type="Button" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot1/Content"]
-custom_minimum_size = Vector2(0, 38)
-layout_mode = 2
-focus_mode = 0
-theme_override_colors/font_color = Color(1, 0.94902, 0.85098, 1)
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
-text = "领取"
-
-[node name="OfferSlot2" type="PanelContainer" parent="CenterContainer/Panel/Content/OfferContainer"]
+[node name="OfferArea" type="VBoxContainer" parent="CenterContainer/Panel/Content/MainContent"]
+custom_minimum_size = Vector2(820, 0)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_offer")
-
-[node name="Content" type="VBoxContainer" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot2"]
-layout_mode = 2
-theme_override_constants/separation = 12
-alignment = 1
-
-[node name="CardPreview" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot2/Content" instance=ExtResource("1_card_view")]
-custom_minimum_size = Vector2(148, 308)
-layout_mode = 2
-size_flags_horizontal = 4
-mouse_filter = 2
-color = Color(0.278431, 0.164706, 0.0470588, 1)
-
-[node name="PriceOrRewardLabel" type="Label" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot2/Content"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.835294, 0.435294, 1)
-theme_override_font_sizes/font_size = 16
-text = "卡牌奖励"
-horizontal_alignment = 1
-
-[node name="ActionButton" type="Button" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot2/Content"]
-custom_minimum_size = Vector2(0, 38)
-layout_mode = 2
-focus_mode = 0
-theme_override_colors/font_color = Color(1, 0.94902, 0.85098, 1)
-theme_override_font_sizes/font_size = 16
-theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
-text = "领取"
-
-[node name="OfferSlot3" type="PanelContainer" parent="CenterContainer/Panel/Content/OfferContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_styles/panel = SubResource("StyleBoxFlat_offer")
-
-[node name="Content" type="VBoxContainer" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot3"]
-layout_mode = 2
-theme_override_constants/separation = 12
-alignment = 1
-
-[node name="GoldRewardPreview" type="PanelContainer" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot3/Content"]
-custom_minimum_size = Vector2(148, 308)
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_gold_preview")
-
-[node name="Content" type="VBoxContainer" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot3/Content/GoldRewardPreview"]
-layout_mode = 2
-alignment = 1
 theme_override_constants/separation = 10
 
-[node name="IconLabel" type="Label" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot3/Content/GoldRewardPreview/Content"]
+[node name="OfferKicker" type="Label" parent="CenterContainer/Panel/Content/MainContent/OfferArea"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.827451, 0.286275, 1)
-theme_override_font_sizes/font_size = 64
-text = "◆"
+theme_override_colors/font_color = Color(0.784314, 0.670588, 0.458824, 1)
+theme_override_font_sizes/font_size = 13
+text = "THE SACRED REMAINS"
 horizontal_alignment = 1
 
-[node name="AmountLabel" type="Label" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot3/Content/GoldRewardPreview/Content"]
+[node name="OfferContainer" type="HBoxContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.909804, 0.658824, 1)
-theme_override_font_sizes/font_size = 24
-text = "+20 金币"
+size_flags_vertical = 3
+theme_override_constants/separation = 14
+alignment = 1
+
+[node name="OfferSlot1" type="PanelContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer"]
+custom_minimum_size = Vector2(248, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_offer")
+
+[node name="Content" type="VBoxContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot1"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="CardPreviewHolder" type="PanelContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot1/Content"]
+custom_minimum_size = Vector2(0, 248)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_holder")
+
+[node name="CardPreview" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot1/Content/CardPreviewHolder" instance=ExtResource("1_card_entity")]
+position = Vector2(112, 124)
+scale = Vector2(1.14, 1.14)
+
+[node name="RewardLabelPanel" type="PanelContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot1/Content"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_reward_label")
+
+[node name="PriceOrRewardLabel" type="Label" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot1/Content/RewardLabelPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945098, 0.733333, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "CARD RELIC"
 horizontal_alignment = 1
 
-[node name="PriceOrRewardLabel" type="Label" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot3/Content"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.835294, 0.435294, 1)
-theme_override_font_sizes/font_size = 16
-text = "金币奖励"
-horizontal_alignment = 1
-
-[node name="ActionButton" type="Button" parent="CenterContainer/Panel/Content/OfferContainer/OfferSlot3/Content"]
+[node name="ActionButton" type="Button" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot1/Content"]
 custom_minimum_size = Vector2(0, 38)
 layout_mode = 2
 focus_mode = 0
-theme_override_colors/font_color = Color(1, 0.94902, 0.85098, 1)
-theme_override_font_sizes/font_size = 16
+theme_override_colors/font_color = Color(1, 0.898039, 0.709804, 1)
+theme_override_colors/font_hover_color = Color(1, 0.956863, 0.807843, 1)
+theme_override_font_sizes/font_size = 14
 theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
 theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
-text = "领取"
+text = "CLAIM"
+
+[node name="OfferSlot2" type="PanelContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer"]
+custom_minimum_size = Vector2(248, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_offer")
+
+[node name="Content" type="VBoxContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot2"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="CardPreviewHolder" type="PanelContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot2/Content"]
+custom_minimum_size = Vector2(0, 248)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_holder")
+
+[node name="CardPreview" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot2/Content/CardPreviewHolder" instance=ExtResource("1_card_entity")]
+position = Vector2(112, 124)
+scale = Vector2(1.14, 1.14)
+
+[node name="RewardLabelPanel" type="PanelContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot2/Content"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_reward_label")
+
+[node name="PriceOrRewardLabel" type="Label" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot2/Content/RewardLabelPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945098, 0.733333, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "CARD RELIC"
+horizontal_alignment = 1
+
+[node name="ActionButton" type="Button" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot2/Content"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.898039, 0.709804, 1)
+theme_override_colors/font_hover_color = Color(1, 0.956863, 0.807843, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+text = "CLAIM"
+
+[node name="OfferSlot3" type="PanelContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer"]
+custom_minimum_size = Vector2(248, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_offer")
+
+[node name="Content" type="VBoxContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot3"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="CardPreviewHolder" type="PanelContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot3/Content"]
+custom_minimum_size = Vector2(0, 248)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_card_holder")
+
+[node name="GoldRewardPreview" type="PanelContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot3/Content/CardPreviewHolder"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_gold_preview")
+
+[node name="Content" type="VBoxContainer" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot3/Content/CardPreviewHolder/GoldRewardPreview"]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="RelicLabel" type="Label" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot3/Content/CardPreviewHolder/GoldRewardPreview/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.909804, 0.682353, 0.333333, 1)
+theme_override_font_sizes/font_size = 13
+text = "GILDED REMNANT"
+horizontal_alignment = 1
+
+[node name="AmountLabel" type="Label" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot3/Content/CardPreviewHolder/GoldRewardPreview/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.847059, 0.490196, 1)
+theme_override_colors/font_shadow_color = Color(0.0901961, 0.054902, 0.0117647, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 2
+theme_override_font_sizes/font_size = 24
+text = "+24 GOLD"
+horizontal_alignment = 1
+
+[node name="PriceOrRewardLabel" type="Label" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot3/Content"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.945098, 0.733333, 0.4, 1)
+theme_override_font_sizes/font_size = 14
+text = "GOLDEN REMNANT"
+horizontal_alignment = 1
+
+[node name="ActionButton" type="Button" parent="CenterContainer/Panel/Content/MainContent/OfferArea/OfferContainer/OfferSlot3/Content"]
+custom_minimum_size = Vector2(0, 38)
+layout_mode = 2
+focus_mode = 0
+theme_override_colors/font_color = Color(1, 0.898039, 0.709804, 1)
+theme_override_colors/font_hover_color = Color(1, 0.956863, 0.807843, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_styles/normal = SubResource("StyleBoxFlat_button_normal")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
+text = "TAKE GOLD"
 
 [node name="HintPanel" type="PanelContainer" parent="CenterContainer/Panel/Content"]
 layout_mode = 2
@@ -286,7 +420,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_hint")
 
 [node name="HintLabel" type="Label" parent="CenterContainer/Panel/Content/HintPanel"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.894118, 0.709804, 0.454902, 1)
-theme_override_font_sizes/font_size = 14
-text = "只能带走一项奖励。"
+theme_override_colors/font_color = Color(0.717647, 0.686275, 0.619608, 1)
+theme_override_font_sizes/font_size = 13
+text = "One relic may accompany you."
 horizontal_alignment = 1
