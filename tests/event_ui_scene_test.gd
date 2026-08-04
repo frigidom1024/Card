@@ -2,6 +2,8 @@ extends SceneTree
 
 const CARD_VIEW_SCENE_PATH := "res://scenes/card_view/card_view.tscn"
 const CARD_VIEW_SCRIPT_PATH := "res://scripts/card/card_view.gd"
+const CARD_ENTITY_SCENE_PATH := "res://scenes/card_view/card_entity.tscn"
+const CARD_ENTITY_SCRIPT_PATH := "res://scripts/card/card_entity.gd"
 const SHOP_SCENE_PATH := "res://scenes/game/event_shop.tscn"
 const TREASURE_SCENE_PATH := "res://scenes/game/event_treasure.tscn"
 const COMBAT_SCENE_PATH := "res://scenes/game/event_combat.tscn"
@@ -66,7 +68,7 @@ func _test_shop_scene_structure() -> void:
 	_expect(scene_root.find_child("GoldLabel", true, false) != null, "shop exposes GoldLabel")
 	_expect(_find_all(scene_root, "CardPreview").size() == 3, "shop exposes three card previews")
 	_assert_common_structure(scene_root, "shop")
-	_assert_card_preview_instances(scene_root, "shop")
+	_assert_shop_card_preview_instances(scene_root)
 	scene_root.free()
 
 
@@ -83,7 +85,7 @@ func _test_treasure_scene_structure() -> void:
 		"treasure exposes a dedicated GoldRewardPreview"
 	)
 	_assert_common_structure(scene_root, "treasure")
-	_assert_card_preview_instances(scene_root, "treasure")
+	_assert_card_view_preview_instances(scene_root, "treasure")
 	scene_root.free()
 
 
@@ -182,7 +184,20 @@ func _assert_common_structure(scene_root: Control, scene_name: String) -> void:
 		)
 
 
-func _assert_card_preview_instances(scene_root: Control, scene_name: String) -> void:
+func _assert_shop_card_preview_instances(scene_root: Control) -> void:
+	for card_preview in _find_all(scene_root, "CardPreview"):
+		_expect(
+			card_preview.scene_file_path == CARD_ENTITY_SCENE_PATH,
+			"shop CardPreview directly instances card_entity.tscn"
+		)
+		var card_entity_script := card_preview.get_script() as Script
+		_expect(
+			card_entity_script != null and card_entity_script.resource_path == CARD_ENTITY_SCRIPT_PATH,
+			"shop CardPreview uses CardEntity interaction handling"
+		)
+
+
+func _assert_card_view_preview_instances(scene_root: Control, scene_name: String) -> void:
 	for card_preview in _find_all(scene_root, "CardPreview"):
 		_expect(
 			card_preview.scene_file_path == CARD_VIEW_SCENE_PATH,
