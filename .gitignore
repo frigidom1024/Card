@@ -5,3 +5,9 @@
 
 # Godot Git plugin temporary DLL files
 addons/godot-git-plugin/windows/~*.TMP
+
+# RunningHub local configuration and generated assets
+tools/runninghub.json
+art/generated/
+__pycache__/
+*.py[cod]
