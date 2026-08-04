@@ -13,6 +13,7 @@ func _init() -> void:
 
 func _run_tests() -> void:
 	await _test_display_only_card_ignores_gameplay_interactions()
+	await _test_head_indicator_is_hidden_until_card_is_on_board()
 	await _test_display_mode_can_be_set_before_entering_tree()
 	await _test_default_card_remains_interactable()
 	quit(1 if _failure_count > 0 else 0)
@@ -48,6 +49,25 @@ func _test_display_only_card_ignores_gameplay_interactions() -> void:
 
 	card._show_zoom()
 	_expect(card._zoom_overlay == null, "display-only card cannot open zoom overlay")
+	card.free()
+	await process_frame
+
+
+func _test_head_indicator_is_hidden_until_card_is_on_board() -> void:
+	var card := CardEntityScene.instantiate() as CardEntity
+	card.bind_instance(CardInstance.new(RevivalDeck.get_root_card()))
+	root.add_child(card)
+	await process_frame
+
+	var indicator := card.get_node_or_null("CardView/HeadIndicator") as Control
+	_expect(indicator != null and not indicator.visible, "card head indicator is hidden outside the board")
+
+	card.set_on_board(true)
+	_expect(indicator != null and indicator.visible, "card head indicator is shown on the board")
+
+	card.set_on_board(false)
+	_expect(indicator != null and not indicator.visible, "card head indicator is hidden after leaving the board")
+
 	card.free()
 	await process_frame
 

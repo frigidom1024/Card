@@ -57,6 +57,7 @@ var _consume_next_left_release := false
 var _display_only := false
 var _display_info_enabled := false
 var _display_zoom_enabled := false
+var _on_board := false
 
 var drag_layer
 var _card_info_overlay: CardInfoOverlay = null
@@ -104,6 +105,12 @@ func is_display_only() -> bool:
 	return _display_only
 
 
+func set_on_board(value: bool) -> void:
+	_on_board = value
+	if _card_view:
+		_card_view.set_head_indicator_visible(value)
+
+
 # ============================
 # 生命周期
 # ============================
@@ -114,6 +121,7 @@ func _ready() -> void:
 	if not card_instance:
 		card_instance = CardInstance.create_debug_card()
 	_card_view.set_value(card_instance)
+	_card_view.set_head_indicator_visible(_on_board)
 	_configure_card_view_pointer_input()
 	_apply_layout()
 	_refresh_combat_tags()

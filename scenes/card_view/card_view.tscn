@@ -87,6 +87,24 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
+[node name="HeadIndicator" type="Control" parent="."]
+visible = false
+layout_mode = 0
+offset_left = 0.0
+offset_top = -16.0
+offset_right = 28.0
+offset_bottom = -2.0
+mouse_filter = 2
+z_index = 20
+
+[node name="ArrowGlow" type="Polygon2D" parent="HeadIndicator"]
+polygon = PackedVector2Array(14, 0, 28, 9, 19, 9, 19, 14, 9, 14, 9, 9, 0, 9)
+color = Color(0.18, 0.82, 0.92, 0.28)
+
+[node name="ArrowBody" type="Polygon2D" parent="HeadIndicator"]
+polygon = PackedVector2Array(14, 1, 26, 9, 18, 9, 18, 13, 10, 13, 10, 9, 2, 9)
+color = Color(0.48, 0.92, 0.96, 0.95)
+
 [node name="LabelContainer" type="HBoxContainer" parent="." unique_id=1403990714]
 visible = false
 layout_mode = 0

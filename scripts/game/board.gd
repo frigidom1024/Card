@@ -499,6 +499,7 @@ func add_card(card: CardEntity) -> bool:
 
 	# 重新父节点到棋盘
 	card.reparent(self)
+	card.set_on_board(true)
 	card.z_index = RenderPriority.CARD_BASE + len(cards)
 
 
@@ -533,6 +534,7 @@ func remove_card(card: CardEntity) -> bool:
 			_grid_owner.erase(k)
 
 	cards.erase(card)
+	card.set_on_board(false)
 	return true
 
 

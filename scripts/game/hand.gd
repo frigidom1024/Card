@@ -52,6 +52,7 @@ func add_card(card: CardEntity, animate: bool = true) -> bool:
 		add_child(card)
 
 	# 2. 重置卡牌状态
+	card.set_on_board(false)
 	card.scale = Vector2.ONE
 	card.z_index = RenderPriority.CARD_BASE
 

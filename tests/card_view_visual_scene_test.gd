@@ -30,6 +30,7 @@ func _run_tests() -> void:
 	_test_editable_visual_scenes_exist()
 	_test_rarity_frames_include_subtle_paper_depth()
 	await _test_card_view_has_visual_hosts()
+	await _test_card_view_head_indicator_points_outward_and_rotates_with_card()
 	await _test_scene_preview_artwork_overlays_placeholder()
 	await _test_card_view_shows_placeholder_without_artwork()
 	await _test_card_view_loads_artwork_from_data_path()
@@ -69,6 +70,43 @@ func _test_card_view_has_visual_hosts() -> void:
 
 	_expect(view.get_node_or_null("FrameHost") != null, "card view exposes a frame host")
 	_expect(view.get_node_or_null("NamePlate") == null, "card view does not render a removed title plate")
+
+	view.free()
+	await process_frame
+
+
+func _test_card_view_head_indicator_points_outward_and_rotates_with_card() -> void:
+	var view := CardViewScene.instantiate() as Control
+	root.add_child(view)
+	await process_frame
+
+	var indicator := view.get_node_or_null("HeadIndicator") as Control
+	var glow := view.get_node_or_null("HeadIndicator/ArrowGlow") as Polygon2D
+	var body := view.get_node_or_null("HeadIndicator/ArrowBody") as Polygon2D
+	_expect(indicator != null, "card view exposes a head direction indicator")
+	_expect(indicator != null and not indicator.visible, "head direction indicator is hidden by default")
+	_expect(indicator != null and indicator.mouse_filter == Control.MOUSE_FILTER_IGNORE, "head direction indicator does not intercept pointer input")
+	_expect(glow != null and glow.polygon.size() >= 5, "head indicator exposes a geometric glow arrow")
+	_expect(body != null and body.polygon.size() >= 5, "head indicator exposes a geometric body arrow")
+
+	view.set_head_indicator_visible(true)
+	await process_frame
+	_expect(indicator != null and indicator.visible, "head direction indicator can be enabled explicitly")
+
+	if indicator != null:
+		_expect(indicator.position.x > 0.0 and indicator.position.x + indicator.size.x < view.size.x, "head indicator is horizontally centered within the card")
+		_expect(indicator.position.y + indicator.size.y < 0.0, "head indicator is outside the card's top edge")
+
+	var rotation_before: float = 0.0
+	if indicator != null:
+		rotation_before = indicator.get_global_transform_with_canvas().get_rotation()
+	view.rotation = PI / 2.0
+	await process_frame
+	if indicator != null:
+		var indicator_rotation := indicator.get_global_transform_with_canvas().get_rotation()
+		var view_rotation := view.get_global_transform_with_canvas().get_rotation()
+		_expect(is_equal_approx(indicator_rotation, view_rotation), "head indicator rotates with the card view")
+		_expect(not is_equal_approx(rotation_before, indicator_rotation), "head indicator changes orientation when the card rotates")
 
 	view.free()
 	await process_frame

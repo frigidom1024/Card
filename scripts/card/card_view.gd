@@ -1,5 +1,8 @@
 extends ColorRect
 
+const HEAD_INDICATOR_SIZE := Vector2(28.0, 14.0)
+const HEAD_INDICATOR_GAP := 2.0
+
 const FRAME_SCENES := {
 	CardData.Rarity.COMMON: preload("res://scenes/card_view/frames/card_frame_common.tscn"),
 	CardData.Rarity.RARE: preload("res://scenes/card_view/frames/card_frame_rare.tscn"),
@@ -11,6 +14,7 @@ const FRAME_SCENES := {
 @onready var artwork_placeholder: Control = $ArtworkPlaceholder
 @onready var frame_host: Control = $FrameHost
 @onready var labelcontainer: HBoxContainer = $LabelContainer
+@onready var head_indicator: Control = $HeadIndicator
 
 var card_inst: CardInstance
 
@@ -19,8 +23,26 @@ func _ready() -> void:
 	if not card_inst:
 		card_inst = CardInstance.create_debug_card()
 	resized.connect(_pin_label_container)
+	resized.connect(_pin_head_indicator)
 	_pin_label_container()
+	_pin_head_indicator()
 	refresh_display()
+
+
+func set_head_indicator_visible(value: bool) -> void:
+	if head_indicator == null:
+		return
+	head_indicator.visible = value
+
+
+func _pin_head_indicator() -> void:
+	if head_indicator == null:
+		return
+	head_indicator.size = HEAD_INDICATOR_SIZE
+	head_indicator.position = Vector2(
+		(size.x - HEAD_INDICATOR_SIZE.x) * 0.5,
+		-HEAD_INDICATOR_SIZE.y - HEAD_INDICATOR_GAP,
+	)
 
 
 func _pin_label_container() -> void:
