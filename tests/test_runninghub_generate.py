@@ -17,6 +17,7 @@ from tools.runninghub_generate import (
     build_node_info_list,
     build_submit_payload,
     collect_prompts,
+    default_env_path,
     get_api_key,
     load_env_file,
     load_config,
@@ -79,6 +80,8 @@ class EnvFileTests(unittest.TestCase):
             environment = {}
             load_env_file(env_file, environment)
             self.assertEqual(environment["RUNNINGHUB_API_KEY"], "quoted-key")
+    def test_default_env_path_is_next_to_the_tool_script(self):
+        self.assertEqual(default_env_path(), Path(__file__).resolve().parents[1] / "tools" / ".env")
 
 class ConfigurationTests(unittest.TestCase):
     def test_missing_api_key_is_actionable(self):

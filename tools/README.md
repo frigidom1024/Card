@@ -4,23 +4,23 @@
 
 ## 1. 配置 API Key
 
-工具会自动读取项目根目录的 `.env` 文件。也可以不要把 API Key 写入脚本或 JSON 文件，而是在 PowerShell 会话中设置环境变量：
+工具会自动读取 `tools/.env` 文件。也可以不要把 API Key 写入脚本或 JSON 文件，而是在 PowerShell 会话中设置环境变量：
 
 ```powershell
 $env:RUNNINGHUB_API_KEY = "你的-RunningHub-API-Key"
 ```
 
-项目根目录的 `.env` 会被自动加载；如果系统环境变量中已经存在 `RUNNINGHUB_API_KEY`，系统环境变量优先。`.env` 已加入 Git 忽略规则，请勿把这个文件、含 Key 的终端截图或本地密钥配置提交到 Git。
+`tools/.env` 会被自动加载；如果系统环境变量中已经存在 `RUNNINGHUB_API_KEY`，系统环境变量优先。`.env` 已加入 Git 忽略规则，请勿把这个文件、含 Key 的终端截图或本地密钥配置提交到 Git。
 
 ## 2. 创建本地工作流配置
 
-复制安全的示例配置：
+复制安全的工作流配置示例：
 
 ```powershell
 Copy-Item tools/runninghub.example.json tools/runninghub.json
 ```
 
-`tools/runninghub.json` 已被 Git 忽略。根据目标 RunningHub AI App 修改：
+`tools/runninghub.json` 已被 Git 忽略。API Key 应保存在同目录的 `tools/.env`，可参考 `tools/.env.example`。根据目标 RunningHub AI App 修改：
 
 - `workflow_id`：AI App 工作流 ID；
 - `prompt_node`：正向提示词字段，如 `134.text`；

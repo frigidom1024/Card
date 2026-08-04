@@ -97,6 +97,9 @@ def load_config(path: Path | None) -> dict[str, Any]:
     return data
 
 
+def default_env_path() -> Path:
+    """Return the ignored local env file stored alongside this tool."""
+    return Path(__file__).resolve().parent / ".env"
 def load_env_file(path: Path, environ: MutableMapping[str, str]) -> None:
     """Load simple KEY=VALUE entries without overriding existing environment values."""
     if not path.is_file():
@@ -469,7 +472,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     try:
-        env_path = Path(__file__).resolve().parents[1] / ".env"
+        env_path = default_env_path()
         load_env_file(env_path, os.environ)
         api_key = get_api_key(os.environ)
     except ValueError as exc:
