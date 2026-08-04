@@ -4,13 +4,13 @@
 
 ## 1. 配置 API Key
 
-不要把 API Key 写入脚本或 JSON 文件。在 PowerShell 会话中设置环境变量：
+工具会自动读取项目根目录的 `.env` 文件。也可以不要把 API Key 写入脚本或 JSON 文件，而是在 PowerShell 会话中设置环境变量：
 
 ```powershell
 $env:RUNNINGHUB_API_KEY = "你的-RunningHub-API-Key"
 ```
 
-这只在当前 PowerShell 窗口生效。请勿把这个命令、含 Key 的终端截图或本地密钥配置提交到 Git。
+项目根目录的 `.env` 会被自动加载；如果系统环境变量中已经存在 `RUNNINGHUB_API_KEY`，系统环境变量优先。`.env` 已加入 Git 忽略规则，请勿把这个文件、含 Key 的终端截图或本地密钥配置提交到 Git。
 
 ## 2. 创建本地工作流配置
 

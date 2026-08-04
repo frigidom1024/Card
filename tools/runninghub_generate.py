@@ -9,7 +9,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Callable, Mapping, MutableMapping, Sequence
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
@@ -97,6 +97,30 @@ def load_config(path: Path | None) -> dict[str, Any]:
     return data
 
 
+def load_env_file(path: Path, environ: MutableMapping[str, str]) -> None:
+    """Load simple KEY=VALUE entries without overriding existing environment values."""
+    if not path.is_file():
+        return
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise ValueError(f"Unable to read env file {path}: {exc}") from exc
+    for line_number, raw_line in enumerate(lines, start=1):
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("export "):
+            line = line[7:].lstrip()
+        if "=" not in line:
+            raise ValueError(f"Invalid .env entry at {path}:{line_number}; expected KEY=VALUE.")
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip()
+        if not key or not (key[0].isalpha() or key[0] == "_") or not all(character.isalnum() or character == "_" for character in key):
+            raise ValueError(f"Invalid .env variable name at {path}:{line_number}.")
+        if len(value) >= 2 and value[0] == value[-1] and value[0] in {"'", '"'}:
+            value = value[1:-1]
+        environ.setdefault(key, value)
 def collect_prompts(args: argparse.Namespace) -> list[str]:
     prompts = [prompt.strip() for prompt in args.prompt if prompt and prompt.strip()]
     for path in args.prompts_file:
@@ -445,6 +469,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         return 0
 
     try:
+        env_path = Path(__file__).resolve().parents[1] / ".env"
+        load_env_file(env_path, os.environ)
         api_key = get_api_key(os.environ)
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)

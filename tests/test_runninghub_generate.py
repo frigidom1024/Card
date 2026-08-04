@@ -18,6 +18,7 @@ from tools.runninghub_generate import (
     build_submit_payload,
     collect_prompts,
     get_api_key,
+    load_env_file,
     load_config,
     make_output_path,
     parse_args,
@@ -57,6 +58,27 @@ class CliInputTests(unittest.TestCase):
         nodes = build_node_info_list("knife", 512, 512, DEFAULT_CONFIG, ["77.seed=42"])
         self.assertIn({"nodeId": "77", "fieldName": "seed", "fieldValue": "42", "description": "seed"}, nodes)
 
+
+class EnvFileTests(unittest.TestCase):
+    def test_load_env_file_reads_key_without_overwriting_process_environment(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_file = Path(temp_dir) / ".env"
+            env_file.write_text(
+                "# local secrets\nRUNNINGHUB_API_KEY=from-file\nRUNNINGHUB_TIMEOUT=30\n",
+                encoding="utf-8",
+            )
+            environment = {"RUNNINGHUB_API_KEY": "from-process"}
+            load_env_file(env_file, environment)
+            self.assertEqual(environment["RUNNINGHUB_API_KEY"], "from-process")
+            self.assertEqual(environment["RUNNINGHUB_TIMEOUT"], "30")
+
+    def test_load_env_file_accepts_quoted_values(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            env_file = Path(temp_dir) / ".env"
+            env_file.write_text("RUNNINGHUB_API_KEY='quoted-key'\n", encoding="utf-8")
+            environment = {}
+            load_env_file(env_file, environment)
+            self.assertEqual(environment["RUNNINGHUB_API_KEY"], "quoted-key")
 
 class ConfigurationTests(unittest.TestCase):
     def test_missing_api_key_is_actionable(self):
