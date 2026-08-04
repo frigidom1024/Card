@@ -62,6 +62,7 @@ func _init() -> void:
 	_test_treasure_rejects_non_treasure_content()
 	_test_full_hand_rejects_card_but_allows_gold()
 	_test_seeded_event_placement_reserves_footprints_and_boundaries()
+	_test_dynamic_event_placement_attaches_the_supplied_monster()
 	call_deferred("_finish_tests")
 
 
@@ -741,3 +742,34 @@ func _test_seeded_event_placement_reserves_footprints_and_boundaries() -> void:
 				"seed %d later event avoids the footprint and mandatory empty boundary" % seed
 			)
 		board.queue_free()
+
+
+func _test_dynamic_event_placement_attaches_the_supplied_monster() -> void:
+	var board := BoardScene.instantiate() as Board
+	board.width = 4
+	board.height = 2
+	root.add_child(board)
+
+	var template := EventDataScript.new()
+	template.event_id = "dynamic_monster"
+	template.event_type = EventDataScript.EventType.MONSTER
+	template.size = Vector2i.ONE
+	var entry := EventEntryScript.new()
+	entry.event_data = template
+	var event_lib := EventLibScript.new()
+	event_lib.entries = [entry]
+	event_lib.event_scene = EventScene
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 7
+
+	var instance := template.create_instance()
+	var placed: bool = EventPlacementServiceScript.new().place_event_instance(instance, event_lib, board, rng)
+	_expect(placed, "dynamic event placement attaches a supplied event instance")
+	_expect(instance.origin != Vector2i(-1, -1), "dynamic event placement assigns a valid origin")
+	_expect(board.events.size() == 1, "dynamic event placement adds one BoardEvent")
+	if board.events.size() == 1:
+		_expect(
+			board.events[0].event_instance.get_event_type() == EventDataScript.EventType.MONSTER,
+			"dynamic event placement preserves the supplied monster type"
+		)
+	board.queue_free()

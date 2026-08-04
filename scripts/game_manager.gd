@@ -1,17 +1,21 @@
 extends Node
 
+const FaithServiceScript := preload("res://scripts/player/faith_service.gd")
+
 signal combat_started(instance: EventInstance, monster: MobInstance)
 signal combat_resolved(instance: EventInstance, result: CombatResult)
 signal exploration_failed(result: CombatResult)
 signal run_initialization_failed(reason: String)
 signal run_finished
+signal faith_changed(current_faith: int)
 
 @onready var gameplay_canvas: GameplayCanvas = $GameplayCanvas
 @onready var board: Board = $GameplayCanvas/Board
 @onready var card_manager: Node2D = $GameplayCanvas/CardManager
 @onready var hand_area: HandArea = $GameplayCanvas/HandManager
+@onready var hand_tray: HandTray = $GameplayCanvas/HandTray
 @onready var drag_layer: DragLayer = $GameplayCanvas/DragLayer
-@onready var card_info_overlay = $CardInfoOverlay
+@onready var event_modal_layer: CanvasLayer = $EventModalLayer
 @onready var shop_event_view = $EventModalLayer/ShopEventView
 @onready var treasure_event_view = $EventModalLayer/TreasureEventView
 @onready var combat_event_view: CombatEventView = $EventModalLayer/CombatEventView
@@ -26,10 +30,14 @@ var _encounter_combat_flow: EncounterCombatFlowCoordinator
 var _shop_event_resolver := ShopEventResolver.new()
 var _treasure_event_resolver := TreasureEventResolver.new()
 var _treasure_rng := RandomNumberGenerator.new()
+var _faith_rng := RandomNumberGenerator.new()
+var _faith_service := FaithServiceScript.new()
 var _active_event: EventInstance
 var _pending_combat_instance: EventInstance
 var _pending_combat_result: CombatResult
 var _is_exploration_failed := false
+var _faith_label: Label
+var _pending_faith_echo_spawns := 0
 
 # 所有玩家相关卡牌数据引用
 var cards_inst: Array[CardInstance]
@@ -52,9 +60,24 @@ func _ready() -> void:
 	if not _initialize_run_state():
 		return
 
-	# 注入 DragLayer 的区域引用
+	if not hand_area.hand_count_changed.is_connected(_sync_hand_tray):
+		hand_area.hand_count_changed.connect(_sync_hand_tray)
+	_sync_hand_tray()
+
+	_create_faith_hud()
+	if not faith_changed.is_connected(_update_faith_hud):
+		faith_changed.connect(_update_faith_hud)
+	if not _faith_service.faith_changed.is_connected(_on_faith_changed):
+		_faith_service.faith_changed.connect(_on_faith_changed)
+	if not _faith_service.echo_spawn_requested.is_connected(_on_echo_spawn_requested):
+		_faith_service.echo_spawn_requested.connect(_on_echo_spawn_requested)
+	_update_faith_hud(_faith_service.get_faith())
+
+	# DragLayer only owns the interaction. FaithService observes deliberate retractions.
 	drag_layer.board = board
 	drag_layer.hand_area = hand_area
+	if not drag_layer.manual_chain_retracted.is_connected(_faith_service.resolve_manual_chain_retraction):
+		drag_layer.manual_chain_retracted.connect(_faith_service.resolve_manual_chain_retraction)
 	if not board.event_triggered.is_connected(_on_board_event_triggered):
 		board.event_triggered.connect(_on_board_event_triggered)
 	if not shop_event_view.purchase_requested.is_connected(_on_shop_purchase_requested):
@@ -68,6 +91,7 @@ func _ready() -> void:
 	if not combat_event_view.settlement_confirmed.is_connected(_on_combat_settlement_confirmed):
 		combat_event_view.settlement_confirmed.connect(_on_combat_settlement_confirmed)
 	_treasure_rng.randomize()
+	_faith_rng.randomize()
 
 	init_events()
 	_center_layout()
@@ -77,6 +101,12 @@ func _ready() -> void:
 	if not viewport.size_changed.is_connected(_center_layout):
 		viewport.size_changed.connect(_center_layout)
 
+func _sync_hand_tray(
+	current_count: int = hand_area.get_card_count(),
+	max_count: int = hand_area.max_hand_size
+) -> void:
+	if hand_tray != null:
+		hand_tray.set_hand_count(current_count, max_count)
 
 func _initialize_run_state() -> bool:
 	if starting_deck == null:
@@ -88,6 +118,8 @@ func _initialize_run_state() -> bool:
 	if runtime_player == null or runtime_player.base_stats == null:
 		return _fail_run_initialization("GameManager could not duplicate PlayerData")
 	player_data = runtime_player
+	player_data.faith = PlayerData.INITIAL_FAITH
+	_faith_service.configure(player_data)
 	player_stats = CombatStats.from_data(player_data.base_stats)
 	if player_stats == null:
 		return _fail_run_initialization("GameManager could not create runtime combat stats")
@@ -127,13 +159,57 @@ func init_player_cards() -> bool:
 			_clear_initial_player_cards()
 			return false
 		entity.drag_layer = drag_layer
-		entity.card_info_overlay = card_info_overlay
 		if not hand_area.add_card(entity):
 			entity.queue_free()
 			_clear_initial_player_cards()
 			return false
 		card_entities.append(entity)
 	return true
+
+
+func _create_faith_hud() -> void:
+	if _faith_label != null and is_instance_valid(_faith_label):
+		return
+	var hud := CanvasLayer.new()
+	hud.name = "FaithHud"
+	hud.layer = 0
+	add_child(hud)
+	_faith_label = Label.new()
+	_faith_label.name = "FaithLabel"
+	_faith_label.position = Vector2(24, 20)
+	_faith_label.add_theme_font_size_override("font_size", 24)
+	_faith_label.add_theme_color_override("font_color", Color("f2d58a"))
+	hud.add_child(_faith_label)
+
+
+func _update_faith_hud(current_faith: int) -> void:
+	if _faith_label != null and is_instance_valid(_faith_label):
+		_faith_label.text = "信仰：%d" % current_faith
+
+
+func _on_faith_changed(current_faith: int) -> void:
+	faith_changed.emit(current_faith)
+
+
+func _on_echo_spawn_requested() -> void:
+	_pending_faith_echo_spawns += 1
+	_try_spawn_pending_faith_echoes()
+
+
+func _try_spawn_pending_faith_echoes() -> void:
+	if board == null or event_lib == null:
+		return
+	var templates := event_lib.get_templates_of_type(EventData.EventType.MONSTER)
+	if templates.is_empty():
+		push_warning("Faith consequence could not find a normal monster event template")
+		return
+	while _pending_faith_echo_spawns > 0:
+		var template := templates[_faith_rng.randi_range(0, templates.size() - 1)]
+		if not _event_placement_service.place_event_instance(
+			template.create_instance(), event_lib, board, _faith_rng
+		):
+			return
+		_pending_faith_echo_spawns -= 1
 
 
 func _clear_initial_player_cards() -> void:
@@ -308,7 +384,6 @@ func _grant_card_to_hand(card_data: CardData) -> bool:
 	if entity == null:
 		return false
 	entity.drag_layer = drag_layer
-	entity.card_info_overlay = card_info_overlay
 	if not hand_area.add_card(entity):
 		entity.queue_free()
 		return false
@@ -342,9 +417,13 @@ func _apply_combat_result(instance: EventInstance, result: CombatResult) -> void
 			_refresh_event_display(instance)
 			_finish_encounter()
 		CombatResult.Outcome.RETREAT:
-			_clear_player_transient_state()
-			_apply_monster_combat_state(instance, result.monster_stats_after)
-			_apply_penalties(result.penalties)
+			_apply_player_combat_state(result.player_stats_after)
+			_apply_monster_combat_state(
+				instance, result.monster_stats_after, result.monster_action_index_after
+			)
+			_return_tail_card_to_hand()
+			_strengthen_encounter_monster(instance)
+			_refresh_event_display(instance)
 			_finish_encounter()
 		CombatResult.Outcome.DEFEAT:
 			_apply_player_combat_state(result.player_stats_after)
@@ -366,12 +445,16 @@ func _clear_player_transient_state() -> void:
 		player_stats.defense = 0
 
 
-func _apply_monster_combat_state(instance: EventInstance, result_stats: CombatStats) -> void:
+func _apply_monster_combat_state(
+	instance: EventInstance, result_stats: CombatStats, action_index_after: int = -1
+) -> void:
 	var monster := _get_event_monster(instance)
 	if monster == null or monster.stats == null or result_stats == null:
 		return
 	monster.stats.hp = result_stats.hp
 	monster.stats.defense = 0
+	if action_index_after >= 0:
+		monster.action_index = action_index_after
 
 
 func _clear_monster_transient_state(instance: EventInstance) -> void:
@@ -387,23 +470,28 @@ func _get_event_monster(instance: EventInstance) -> MobInstance:
 	return state.mob_instance if state != null else null
 
 
-func _apply_penalties(penalties: Array[CombatPenalty]) -> void:
-	for penalty in penalties:
-		if penalty != null and penalty.type == CombatPenalty.Type.REMOVE_TAIL_CARD:
-			_remove_tail_card_from_board()
+func _strengthen_encounter_monster(instance: EventInstance) -> void:
+	var monster := _get_event_monster(instance)
+	if monster != null:
+		monster.gain_enhancement()
 
 
-func _remove_tail_card_from_board() -> void:
+func _return_tail_card_to_hand() -> void:
 	if board.cards.size() <= 1:
 		return
 	var tail: CardEntity = board.cards.back()
 	if tail == null or not board.remove_card(tail):
 		return
 	if tail.card_instance != null:
-		tail.card_instance.cur_zone = CardInstance.ZONE.DISCARD
-		cards_inst.erase(tail.card_instance)
-	card_entities.erase(tail)
-	tail.queue_free()
+		tail.card_instance.cur_zone = CardInstance.ZONE.HAND
+	var previous_max_hand_size := hand_area.max_hand_size
+	if hand_area.is_full():
+		hand_area.max_hand_size = hand_area.cards.size() + 1
+	if not hand_area.add_card(tail):
+		hand_area.max_hand_size = previous_max_hand_size
+		push_error("RETREAT failed to return the final card to hand")
+		return
+	hand_area.max_hand_size = previous_max_hand_size
 
 
 func _refresh_event_display(instance: EventInstance) -> void:
@@ -421,6 +509,7 @@ func _finish_event_interaction() -> void:
 	_active_event = null
 	if not _is_exploration_failed:
 		drag_layer.set_interaction_locked(false)
+		_try_spawn_pending_faith_echoes()
 
 
 ## 调试：打印一次战斗结算的完整详细信息
@@ -430,14 +519,6 @@ func _print_combat_result_detail(result: CombatResult) -> void:
 	print("处理卡牌数: ", result.processed_card_count)
 	print("玩家最终: ", _stats_desc(result.player_stats_after))
 	print("怪物最终: ", _stats_desc(result.monster_stats_after))
-
-	if result.penalties.is_empty():
-		print("[惩罚] 无")
-	else:
-		for penalty in result.penalties:
-			if penalty == null:
-				continue
-			print("[惩罚] ", CombatPenalty.Type.keys()[penalty.type], " - ", penalty.get_description())
 
 	print("[战斗步骤] 共 ", result.steps.size(), " 步")
 	for i in result.steps.size():

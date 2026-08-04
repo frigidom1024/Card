@@ -3,6 +3,20 @@ extends Resource
 
 @export var entries: Array[EventEntry] = []
 @export var event_scene:PackedScene
+
+
+## Returns templates that can be instantiated as one dynamic encounter of the requested type.
+func get_templates_of_type(event_type: EventData.EventType) -> Array[EventData]:
+	var templates: Array[EventData] = []
+	for entry in entries:
+		if entry == null or entry.event_data == null:
+			continue
+		if entry.event_data.event_type != event_type or entry.event_data in templates:
+			continue
+		templates.append(entry.event_data)
+	return templates
+
+
 # 提供给外部的事件生成
 func generate_event_datas() -> Array[EventInstance]:
 	var datas: Array[EventInstance] = []

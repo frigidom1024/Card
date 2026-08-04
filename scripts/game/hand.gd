@@ -5,6 +5,7 @@ extends Node2D
 # ===== 信号 =====
 signal card_added(card: CardEntity)
 signal card_removed(card: CardEntity)
+signal hand_count_changed(current_count: int, max_count: int)
 signal card_selected(card: CardEntity)
 signal card_hovered(card: CardEntity)
 signal card_unhovered(card: CardEntity)
@@ -20,44 +21,18 @@ signal card_unhovered(card: CardEntity)
 @export var hover_offset: float = -40.0
 @export var animation_duration: float = 0.15
 
-@export_group("视觉效果")
-@export var show_debug: bool = true:
-	set(v):
-		show_debug = v
-		queue_redraw()
-
 # ===== 内部状态 =====
 var cards: Array[CardEntity] = []
 var hovered_card: CardEntity = null
 var selected_card: CardEntity = null
 
-# ===== 生命周期 =====
-func _ready() -> void:
-	queue_redraw()
-
-func _draw() -> void:
-	if not show_debug:
-		return
-
-	# 根据最大手牌数计算区域范围
-	var max_count = max_hand_size
-	var total_width = (max_count - 1) * (card_width + card_spacing) + card_width
-	var start_x = -total_width / 2
-	var area_height = 180.0
-	var area_rect = Rect2(start_x, -area_height / 2, total_width, area_height)
-
-	# 半透明背景
-	draw_rect(area_rect, Color(0, 0.5, 1, 0.08), true)
-	# 边框
-	draw_rect(area_rect, Color(0, 0.5, 1, 0.3), false, 1.0)
-
-	# 标签
-	var label_str = "手牌区 [%d/%d]" % [cards.size(), max_hand_size]
-	draw_string(ThemeDB.fallback_font, Vector2(start_x, -area_height / 2 - 6), label_str, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0, 0.5, 1, 0.6))
-
 # ============================================================
 # 核心方法
 # ============================================================
+
+func _emit_hand_count_changed() -> void:
+	hand_count_changed.emit(cards.size(), max_hand_size)
+
 
 func add_card(card: CardEntity, animate: bool = true) -> bool:
 	# 检查是否已满
@@ -78,10 +53,11 @@ func add_card(card: CardEntity, animate: bool = true) -> bool:
 
 	# 2. 重置卡牌状态
 	card.scale = Vector2.ONE
-	card.z_index = 0
+	card.z_index = RenderPriority.CARD_BASE
 
 	# 3. 添加到列表
 	cards.append(card)
+	_emit_hand_count_changed()
 
 	# 4. 连接信号
 	_connect_card_signals(card)
@@ -100,6 +76,7 @@ func remove_card(card: CardEntity, animate: bool = true) -> bool:
 
 	# 1. 从列表中移除
 	cards.erase(card)
+	_emit_hand_count_changed()
 
 	# 2. 断开信号
 	_disconnect_card_signals(card)
@@ -117,6 +94,7 @@ func clear_hand() -> void:
 		_disconnect_card_signals(card)
 
 	cards.clear()
+	_emit_hand_count_changed()
 	rearrange_cards(false)
 
 func get_card_count() -> int:
@@ -145,13 +123,13 @@ func rearrange_cards(animate: bool = true) -> void:
 		var x_pos = start_x + i * (card_width + card_spacing)
 		var final_pos = Vector2(x_pos, 0)
 		var final_scale = Vector2.ONE
-		var final_z = i
+		var final_z = RenderPriority.CARD_BASE + i
 
 		# 悬停效果：上浮 + 放大
 		if card == hovered_card:
 			final_pos.y += hover_offset
 			final_scale = Vector2(hover_scale, hover_scale)
-			final_z = 100
+			final_z = RenderPriority.CARD_HAND_HOVER
 
 		# 应用变换
 		if animate:
@@ -161,7 +139,6 @@ func rearrange_cards(animate: bool = true) -> void:
 			card.scale = final_scale
 			card.z_index = final_z
 
-	queue_redraw()
 
 # ============================================================
 # 动画工具

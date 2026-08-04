@@ -14,15 +14,36 @@ func place_initial_events(
 	if rng == null:
 		random.randomize()
 	for instance in event_lib.generate_event_datas():
-		var candidates := _get_valid_origins(instance, board)
-		if candidates.is_empty():
-			push_warning("No board space remains for event: %s" % instance.template.event_id)
-			continue
-		instance.origin = candidates[random.randi_range(0, candidates.size() - 1)]
-		var event_node := event_lib.create_event_scene(instance, board.cell_size)
-		if event_node and board.attach_event(event_node):
+		if place_event_instance(instance, event_lib, board, random):
 			placed.append(instance)
+		elif instance != null and instance.template != null:
+			push_warning("No board space remains for event: %s" % instance.template.event_id)
 	return placed
+
+
+## Attaches a supplied runtime event at one randomly chosen valid map origin.
+func place_event_instance(
+	instance: EventInstance,
+	event_lib: EventLib,
+	board: Board,
+	rng: RandomNumberGenerator = null
+) -> bool:
+	if instance == null or instance.template == null or event_lib == null or board == null:
+		return false
+	var candidates := _get_valid_origins(instance, board)
+	if candidates.is_empty():
+		return false
+	var random := rng if rng else RandomNumberGenerator.new()
+	if rng == null:
+		random.randomize()
+	instance.origin = candidates[random.randi_range(0, candidates.size() - 1)]
+	var event_node := event_lib.create_event_scene(instance, board.cell_size)
+	if event_node != null and board.attach_event(event_node):
+		return true
+	if event_node != null:
+		event_node.queue_free()
+	instance.origin = Vector2i(-1, -1)
+	return false
 
 
 func _get_valid_origins(instance: EventInstance, board: Board) -> Array[Vector2i]:

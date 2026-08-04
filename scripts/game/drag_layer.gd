@@ -1,6 +1,9 @@
 class_name DragLayer
 extends Node2D
 
+## Emitted once after the player deliberately retracts one placed card and its followers.
+signal manual_chain_retracted(removed_card: CardEntity, following_card_count: int)
+
 var board: Board
 var hand_area: HandArea
 
@@ -32,6 +35,12 @@ func set_interaction_locked(locked: bool) -> void:
 		_cancel_active_drag()
 
 
+func can_start_drag(card: CardEntity) -> bool:
+	if interaction_locked or card == null:
+		return false
+	return true
+
+
 func on_card_drag_start(card: CardEntity) -> void:
 	if interaction_locked or card == null:
 		return
@@ -42,6 +51,7 @@ func on_card_drag_start(card: CardEntity) -> void:
 	_drag_origin_direction = card.card_instance.direction if card.card_instance else 0
 	_drag_origin_was_on_board = board != null and card in board.cards
 	_drag_origin_hand_area = hand_area if hand_area and card in hand_area.cards else null
+
 
 	# 如果卡牌在棋盘上，释放格子 + 撤回后续卡牌
 	if _drag_origin_was_on_board:
@@ -55,12 +65,13 @@ func on_card_drag_start(card: CardEntity) -> void:
 				c.card_instance.direction = 0
 			if hand_area:
 				hand_area.add_card(c)
+		manual_chain_retracted.emit(card, following.size())
 	# 如果卡牌在手牌区，先从手牌区移除
 	if _drag_origin_hand_area:
 		_drag_origin_hand_area.remove_card(card, false)
 
 	card.reparent(self)
-	card.z_index = 100
+	card.z_index = RenderPriority.CARD_DRAGGING
 
 
 func on_card_drag_end(card: CardEntity) -> void:
@@ -226,7 +237,7 @@ func _show_hint(text: String) -> void:
 
 	# 添加到顶层 CanvasLayer
 	var canvas = CanvasLayer.new()
-	canvas.layer = 256
+	canvas.layer = RenderPriority.DRAG_HINT
 	canvas.name = "DragHintCanvas"
 	add_child(canvas)
 	canvas.add_child(_hint_label)
