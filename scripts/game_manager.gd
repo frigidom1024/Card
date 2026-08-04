@@ -14,6 +14,7 @@ signal faith_changed(current_faith: int)
 @onready var card_manager: Node2D = $GameplayCanvas/CardManager
 @onready var hand_area: HandArea = $GameplayCanvas/HandManager
 @onready var hand_tray: HandTray = $GameplayCanvas/HandTray
+@onready var pilgrim_crest_hud: PilgrimCrestHud = $GameplayCanvas/PilgrimCrestHud
 @onready var drag_layer: DragLayer = $GameplayCanvas/DragLayer
 @onready var event_modal_layer: CanvasLayer = $EventModalLayer
 @onready var shop_event_view = $EventModalLayer/ShopEventView
@@ -36,7 +37,6 @@ var _active_event: EventInstance
 var _pending_combat_instance: EventInstance
 var _pending_combat_result: CombatResult
 var _is_exploration_failed := false
-var _faith_label: Label
 var _pending_faith_echo_spawns := 0
 
 # 所有玩家相关卡牌数据引用
@@ -64,14 +64,11 @@ func _ready() -> void:
 		hand_area.hand_count_changed.connect(_sync_hand_tray)
 	_sync_hand_tray()
 
-	_create_faith_hud()
-	if not faith_changed.is_connected(_update_faith_hud):
-		faith_changed.connect(_update_faith_hud)
 	if not _faith_service.faith_changed.is_connected(_on_faith_changed):
 		_faith_service.faith_changed.connect(_on_faith_changed)
 	if not _faith_service.echo_spawn_requested.is_connected(_on_echo_spawn_requested):
 		_faith_service.echo_spawn_requested.connect(_on_echo_spawn_requested)
-	_update_faith_hud(_faith_service.get_faith())
+	_sync_pilgrim_crest()
 
 	# DragLayer only owns the interaction. FaithService observes deliberate retractions.
 	drag_layer.board = board
@@ -167,28 +164,23 @@ func init_player_cards() -> bool:
 	return true
 
 
-func _create_faith_hud() -> void:
-	if _faith_label != null and is_instance_valid(_faith_label):
-		return
-	var hud := CanvasLayer.new()
-	hud.name = "FaithHud"
-	hud.layer = 0
-	add_child(hud)
-	_faith_label = Label.new()
-	_faith_label.name = "FaithLabel"
-	_faith_label.position = Vector2(24, 20)
-	_faith_label.add_theme_font_size_override("font_size", 24)
-	_faith_label.add_theme_color_override("font_color", Color("f2d58a"))
-	hud.add_child(_faith_label)
-
-
-func _update_faith_hud(current_faith: int) -> void:
-	if _faith_label != null and is_instance_valid(_faith_label):
-		_faith_label.text = "信仰：%d" % current_faith
-
-
 func _on_faith_changed(current_faith: int) -> void:
 	faith_changed.emit(current_faith)
+	if pilgrim_crest_hud != null:
+		pilgrim_crest_hud.set_faith(current_faith)
+
+
+func _sync_pilgrim_crest() -> void:
+	if pilgrim_crest_hud == null:
+		return
+	if player_stats != null:
+		pilgrim_crest_hud.set_vitality(player_stats.hp, player_stats.max_hp)
+	pilgrim_crest_hud.set_faith(_faith_service.get_faith())
+
+
+func set_player_temporary_status(status_text: String) -> void:
+	if pilgrim_crest_hud != null:
+		pilgrim_crest_hud.set_temporary_status(status_text)
 
 
 func _on_echo_spawn_requested() -> void:
@@ -438,6 +430,7 @@ func _apply_player_combat_state(result_stats: CombatStats) -> void:
 		return
 	player_stats.hp = result_stats.hp
 	player_stats.defense = 0
+	_sync_pilgrim_crest()
 
 
 func _clear_player_transient_state() -> void:

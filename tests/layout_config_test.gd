@@ -104,7 +104,12 @@ func _test_game_manager_centering() -> void:
 	_expect(gm.configure_run(RevivalDeck), "layout setup configures a starting deck")
 	root.add_child(gm)
 	var gameplay_canvas := gm.get_node_or_null("GameplayCanvas")
+	var pilgrim_crest_hud := gm.get_node_or_null("GameplayCanvas/PilgrimCrestHud") as PilgrimCrestHud
 	var hand_tray := gm.get_node_or_null("GameplayCanvas/HandTray") as HandTray
+	_expect(pilgrim_crest_hud != null, "game manager owns a Pilgrim Crest HUD inside the gameplay canvas")
+	_expect(pilgrim_crest_hud != null and pilgrim_crest_hud.get_parent() == gameplay_canvas, "Pilgrim Crest HUD scales with the gameplay canvas")
+	_expect(pilgrim_crest_hud != null and pilgrim_crest_hud.z_index == RenderPriority.PLAYER_HUD, "Pilgrim Crest HUD uses the player HUD render layer")
+	_expect(pilgrim_crest_hud != null and pilgrim_crest_hud.mouse_filter == Control.MOUSE_FILTER_IGNORE, "Pilgrim Crest HUD does not block card input")
 	_expect(hand_tray != null, "game manager owns a hand tray inside the gameplay canvas")
 	_expect(hand_tray != null and hand_tray.get_parent() == gameplay_canvas, "hand tray scales with the gameplay canvas")
 	_expect(hand_tray != null and hand_tray.z_index == -1, "hand tray uses the required render layer")

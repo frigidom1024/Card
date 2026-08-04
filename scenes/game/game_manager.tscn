@@ -15,6 +15,7 @@
 [ext_resource type="Script" uid="uid://dkoovc0bwysbb" path="res://scripts/game/gameplay_canvas.gd" id="13_gameplay_canvas"]
 [ext_resource type="Texture2D" uid="uid://bdykofgan53ce" path="res://assert/bg/RidWoodBg.jpg" id="14_7ibbv"]
 [ext_resource type="PackedScene" path="res://scenes/game/hand_tray.tscn" id="15_hand_tray"]
+[ext_resource type="PackedScene" path="res://scenes/game/pilgrim_crest_hud.tscn" id="16_pilgrim_crest"]
 
 [node name="GameManager" type="Node" unique_id=2111395174]
 script = ExtResource("1_q8mjp")
@@ -23,6 +24,9 @@ event_lib = ExtResource("9_event_lib")
 
 [node name="GameplayCanvas" type="Node2D" parent="." unique_id=249847659]
 script = ExtResource("13_gameplay_canvas")
+
+[node name="PilgrimCrestHud" parent="GameplayCanvas" instance=ExtResource("16_pilgrim_crest")]
+z_index = -5
 
 [node name="HandTray" parent="GameplayCanvas" instance=ExtResource("15_hand_tray")]
 z_index = -1

@@ -39,8 +39,8 @@ func _test_manually_removing_a_board_card_spends_one_faith() -> void:
 	if tail_card != null:
 		manager.drag_layer.on_card_drag_start(tail_card)
 	_expect(manager.player_data.get("faith") == 2, "manual chain removal spends PlayerData faith")
-	var faith_label := manager.find_child("FaithLabel", true, false) as Label
-	_expect(faith_label != null and faith_label.text == "信仰：2", "faith HUD refreshes after manual chain removal")
+	var faith_value := manager.get_node_or_null("GameplayCanvas/PilgrimCrestHud/FaithSeal/FaithValue") as Label
+	_expect(faith_value != null and faith_value.text == "FAITH · 2", "faith HUD refreshes after manual chain removal")
 	_cleanup_manager(manager)
 
 
@@ -48,8 +48,8 @@ func _test_faith_is_visible_and_system_tail_return_is_free() -> void:
 	var manager := await _make_game_manager()
 	var tail_card := _place_card(manager, Vector2i(0, 0), CardData.CardType.ROOT)
 	var follower := _place_card(manager, Vector2i(2, 0), CardData.CardType.NORMAL)
-	var faith_label := manager.find_child("FaithLabel", true, false) as Label
-	_expect(faith_label != null and faith_label.text == "信仰：3", "faith HUD shows the current faith")
+	var faith_value := manager.get_node_or_null("GameplayCanvas/PilgrimCrestHud/FaithSeal/FaithValue") as Label
+	_expect(faith_value != null and faith_value.text == "FAITH · 3", "faith HUD shows the current faith")
 	manager._return_tail_card_to_hand()
 	_expect(manager.player_data.get("faith") == 3, "system tail return does not spend PlayerData faith")
 	_expect(tail_card in manager.board.cards and follower in manager.hand_area.cards, "system tail return keeps the root and returns only the tail")

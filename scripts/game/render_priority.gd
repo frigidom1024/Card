@@ -2,6 +2,7 @@ class_name RenderPriority
 extends RefCounted
 
 const BOARD_BACKGROUND := -10
+const PLAYER_HUD := -5
 const CARD_BASE := 0
 const CARD_HAND_HOVER := 100
 const CARD_DRAGGING := 100
