@@ -14,7 +14,7 @@ func _init() -> void:
 
 func _run_tests() -> void:
 	await _test_monster_victory_resolves_event_and_unlocks_exploration()
-	await _test_retreat_preserves_monster_hp_and_removes_the_real_tail_card()
+	await _test_retreat_preserves_encounter_and_returns_the_real_tail_card()
 	await _test_defeat_emits_failure_and_keeps_exploration_locked()
 	await _test_shop_event_routes_purchase_and_close()
 	await _test_treasure_event_routes_claim_and_resolves()
@@ -56,7 +56,7 @@ func _test_monster_victory_resolves_event_and_unlocks_exploration() -> void:
 	_cleanup_manager(manager)
 
 
-func _test_retreat_preserves_monster_hp_and_removes_the_real_tail_card() -> void:
+func _test_retreat_preserves_encounter_and_returns_the_real_tail_card() -> void:
 	var manager := await _make_game_manager()
 	if not _require_combat_signals(manager):
 		_cleanup_manager(manager)
@@ -86,7 +86,7 @@ func _test_retreat_preserves_monster_hp_and_removes_the_real_tail_card() -> void
 	_expect(outcomes.is_empty(), "retreat does not emit combat result before confirmation")
 	_expect(manager.player_stats.hp == 10, "retreat does not apply player state before confirmation")
 	_expect(runtime_state.mob_instance.stats.hp == 20, "retreat does not persist monster damage before confirmation")
-	_expect(board.cards.size() == 3, "retreat does not remove a board tail card before confirmation")
+	_expect(board.cards.size() == 3, "retreat does not return the board tail card before confirmation")
 	_expect(tail in board.cards, "retreat retains the real final CardEntity before confirmation")
 	_expect(manager.drag_layer.is_interaction_locked(), "retreat keeps exploration locked before confirmation")
 
@@ -97,15 +97,28 @@ func _test_retreat_preserves_monster_hp_and_removes_the_real_tail_card() -> void
 		outcomes.size() == 1 and outcomes[0].outcome == CombatResult.Outcome.RETREAT,
 		"confirmed retreat result has RETREAT outcome"
 	)
-	_expect(manager.player_stats.hp == 10, "confirmed retreat restores the player HP from before combat")
+	_expect(manager.player_stats.hp == 7, "confirmed retreat persists player damage")
+	_expect(manager.player_stats.defense == 0, "confirmed retreat clears player encounter defense")
 	_expect(runtime_state.mob_instance.stats.hp == 16, "confirmed retreat persists monster HP damage")
 	_expect(runtime_state.mob_instance.stats.defense == 0, "confirmed retreat clears monster encounter defense")
+	_expect(runtime_state.mob_instance.action_index == 0, "confirmed retreat preserves the next monster action")
+	_expect(runtime_state.mob_instance.enhancement_stacks == 1, "confirmed retreat adds one enhancement stack")
 	_expect(board.cards.size() == 2, "confirmed retreat removes one board tail card")
 	_expect(tail not in board.cards, "confirmed retreat removes the actual final CardEntity from Board")
-	_expect(tail.card_instance.cur_zone == CardInstance.ZONE.DISCARD, "confirmed retreat moves the removed tail instance to discard")
-	_expect(tail not in manager.card_entities, "confirmed retreat removes discarded tail entity from manager ownership")
-	_expect(tail.card_instance not in manager.cards_inst, "confirmed retreat removes discarded tail instance from manager ownership")
-	_expect(not manager.drag_layer.is_interaction_locked(), "confirmed retreat unlocks exploration")
+	_expect(tail.card_instance.cur_zone == CardInstance.ZONE.HAND, "confirmed retreat moves the tail instance to hand")
+	_expect(tail in manager.hand_area.cards, "confirmed retreat returns the actual tail entity to hand")
+	_expect(tail in manager.card_entities, "confirmed retreat preserves returned tail entity ownership")
+	_expect(tail.card_instance in manager.cards_inst, "confirmed retreat preserves returned tail instance ownership")
+	_expect(not manager.drag_layer.is_interaction_locked(), "confirmed retreat unlocks exploration for another challenge")
+
+	if tail != null and manager.hand_area.remove_card(tail):
+		tail.global_position = board.to_global(_horizontal_card_center(board, Vector2i(4, 0)))
+		tail.rotation_degrees = 90.0
+		_expect(board.add_card(tail), "returned tail can be placed to challenge the same encounter again")
+		await process_frame
+		var next_result: CombatResult = manager._pending_combat_result
+		_expect(next_result != null and next_result.outcome == CombatResult.Outcome.RETREAT, "second challenge opens another retreat result")
+		_expect(next_result != null and next_result.steps.size() >= 3 and next_result.steps[2].effects[0].value == 4, "strengthening adds one to the next monster action")
 	_cleanup_manager(manager)
 
 

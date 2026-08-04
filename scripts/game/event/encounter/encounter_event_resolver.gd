@@ -23,5 +23,7 @@ func begin(instance: EventInstance) -> MobInstance:
 	if state.mob_instance != null:
 		return state.mob_instance
 	state.mob_instance = mob.create_instance()
+	if event_type == EventData.EventType.BOSS:
+		state.mob_instance.max_enhancement_stacks = 3
 	state.has_started = true
 	return state.mob_instance

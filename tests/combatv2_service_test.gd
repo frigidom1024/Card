@@ -6,8 +6,6 @@ const CombatStatsDataScript = preload("res://scripts/combatv2/combat_stats_data.
 const CombatResultScript = preload("res://scripts/combatv2/combat_result.gd")
 const CombatStepScript = preload("res://scripts/combatv2/combat_step.gd")
 const CombatEffectScript = preload("res://scripts/combatv2/card/combat_effect.gd")
-const PenaltyContextScript = preload("res://scripts/combatv2/penalty/penalty_context.gd")
-const CombatPenaltyScript = preload("res://scripts/combatv2/penalty/combat_penalty.gd")
 const PreviousWeaponDamageDoubleRuleScript = preload(
 	"res://scripts/combatv2/card/rules/previous_weapon_damage_double_rule.gd"
 )
@@ -27,12 +25,13 @@ func _init() -> void:
 	_test_previous_weapon_rule_modifies_current_card_damage()
 	_test_lethal_normal_card_skips_monster_counterattack()
 	_test_lethal_monster_action_stops_remaining_cards()
-	_test_retreat_returns_and_executes_tail_card_penalty()
+	_test_retreat_result_keeps_combat_state_for_retry()
+	_test_monster_strengthening_caps_stacks()
 	_test_result_steps_and_inputs_are_isolated_snapshots()
 	_test_missing_monster_action_records_an_empty_step()
 	_test_monster_defense_action_resolves_after_player_card()
 	_test_monster_heal_action_respects_current_hp()
-	_test_tail_penalty_keeps_the_root_when_it_is_the_only_card()
+	_test_root_only_chain_returns_retreat()
 	call_deferred("_finish_tests")
 
 
@@ -68,7 +67,7 @@ func _test_normal_card_and_monster_action_alternate() -> void:
 
 	var result := CombatServiceScript.new().resolve_encounter(player, [root, slash], monster)
 
-	_expect_result(result, CombatResultScript.Outcome.RETREAT, 2, 1, "alternating combat retreats")
+	_expect_result(result, CombatResultScript.Outcome.RETREAT, 2, 0, "alternating combat retreats")
 	_expect_stats(result.player_stats_after, 20, 16, 0, 0, "alternating combat final player stats")
 	_expect_stats(result.monster_stats_after, 10, 7, 0, 0, "alternating combat final monster stats")
 	_expect_step(
@@ -114,7 +113,7 @@ func _test_defense_is_consumed_before_player_hp() -> void:
 
 	var result := CombatServiceScript.new().resolve_encounter(player, [root, guard], monster)
 
-	_expect_result(result, CombatResultScript.Outcome.RETREAT, 2, 1, "defense scenario retreats")
+	_expect_result(result, CombatResultScript.Outcome.RETREAT, 2, 0, "defense scenario retreats")
 	_expect_stats(result.player_stats_after, 10, 10, 0, 2, "defense absorbs monster attack")
 	_expect_step(
 		result,
@@ -159,7 +158,7 @@ func _test_healing_is_capped_before_monster_action() -> void:
 
 	var result := CombatServiceScript.new().resolve_encounter(player, [root, recovery], monster)
 
-	_expect_result(result, CombatResultScript.Outcome.RETREAT, 2, 1, "healing scenario retreats")
+	_expect_result(result, CombatResultScript.Outcome.RETREAT, 2, 0, "healing scenario retreats")
 	_expect_stats(result.player_stats_after, 10, 8, 0, 0, "healing caps at max HP before damage")
 	_expect_step(
 		result,
@@ -354,89 +353,35 @@ func _test_lethal_monster_action_stops_remaining_cards() -> void:
 	_expect(result.steps.size() == 3, "defeat stops the unprocessed tail card")
 
 
-func _test_retreat_returns_and_executes_tail_card_penalty() -> void:
+func _test_retreat_result_keeps_combat_state_for_retry() -> void:
 	var player := _make_stats(10, 10, 0, 0)
 	var root := _make_card("Retreat Root", CardData.CardType.ROOT)
-	var poke := _make_card("Poke", CardData.CardType.NORMAL, 1)
+	var poke := _make_card("Poke", CardData.CardType.NORMAL, 4)
 	var tail_guard := _make_card("Tail Guard", CardData.CardType.NORMAL, 0, 2)
-	var monster := _make_monster("Ogre", 20, 0, [_attack(0)])
+	var monster := _make_monster("Echo", 20, 0, [_attack(3)])
 	var board: Array[CardInstance] = [root, poke, tail_guard]
 
 	var result := CombatServiceScript.new().resolve_encounter(player, board, monster)
 
 	_expect_result(
-		result, CombatResultScript.Outcome.RETREAT, 3, 1, "card chain exhaustion retreats"
-	)
-	_expect_stats(
-		result.player_stats_after, 10, 10, 0, 2, "retreat preserves resolved combat defense"
-	)
-	_expect_stats(result.monster_stats_after, 20, 19, 0, 0, "retreat keeps monster battle damage")
-	_expect_step(
 		result,
-		0,
-		CombatStepScript.Kind.ROOT_CARD,
-		"Retreat Root",
-		[10, 10, 0, 0],
-		[10, 10, 0, 0],
-		[20, 20, 0, 0],
-		[20, 20, 0, 0],
-		[]
-	)
-	_expect_step(
-		result,
-		1,
-		CombatStepScript.Kind.PLAYER_CARD,
-		"Poke",
-		[10, 10, 0, 0],
-		[10, 10, 0, 0],
-		[20, 20, 0, 0],
-		[20, 19, 0, 0],
-		[_damage_effect(CombatEffect.Target.MONSTER, 1, CombatEffect.SourceType.PLAYER_CARD)]
-	)
-	_expect_step(
-		result,
-		2,
-		CombatStepScript.Kind.MONSTER_ACTION,
-		"Ogre",
-		[10, 10, 0, 0],
-		[10, 10, 0, 0],
-		[20, 19, 0, 0],
-		[20, 19, 0, 0],
-		[_damage_effect(CombatEffect.Target.PLAYER, 0, CombatEffect.SourceType.MONSTER_ACTION)]
-	)
-	_expect_step(
-		result,
+		CombatResultScript.Outcome.RETREAT,
 		3,
-		CombatStepScript.Kind.PLAYER_CARD,
-		"Tail Guard",
-		[10, 10, 0, 0],
-		[10, 10, 0, 2],
-		[20, 19, 0, 0],
-		[20, 19, 0, 0],
-		[_defense_effect(CombatEffect.Target.PLAYER, 2, CombatEffect.SourceType.PLAYER_CARD)]
+		0,
+		"card chain exhaustion returns RETREAT"
 	)
-	_expect_step(
-		result,
-		4,
-		CombatStepScript.Kind.MONSTER_ACTION,
-		"Ogre",
-		[10, 10, 0, 2],
-		[10, 10, 0, 2],
-		[20, 19, 0, 0],
-		[20, 19, 0, 0],
-		[_damage_effect(CombatEffect.Target.PLAYER, 0, CombatEffect.SourceType.MONSTER_ACTION)]
-	)
-	_expect(
-		result.penalties[0].type == CombatPenaltyScript.Type.REMOVE_TAIL_CARD,
-		"retreat emits the remove-tail-card penalty"
-	)
-	var penalty_context := PenaltyContextScript.new()
-	penalty_context.cards_on_board = board
-	_expect(
-		result.penalties[0].execute(penalty_context), "retreat penalty reports successful execution"
-	)
-	_expect(board.size() == 2, "retreat penalty removes exactly one card")
-	_expect(board.back() == poke, "retreat penalty removes the original tail card")
+	_expect_stats(result.player_stats_after, 10, 6, 0, 0, "retreat preserves combat damage before settlement")
+	_expect_stats(result.monster_stats_after, 20, 16, 0, 0, "retreat keeps monster battle damage")
+	_expect(result.monster_action_index_after == 0, "retreat snapshots the next monster action")
+
+
+func _test_monster_strengthening_caps_stacks() -> void:
+	var monster := _make_monster("Echo", 10, 0, [])
+
+	_expect(monster.gain_enhancement(), "first strengthening increases the stack count")
+	_expect(monster.gain_enhancement(), "second strengthening increases the stack count")
+	_expect(not monster.gain_enhancement(), "normal echo strengthening stops at the cap")
+	_expect(monster.enhancement_stacks == 2, "normal echo strengthening caps at two stacks")
 
 
 func _test_result_steps_and_inputs_are_isolated_snapshots() -> void:
@@ -447,7 +392,7 @@ func _test_result_steps_and_inputs_are_isolated_snapshots() -> void:
 
 	var result := CombatServiceScript.new().resolve_encounter(player, [root, wait], monster)
 
-	_expect_result(result, CombatResultScript.Outcome.RETREAT, 2, 1, "snapshot scenario retreats")
+	_expect_result(result, CombatResultScript.Outcome.RETREAT, 2, 0, "snapshot scenario retreats")
 	_expect_step(
 		result,
 		0,
@@ -505,7 +450,7 @@ func _test_missing_monster_action_records_an_empty_step() -> void:
 	var result := CombatServiceScript.new().resolve_encounter(player, [root, wait], monster)
 
 	_expect_result(
-		result, CombatResultScript.Outcome.RETREAT, 2, 1, "missing action scenario retreats"
+		result, CombatResultScript.Outcome.RETREAT, 2, 0, "missing action scenario retreats"
 	)
 	_expect_step(
 		result,
@@ -551,7 +496,7 @@ func _test_monster_defense_action_resolves_after_player_card() -> void:
 	var result := CombatServiceScript.new().resolve_encounter(player, [root, poke], monster)
 
 	_expect_result(
-		result, CombatResultScript.Outcome.RETREAT, 2, 1, "monster defense scenario retreats"
+		result, CombatResultScript.Outcome.RETREAT, 2, 0, "monster defense scenario retreats"
 	)
 	_expect_stats(result.player_stats_after, 10, 10, 0, 0, "monster defense final player stats")
 	_expect_stats(result.monster_stats_after, 10, 8, 0, 3, "monster defense final monster stats")
@@ -600,7 +545,7 @@ func _test_monster_heal_action_respects_current_hp() -> void:
 	var result := CombatServiceScript.new().resolve_encounter(player, [root, poke], monster)
 
 	_expect_result(
-		result, CombatResultScript.Outcome.RETREAT, 2, 1, "monster heal scenario retreats"
+		result, CombatResultScript.Outcome.RETREAT, 2, 0, "monster heal scenario retreats"
 	)
 	_expect_stats(result.player_stats_after, 10, 10, 0, 0, "monster heal final player stats")
 	_expect_stats(result.monster_stats_after, 10, 8, 0, 0, "monster heal final monster stats")
@@ -639,7 +584,7 @@ func _test_monster_heal_action_respects_current_hp() -> void:
 	)
 
 
-func _test_tail_penalty_keeps_the_root_when_it_is_the_only_card() -> void:
+func _test_root_only_chain_returns_retreat() -> void:
 	var player := _make_stats(10, 10, 0, 0)
 	var root := _make_card("Only Root", CardData.CardType.ROOT)
 	var monster := _make_monster("Endless Wall", 20, 0, [])
@@ -647,7 +592,7 @@ func _test_tail_penalty_keeps_the_root_when_it_is_the_only_card() -> void:
 
 	var result := CombatServiceScript.new().resolve_encounter(player, board, monster)
 
-	_expect_result(result, CombatResultScript.Outcome.RETREAT, 1, 1, "root-only chain retreats")
+	_expect_result(result, CombatResultScript.Outcome.RETREAT, 1, 0, "root-only chain retreats")
 	_expect_step(
 		result,
 		0,
@@ -660,12 +605,6 @@ func _test_tail_penalty_keeps_the_root_when_it_is_the_only_card() -> void:
 		[]
 	)
 	_expect(result.steps.size() == 1, "a nonlethal root does not receive a monster action")
-	var penalty_context := PenaltyContextScript.new()
-	penalty_context.cards_on_board = board
-	_expect(
-		result.penalties[0].execute(penalty_context), "root-only retreat penalty reports execution"
-	)
-	_expect(board.size() == 1 and board[0] == root, "retreat penalty never removes the root card")
 
 
 func _expect_result(

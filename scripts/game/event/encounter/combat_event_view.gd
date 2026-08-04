@@ -138,9 +138,9 @@ func _show_settlement() -> void:
 			_result_body_label.text = "已击败 %s。\n本次遭遇已解决。" % _monster_name()
 			_confirm_button.text = "确认继续"
 		CombatResult.Outcome.RETREAT:
-			_result_title_label.text = "撤离"
-			_result_body_label.text = "牌链已结算完毕，但未能击败 %s。" % _monster_name()
-			_confirm_button.text = "接受惩罚并继续"
+			_result_title_label.text = "牌链耗尽"
+			_result_body_label.text = "未能击败 %s。\n最后一张牌返回手牌；残响已强化。重新布置牌链后可再次挑战。" % _monster_name()
+			_confirm_button.text = "重整牌链"
 		CombatResult.Outcome.DEFEAT:
 			_result_title_label.text = "远征失败"
 			_result_body_label.text = "生命降至 0，探索结束。"

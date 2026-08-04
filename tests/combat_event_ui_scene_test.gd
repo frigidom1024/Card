@@ -11,7 +11,7 @@ func _init() -> void:
 
 func _run_tests() -> void:
 	await _test_steps_render_in_order_and_update_after_snapshots()
-	await _test_result_panel_stays_hidden_until_all_steps_finish_then_formats_retreat_penalty()
+	await _test_result_panel_stays_hidden_until_all_steps_finish_then_formats_retreat()
 	await _test_victory_and_defeat_settlement_copy_and_confirmation_signal()
 	quit(0 if _failure_count == 0 else 1)
 
@@ -52,11 +52,11 @@ func _test_steps_render_in_order_and_update_after_snapshots() -> void:
 	_cleanup_view(view)
 
 
-func _test_result_panel_stays_hidden_until_all_steps_finish_then_formats_retreat_penalty() -> void:
+func _test_result_panel_stays_hidden_until_all_steps_finish_then_formats_retreat() -> void:
 	var view := await _make_view()
 	if view == null:
 		return
-	var penalties: Array[CombatPenalty] = [CombatPenaltyRemoveTailCard.new()]
+	var penalties: Array[CombatPenalty] = []
 	view.call(
 		"show_combat",
 		null,
@@ -78,21 +78,12 @@ func _test_result_panel_stays_hidden_until_all_steps_finish_then_formats_retreat
 	if progress_button != null:
 		progress_button.pressed.emit()
 	_expect(result_panel != null and result_panel.visible, "explicit settlement action reveals result panel")
-	_expect(result_title != null and result_title.text == "撤离", "retreat settlement uses retreat title")
-	_expect(result_body != null and result_body.text.contains("未能击败"), "retreat settlement explains unresolved monster")
+	_expect(result_title != null and result_title.text == "牌链耗尽", "retreat settlement uses a player-facing title")
+	_expect(result_body != null and result_body.text.contains("最后一张牌返回手牌"), "retreat settlement explains the returned tail card")
+	_expect(penalty_list != null and penalty_list.get_child_count() == 0, "retreat settlement supports an empty penalty list")
 	_expect(
-		penalty_list != null and penalty_list.get_child_count() == 1,
-		"retreat settlement renders every combat penalty"
-	)
-	if penalty_list != null and penalty_list.get_child_count() == 1:
-		var penalty_label := penalty_list.get_child(0) as Label
-		_expect(
-			penalty_label != null and penalty_label.text == penalties[0].description,
-			"retreat settlement uses the penalty description"
-		)
-	_expect(
-		confirm_button != null and confirm_button.text == "接受惩罚并继续",
-		"retreat settlement names the confirmation action"
+		confirm_button != null and confirm_button.text == "重整牌链",
+		"retreat settlement names the retry action"
 	)
 	_cleanup_view(view)
 

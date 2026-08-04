@@ -24,7 +24,7 @@ func resolve_encounter(
 
 	if context.cards.is_empty() or not _is_root_card(context.cards[0]):
 		push_error("CombatService requires the first card in a chain to be a root card")
-		return _build_result(context, CombatResult.Outcome.RETREAT, _retreat_penalties())
+		return _build_result(context, CombatResult.Outcome.RETREAT)
 
 	var root: CardInstance = context.cards[0]
 	if resolve_player_card(context, root, 0, CombatEffect.SourceType.ROOT_CARD):
@@ -50,10 +50,7 @@ func resolve_encounter(
 		return _build_result(context, CombatResult.Outcome.DEFEAT)
 	if _is_monster_defeated(context):
 		return _build_result(context, CombatResult.Outcome.VICTORY)
-	return _build_result(context, CombatResult.Outcome.RETREAT, _retreat_penalties())
-
-
-	
+	return _build_result(context, CombatResult.Outcome.RETREAT)
 
 
 # gdlint: enable=max-returns
@@ -115,7 +112,9 @@ func resolve_monster_action(context: CombatContext) -> bool:
 		context.monster.next_action() if context != null and context.monster != null else null
 	)
 	if action != null:
-		for effect in MobActionResolverScript.to_effects(action, source_name):
+		for effect in MobActionResolverScript.to_effects(
+			action, source_name, context.monster.enhancement_stacks
+		):
 			apply_effect(context, effect)
 			applied_effects.append(effect)
 			if _is_player_defeated(context) or _is_monster_defeated(context):
@@ -181,14 +180,9 @@ func _build_result(
 		context.monster.stats if context != null and context.monster != null else null,
 		context.steps if context != null else [],
 		context.resolved_cards.size() if context != null else 0,
-		penalties
+		penalties,
+		context.monster.action_index if context != null and context.monster != null else 0
 	)
-
-
-func _retreat_penalties() -> Array[CombatPenalty]:
-	return [
-		CombatPenaltyRemoveTailCard.new()
-	]
 
 
 func _target_stats(context: CombatContext, target: CombatEffect.Target) -> CombatStats:
