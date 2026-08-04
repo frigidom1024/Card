@@ -144,7 +144,7 @@ func _clear_preview_container(container: Control) -> void:
 func _add_preview(parent: Control, card_data: CardData) -> void:
 	var card := CARD_ENTITY_SCENE.instantiate() as CardEntity
 	card.bind_instance(CardInstance.new(card_data))
-	card.set_display_only(true)
+	card.set_display_only(true, true, true)
 	parent.add_child(card)
 
 

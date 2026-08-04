@@ -337,10 +337,12 @@ custom_minimum_size = Vector2(520, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 1.4
+mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
 [node name="PreviewLayout" type="VBoxContainer" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 10
 
 [node name="PreviewTitle" type="Label" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel/PreviewLayout"]
