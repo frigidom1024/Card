@@ -1,6 +1,7 @@
 extends Node
 
 const ExplorationCoordinatorScript := preload("res://scripts/game/exploration/exploration_coordinator.gd")
+const EncounterResolutionCoordinatorScript := preload("res://scripts/game/event/encounter/encounter_resolution_coordinator.gd")
 const FaithServiceScript := preload("res://scripts/player/faith_service.gd")
 const MarketPriceContextScript := preload("res://scripts/game/market/market_price_context.gd")
 const MarketPricingServiceScript := preload("res://scripts/game/market/market_pricing_service.gd")
@@ -37,6 +38,7 @@ var player_stats: CombatStats
 var _exploration_coordinator: ExplorationCoordinator
 var _event_interaction_controller: EventInteractionController
 var _encounter_combat_flow: EncounterCombatFlowCoordinator
+var _encounter_resolution
 var _market_pricing := MarketPricingServiceScript.new()
 var _shop_event_resolver: ShopEventResolver
 var _persistent_market_state
@@ -119,6 +121,7 @@ func _ready() -> void:
 	_treasure_rng.randomize()
 
 	_configure_exploration()
+	_configure_encounter_resolution()
 	_center_layout()
 
 	# 窗口实时缩放时重新居中（带重复连接防护）
@@ -269,6 +272,28 @@ func _on_echo_spawn_requested() -> void:
 	_exploration_coordinator.request_faith_echo()
 
 
+## Configures confirmed combat result application without coupling it to modal UI.
+func _configure_encounter_resolution() -> void:
+	if _encounter_resolution == null:
+		_encounter_resolution = EncounterResolutionCoordinatorScript.new()
+	if not _encounter_resolution.configure(
+		board,
+		player_stats,
+		_run_card_service,
+		_exploration_coordinator,
+		Callable(self, "_sync_pilgrim_crest")
+	):
+		push_error("GameManager could not configure encounter resolution")
+		return
+	if not _encounter_resolution.exploration_failed.is_connected(_on_encounter_exploration_failed):
+		_encounter_resolution.exploration_failed.connect(_on_encounter_exploration_failed)
+
+
+func _on_encounter_exploration_failed(result: CombatResult) -> void:
+	_is_exploration_failed = true
+	exploration_failed.emit(result)
+
+
 ## Creates the exploration facade; fog, event scheduling, and Boss pressure stay inside it.
 func _configure_exploration() -> void:
 	if event_lib == null or exploration_config == null:
@@ -358,8 +383,11 @@ func _on_combat_settlement_confirmed() -> void:
 	var result := _event_interaction_controller.get_pending_combat_result()
 	if instance == null or result == null:
 		return
+	# Keep the resolver aligned with any runtime player-stat replacement (for example, restart/debug setup).
+	_configure_encounter_resolution()
 	combat_event_view.hide_combat()
-	_apply_combat_result(instance, result)
+	if _encounter_resolution == null or not _encounter_resolution.apply(instance, result):
+		return
 	_event_interaction_controller.confirm_combat_settlement()
 	combat_resolved.emit(instance, result)
 
@@ -463,83 +491,11 @@ func _resolution_failure_message(failure: EventResolutionResult.Failure) -> Stri
 			return "事件结算失败。"
 
 
-func _apply_combat_result(instance: EventInstance, result: CombatResult) -> void:
-	match result.outcome:
-		CombatResult.Outcome.VICTORY:
-			_apply_player_combat_state(result.player_stats_after)
-			_apply_monster_combat_state(instance, result.monster_stats_after)
-			instance.resolve()
-			if instance.get_event_type() == EventData.EventType.BOSS and _exploration_coordinator != null:
-				_exploration_coordinator.dismiss_defeated_boss(instance)
-			else:
-				_refresh_event_display(instance)
-		CombatResult.Outcome.RETREAT:
-			_apply_player_combat_state(result.player_stats_after)
-			_apply_monster_combat_state(
-				instance, result.monster_stats_after, result.monster_action_index_after
-			)
-			_return_tail_card_to_hand()
-			_strengthen_encounter_monster(instance)
-			_refresh_event_display(instance)
-		CombatResult.Outcome.DEFEAT:
-			_apply_player_combat_state(result.player_stats_after)
-			_clear_monster_transient_state(instance)
-			_is_exploration_failed = true
-			exploration_failed.emit(result)
-
-
-func _apply_player_combat_state(result_stats: CombatStats) -> void:
-	if player_stats == null or result_stats == null:
-		return
-	player_stats.hp = result_stats.hp
-	player_stats.defense = 0
-	_sync_pilgrim_crest()
-
-
-func _clear_player_transient_state() -> void:
-	if player_stats != null:
-		player_stats.defense = 0
-
-
-func _apply_monster_combat_state(
-	instance: EventInstance, result_stats: CombatStats, action_index_after: int = -1
-) -> void:
-	var monster := _get_event_monster(instance)
-	if monster == null or monster.stats == null or result_stats == null:
-		return
-	monster.stats.hp = result_stats.hp
-	monster.stats.defense = 0
-	if action_index_after >= 0:
-		monster.action_index = action_index_after
-
-
-func _clear_monster_transient_state(instance: EventInstance) -> void:
-	var monster := _get_event_monster(instance)
-	if monster != null and monster.stats != null:
-		monster.stats.defense = 0
-
-
 func _get_event_monster(instance: EventInstance) -> MobInstance:
 	if instance == null:
 		return null
 	var state := instance.runtime_state as EncounterRuntimeState
 	return state.mob_instance if state != null else null
-
-
-func _strengthen_encounter_monster(instance: EventInstance) -> void:
-	var monster := _get_event_monster(instance)
-	if monster != null:
-		monster.gain_enhancement()
-
-
-func _return_tail_card_to_hand() -> void:
-	if board.cards.size() <= 1:
-		return
-	var tail: CardEntity = board.cards.back()
-	if tail == null or not board.remove_card(tail):
-		return
-	if _run_card_service == null or not _run_card_service.return_existing_to_hand_temporarily(tail):
-		push_error("RETREAT failed to return the final card to hand")
 
 
 func _refresh_event_display(instance: EventInstance) -> void:
