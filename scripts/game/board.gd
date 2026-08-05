@@ -2,6 +2,7 @@ class_name Board
 extends Node2D
 
 signal event_triggered(instance: EventInstance)
+signal card_return_requested(card: CardEntity)
 
 @export var cell_size: int = LayoutConfig.CELL_SIZE
 @export var width: int = 10
@@ -497,11 +498,17 @@ func add_card(card: CardEntity) -> bool:
 		card.rotation_degrees
 	)
 
+	# GUIDE 卡沿用普通卡牌的校验和吸附，但不加入牌链；
+	# 它会把当前牌链整体向前移动，并由上层负责回收到手牌。
+	if _is_guide_card(card):
+		_add_guide_card(card, cells)
+		clear_preview()
+		return true
+
 	# 重新父节点到棋盘
 	card.reparent(self)
 	card.set_on_board(true)
 	card.z_index = RenderPriority.CARD_BASE + len(cards)
-
 
 	# 记录占用
 	cards.append(card)
@@ -515,6 +522,70 @@ func add_card(card: CardEntity) -> bool:
 
 	clear_preview()
 	return true
+
+
+func _is_guide_card(card: CardEntity) -> bool:
+	return card.card_instance \
+		and card.card_instance.card_data \
+		and card.card_instance.card_data.card_type == CardData.CardType.GUIDE
+
+
+func _get_card_direction(card: CardEntity) -> int:
+	if card.card_instance != null:
+		return card.card_instance.direction
+	return _get_rotation_direction(card.rotation_degrees)
+
+
+func _add_guide_card(card: CardEntity, guide_cells: Array[Vector2i]) -> void:
+	var chain_snapshots: Array[Dictionary] = []
+	for chain_card in cards:
+		chain_snapshots.append({
+			"position": chain_card.global_position,
+			"rotation": chain_card.rotation_degrees,
+			"direction": _get_card_direction(chain_card),
+		})
+
+	var guide_snapshot := {
+		"position": card.global_position,
+		"rotation": card.rotation_degrees,
+		"direction": _get_card_direction(card),
+	}
+
+	# 先挂到棋盘，确保回手信号的接收方可以安全地重新挂载它。
+	card.reparent(self)
+	card.set_on_board(true)
+	card.z_index = RenderPriority.CARD_BASE + cards.size()
+
+	for index in range(cards.size()):
+		var target_snapshot: Dictionary = guide_snapshot
+		if index + 1 < chain_snapshots.size():
+			target_snapshot = chain_snapshots[index + 1]
+
+		var chain_card := cards[index]
+		chain_card.global_position = target_snapshot["position"]
+		chain_card.rotation_degrees = target_snapshot["rotation"]
+		if chain_card.card_instance != null:
+			chain_card.card_instance.direction = target_snapshot["direction"]
+
+	_rebuild_grid_owner()
+
+	var overlapping_event := get_overlapping_unresolved_event(guide_cells)
+	if overlapping_event:
+		print("触发事件")
+		event_triggered.emit(overlapping_event)
+
+	card_return_requested.emit(card)
+
+
+func _rebuild_grid_owner() -> void:
+	_grid_owner.clear()
+	for chain_card in cards:
+		var chain_cells := get_card_cells(
+			chain_card.global_position,
+			chain_card.rotation_degrees
+		)
+		for cell in chain_cells:
+			_grid_owner[cell] = chain_card
 
 func get_combat_card_chain() -> Array[CardInstance]:
 	var chain: Array[CardInstance] = []
