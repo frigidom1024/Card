@@ -1,7 +1,7 @@
 class_name CardData
 extends Resource
 
-enum CardType { ROOT, NORMAL }
+enum CardType { ROOT, NORMAL, GUIDE }
 
 enum CardTag {
 	# 功能

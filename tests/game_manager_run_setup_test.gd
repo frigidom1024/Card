@@ -43,6 +43,14 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 	manager.player_data.gold = 1
 	_expect(BasePlayerData.gold == 30, "run gold changes do not mutate the static PlayerData resource")
 	_expect(manager._encounter_combat_flow != null, "run creates an encounter combat flow")
+	_expect(
+		manager.board.card_return_requested.is_connected(manager._on_board_card_return_requested),
+		"GameManager listens for Board guide-card return requests"
+	)
+	var returned_guide := _make_guide_card()
+	manager.add_child(returned_guide)
+	manager._on_board_card_return_requested(returned_guide)
+	_expect(returned_guide in manager.hand_area.cards, "GameManager returns guide cards through HandArea")
 
 	manager.free()
 	await process_frame
@@ -53,6 +61,15 @@ func _test_invalid_preset_is_rejected_before_scene_entry() -> void:
 	var manager = GameManagerScene.instantiate()
 	_expect(not manager.configure_run(invalid_preset), "invalid preset is rejected before GameManager enters the tree")
 	manager.free()
+
+
+func _make_guide_card() -> CardEntity:
+	var entity := preload("res://scenes/card_view/card_entity.tscn").instantiate() as CardEntity
+	var data := CardData.new()
+	data.card_type = CardData.CardType.GUIDE
+	data.card_name = "Guide"
+	entity.bind_instance(CardInstance.new(data))
+	return entity
 
 
 func _count_roots(cards: Array) -> int:

@@ -97,6 +97,8 @@ func _ready() -> void:
 		drag_layer.manual_chain_retracted.connect(_faith_service.resolve_manual_chain_retraction)
 	if not board.event_triggered.is_connected(_on_board_event_triggered):
 		board.event_triggered.connect(_on_board_event_triggered)
+	if not board.card_return_requested.is_connected(_on_board_card_return_requested):
+		board.card_return_requested.connect(_on_board_card_return_requested)
 	if not shop_event_view.purchase_requested.is_connected(_on_shop_purchase_requested):
 		shop_event_view.purchase_requested.connect(_on_shop_purchase_requested)
 	if not shop_event_view.close_requested.is_connected(_on_shop_close_requested):
@@ -333,6 +335,13 @@ func _center_layout() -> void:
 
 	# GameplayCanvas 负责按窗口尺寸统一缩放并居中。
 	gameplay_canvas.fit_to_viewport(get_viewport().get_visible_rect().size)
+
+
+func _on_board_card_return_requested(card: CardEntity) -> void:
+	if card == null or not is_instance_valid(card):
+		return
+	if not hand_area.add_card(card):
+		push_error("Failed to return guide card to hand")
 
 
 func _on_board_event_triggered(instance: EventInstance) -> void:
