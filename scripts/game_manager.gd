@@ -6,6 +6,7 @@ const FaithServiceScript := preload("res://scripts/player/faith_service.gd")
 const MarketPricingServiceScript := preload("res://scripts/game/market/market_pricing_service.gd")
 const RunSetupCoordinatorScript := preload("res://scripts/game/run/run_setup_coordinator.gd")
 const PersistentMarketCoordinatorScript := preload("res://scripts/game/market/persistent_market_coordinator.gd")
+const EventModalCoordinatorScript := preload("res://scripts/game/event/event_modal_coordinator.gd")
 
 signal combat_started(instance: EventInstance, monster: MobInstance)
 signal combat_resolved(instance: EventInstance, result: CombatResult)
@@ -22,7 +23,6 @@ signal faith_changed(current_faith: int)
 @onready var pilgrim_crest_hud: PilgrimCrestHud = $GameplayCanvas/PilgrimCrestHud
 @onready var drag_layer: DragLayer = $GameplayCanvas/DragLayer
 @onready var persistent_market = $GameplayCanvas/PersistentMarket
-@onready var event_modal_layer: CanvasLayer = $EventModalLayer
 @onready var shop_event_view = $EventModalLayer/ShopEventView
 @onready var treasure_event_view = $EventModalLayer/TreasureEventView
 @onready var combat_event_view: CombatEventView = $EventModalLayer/CombatEventView
@@ -38,11 +38,9 @@ var _event_interaction_controller: EventInteractionController
 var _encounter_combat_flow: EncounterCombatFlowCoordinator
 var _encounter_resolution
 var _market_pricing := MarketPricingServiceScript.new()
-var _shop_event_resolver: ShopEventResolver
 var _persistent_market_coordinator
+var _event_modal_coordinator
 var _market_rng := RandomNumberGenerator.new()
-var _treasure_event_resolver := TreasureEventResolver.new()
-var _treasure_rng := RandomNumberGenerator.new()
 var _faith_service := FaithServiceScript.new()
 var _is_exploration_failed := false
 var _run_card_service
@@ -85,31 +83,11 @@ func _ready() -> void:
 	_configure_persistent_market()
 	if _persistent_market_coordinator != null:
 		_persistent_market_coordinator.connect_drag_layer(drag_layer, hand_tray)
-	if shop_event_view != null and shop_event_view.has_method("set_pricing_service"):
-		shop_event_view.set_pricing_service(_market_pricing)
+	_configure_event_modal()
 	if not drag_layer.chain_retraction_confirmed.is_connected(_faith_service.resolve_confirmed_chain_retraction):
 		drag_layer.chain_retraction_confirmed.connect(_faith_service.resolve_confirmed_chain_retraction)
-	if _event_interaction_controller != null:
-		if not _event_interaction_controller.interaction_started.is_connected(_on_controller_interaction_started):
-			_event_interaction_controller.interaction_started.connect(_on_controller_interaction_started)
-		if not _event_interaction_controller.interaction_finished.is_connected(_on_controller_interaction_finished):
-			_event_interaction_controller.interaction_finished.connect(_on_controller_interaction_finished)
-		if not _event_interaction_controller.combat_result_ready.is_connected(_on_controller_combat_result_ready):
-			_event_interaction_controller.combat_result_ready.connect(_on_controller_combat_result_ready)
-
 	if not board.card_return_requested.is_connected(_on_board_card_return_requested):
 		board.card_return_requested.connect(_on_board_card_return_requested)
-	if not shop_event_view.purchase_requested.is_connected(_on_shop_purchase_requested):
-		shop_event_view.purchase_requested.connect(_on_shop_purchase_requested)
-	if not shop_event_view.close_requested.is_connected(_on_shop_close_requested):
-		shop_event_view.close_requested.connect(_on_shop_close_requested)
-	if not treasure_event_view.reward_requested.is_connected(_on_treasure_reward_requested):
-		treasure_event_view.reward_requested.connect(_on_treasure_reward_requested)
-	if not treasure_event_view.close_requested.is_connected(_on_treasure_close_requested):
-		treasure_event_view.close_requested.connect(_on_treasure_close_requested)
-	if not combat_event_view.settlement_confirmed.is_connected(_on_combat_settlement_confirmed):
-		combat_event_view.settlement_confirmed.connect(_on_combat_settlement_confirmed)
-	_treasure_rng.randomize()
 
 	_configure_exploration()
 	_configure_encounter_resolution()
@@ -148,7 +126,6 @@ func _initialize_run_state() -> bool:
 	cards_inst = _run_card_service.get_instances()
 	card_entities = _run_card_service.get_entities()
 	_faith_service.configure(player_data)
-	_shop_event_resolver = ShopEventResolver.new(_market_pricing)
 	return true
 
 
@@ -186,6 +163,35 @@ func _configure_persistent_market() -> void:
 		return
 	if not _persistent_market_coordinator.player_state_changed.is_connected(_sync_pilgrim_crest):
 		_persistent_market_coordinator.player_state_changed.connect(_sync_pilgrim_crest)
+
+
+func _configure_event_modal() -> void:
+	if _event_interaction_controller == null or _run_card_service == null:
+		return
+	_event_modal_coordinator = EventModalCoordinatorScript.new()
+	if not _event_modal_coordinator.configure(
+		_event_interaction_controller,
+		drag_layer,
+		hand_area,
+		_run_card_service,
+		player_data,
+		shop_event_view,
+		treasure_event_view,
+		combat_event_view,
+		_market_pricing
+	):
+		push_error("GameManager could not configure event modal coordinator")
+		return
+	if not _event_modal_coordinator.combat_started.is_connected(_forward_combat_started):
+		_event_modal_coordinator.combat_started.connect(_forward_combat_started)
+	if not _event_modal_coordinator.combat_settlement_confirmed.is_connected(_on_modal_combat_settlement_confirmed):
+		_event_modal_coordinator.combat_settlement_confirmed.connect(_on_modal_combat_settlement_confirmed)
+	if not _event_modal_coordinator.interaction_lock_changed.is_connected(_on_modal_interaction_lock_changed):
+		_event_modal_coordinator.interaction_lock_changed.connect(_on_modal_interaction_lock_changed)
+	if not _event_modal_coordinator.event_display_refresh_requested.is_connected(_refresh_event_display):
+		_event_modal_coordinator.event_display_refresh_requested.connect(_refresh_event_display)
+	if not _event_modal_coordinator.unsupported_event.is_connected(_on_unsupported_modal_event):
+		_event_modal_coordinator.unsupported_event.connect(_on_unsupported_modal_event)
 
 
 func _sync_pilgrim_crest() -> void:
@@ -281,158 +287,34 @@ func _on_board_card_return_requested(card: CardEntity) -> void:
 
 
 func _on_board_event_triggered(instance: EventInstance) -> void:
-	if _is_exploration_failed or _event_interaction_controller == null or instance == null or instance.is_resolved:
+	if _is_exploration_failed or _event_modal_coordinator == null or instance == null or instance.is_resolved:
 		return
-	if _event_interaction_controller.get_active_event() != null:
-		return
-	_event_interaction_controller.begin(instance, player_stats, board.get_combat_card_chain())
-
-func _on_controller_interaction_started(instance: EventInstance) -> void:
-	if instance == null:
-		return
-	drag_layer.set_interaction_locked(true)
-	match instance.get_event_type():
-		EventData.EventType.SHOP:
-			_open_shop_event(instance)
-		EventData.EventType.TREASURE:
-			_open_treasure_event(instance)
-		EventData.EventType.MONSTER, EventData.EventType.BOSS:
-			combat_started.emit(instance, _get_event_monster(instance))
-		_:
-			push_warning("GameManager received an unsupported event type")
-
-func _on_controller_interaction_finished(_instance: EventInstance) -> void:
-	if _is_exploration_failed:
-		return
-	drag_layer.set_interaction_locked(false)
+	_event_modal_coordinator.begin(instance, player_stats, board.get_combat_card_chain())
 
 
-func _on_controller_combat_result_ready(instance: EventInstance, result: CombatResult) -> void:
-	if instance == null or result == null:
-		return
-	_print_combat_result_detail(result)
-	combat_event_view.show_combat(instance, _get_event_monster(instance), result)
+func _forward_combat_started(instance: EventInstance, monster: MobInstance) -> void:
+	combat_started.emit(instance, monster)
 
-func _on_combat_settlement_confirmed() -> void:
-	if _event_interaction_controller == null:
+
+func _on_modal_interaction_lock_changed(locked: bool) -> void:
+	if not locked and _is_exploration_failed:
 		return
-	var instance := _event_interaction_controller.get_pending_combat_instance()
-	var result := _event_interaction_controller.get_pending_combat_result()
+	drag_layer.set_interaction_locked(locked)
+
+
+func _on_modal_combat_settlement_confirmed(instance: EventInstance, result: CombatResult) -> void:
 	if instance == null or result == null:
 		return
 	# Keep the resolver aligned with any runtime player-stat replacement (for example, restart/debug setup).
 	_configure_encounter_resolution()
-	combat_event_view.hide_combat()
 	if _encounter_resolution == null or not _encounter_resolution.apply(instance, result):
 		return
-	_event_interaction_controller.confirm_combat_settlement()
+	_event_modal_coordinator.complete_combat_settlement()
 	combat_resolved.emit(instance, result)
 
-func _open_shop_event(instance: EventInstance) -> void:
-	if instance.get_content() is not ShopEventContent:
-		push_warning("Shop event is missing ShopEventContent")
-		return
-	shop_event_view.show_event(instance, player_data)
 
-func _open_treasure_event(instance: EventInstance) -> void:
-	if instance.get_content() is not TreasureEventContent:
-		push_warning("Treasure event is missing TreasureEventContent")
-		return
-	var options := _treasure_event_resolver.ensure_options(instance, _treasure_rng)
-	if options.is_empty():
-		push_warning("Treasure event produced no reward options")
-		return
-	treasure_event_view.show_event(instance, options)
-
-func _on_shop_purchase_requested(item_index: int) -> void:
-	var active_event := _event_interaction_controller.get_active_event() if _event_interaction_controller != null else null
-	if active_event == null or active_event.get_event_type() != EventData.EventType.SHOP:
-		return
-	if hand_area.is_full():
-		shop_event_view.show_message("手牌已满，无法购买。", true)
-		return
-
-	var result := _shop_event_resolver.purchase_item(
-		active_event, item_index, player_data, true, _persistent_market_coordinator.create_price_context() if _persistent_market_coordinator != null else null
-	)
-	if not result.success:
-		shop_event_view.show_message(_resolution_failure_message(result.failure), true)
-		return
-	if not _grant_card_to_hand(result.granted_card):
-		push_error("Shop purchase succeeded but card creation failed")
-		shop_event_view.show_message("卡牌创建失败。", true)
-		return
-	shop_event_view.refresh()
-	shop_event_view.show_message("购买成功。", false)
-
-func _on_shop_close_requested() -> void:
-	if _event_interaction_controller == null or _event_interaction_controller.get_active_event() == null:
-		return
-	shop_event_view.hide_event()
-	_event_interaction_controller.close_shop()
-
-func _on_treasure_reward_requested(option_index: int) -> void:
-	var active_event := _event_interaction_controller.get_active_event() if _event_interaction_controller != null else null
-	if active_event == null or active_event.get_event_type() != EventData.EventType.TREASURE:
-		return
-	var options := _treasure_event_resolver.ensure_options(active_event, _treasure_rng)
-	if option_index < 0 or option_index >= options.size():
-		treasure_event_view.show_message("无效的奖励选项。", true)
-		return
-	var option := options[option_index]
-	if option.kind == TreasureRewardOption.Kind.CARD and hand_area.is_full():
-		treasure_event_view.show_message("手牌已满，无法领取这张卡牌。", true)
-		return
-
-	var result := _treasure_event_resolver.claim_reward(
-		active_event,
-		option_index,
-		player_data,
-		true,
-		_treasure_rng
-	)
-	if not result.success:
-		treasure_event_view.show_message(_resolution_failure_message(result.failure), true)
-		return
-	if result.granted_card != null and not _grant_card_to_hand(result.granted_card):
-		push_error("Treasure reward succeeded but card creation failed")
-		treasure_event_view.show_message("卡牌创建失败。", true)
-		return
-	_refresh_event_display(active_event)
-	treasure_event_view.hide_event()
-	_event_interaction_controller.claim_treasure(option_index)
-
-func _on_treasure_close_requested() -> void:
-	var active_event := _event_interaction_controller.get_active_event() if _event_interaction_controller != null else null
-	if active_event == null or active_event.get_event_type() != EventData.EventType.TREASURE:
-		return
-	treasure_event_view.show_message("必须领取一项奖励后才能离开。", true)
-
-func _grant_card_to_hand(card_data: CardData) -> bool:
-	return _run_card_service != null and _run_card_service.grant_to_hand(card_data)
-
-
-func _resolution_failure_message(failure: EventResolutionResult.Failure) -> String:
-	match failure:
-		EventResolutionResult.Failure.SOLD_OUT:
-			return "该商品已售罄。"
-		EventResolutionResult.Failure.INSUFFICIENT_GOLD:
-			return "金币不足。"
-		EventResolutionResult.Failure.HAND_FULL:
-			return "手牌已满。"
-		EventResolutionResult.Failure.INVALID_INDEX:
-			return "无效的选项。"
-		EventResolutionResult.Failure.ALREADY_RESOLVED:
-			return "该事件已经结束。"
-		_:
-			return "事件结算失败。"
-
-
-func _get_event_monster(instance: EventInstance) -> MobInstance:
-	if instance == null:
-		return null
-	var state := instance.runtime_state as EncounterRuntimeState
-	return state.mob_instance if state != null else null
+func _on_unsupported_modal_event(_instance: EventInstance) -> void:
+	push_warning("GameManager received an unsupported event type")
 
 
 func _refresh_event_display(instance: EventInstance) -> void:
@@ -440,40 +322,3 @@ func _refresh_event_display(instance: EventInstance) -> void:
 		if event_node.event_instance == instance:
 			event_node.refresh_display()
 			return
-
-
-func _print_combat_result_detail(result: CombatResult) -> void:
-	print("========== 战斗结算详细结果 ==========")
-	print("结局: ", CombatResult.Outcome.keys()[result.outcome])
-	print("处理卡牌数: ", result.processed_card_count)
-	print("玩家最终: ", _stats_desc(result.player_stats_after))
-	print("怪物最终: ", _stats_desc(result.monster_stats_after))
-
-	print("[战斗步骤] 共 ", result.steps.size(), " 步")
-	for i in result.steps.size():
-		var step := result.steps[i]
-		if step == null:
-			print("  第 ", i + 1, " 步: (空)")
-			continue
-		print("  >> 第 ", i + 1, " 步 [", CombatStep.Kind.keys()[step.kind], "] ", step.source_name)
-		print("      玩家: ", _stats_desc(step.player_before), " -> ", _stats_desc(step.player_after))
-		print("      怪物: ", _stats_desc(step.monster_before), " -> ", _stats_desc(step.monster_after))
-		for effect in step.effects:
-			if effect == null:
-				continue
-			var effect_desc := "      效果: [%s] %s -> %s 数值 %d" % [
-				CombatEffect.SourceType.keys()[effect.source_type],
-				CombatEffect.Type.keys()[effect.type],
-				CombatEffect.Target.keys()[effect.target],
-				effect.value,
-			]
-			if effect.source_name != "":
-				effect_desc += " (来源: %s)" % effect.source_name
-			print(effect_desc)
-	print("=====================================")
-
-
-func _stats_desc(stats: CombatStats) -> String:
-	if stats == null:
-		return "null"
-	return "HP %d/%d 攻 %d 防 %d" % [stats.hp, stats.max_hp, stats.attack, stats.defense]
