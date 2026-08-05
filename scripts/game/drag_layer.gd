@@ -1,8 +1,10 @@
 class_name DragLayer
 extends Node2D
 
-## Emitted once after the player deliberately retracts one placed card and its followers.
-signal manual_chain_retracted(removed_card: CardEntity, following_card_count: int)
+const ChainRetractionTransactionScript := preload("res://scripts/game/chain_retraction_transaction.gd")
+
+## Emitted only after a board-chain retraction has completed by returning its source card to hand.
+signal chain_retraction_confirmed(transaction: ChainRetractionTransaction)
 signal market_purchase_requested(card: CardEntity, slot_index: int)
 signal market_reclaim_requested(card: CardEntity)
 
@@ -24,6 +26,9 @@ var _drag_origin_market_slot := -1
 var _drag_origin_is_market_offer := false
 var _interaction_lock_recovery_container: Node2D = null
 var _completed_market_reclaims: Array[CardEntity] = []
+## Kept while a Board card is dragged so cancelled drags can restore the original chain without cost.
+var _pending_chain_retraction: ChainRetractionTransaction = null
+var _pending_follower_snapshots: Array[Dictionary] = []
 
 # 提示标签
 var _hint_label: Label = null
@@ -90,16 +95,7 @@ func on_card_drag_start(card: CardEntity) -> void:
 		return
 
 	if _drag_origin_was_on_board:
-		var following = board.get_following_cards(card)
-		board.remove_card(card)
-		for following_card in following:
-			board.remove_card(following_card)
-			following_card.rotation_degrees = 0
-			if following_card.card_instance:
-				following_card.card_instance.direction = 0
-			if hand_area:
-				hand_area.add_card(following_card)
-		manual_chain_retracted.emit(card, following.size())
+		_begin_chain_retraction(card)
 	if _drag_origin_hand_area:
 		_drag_origin_hand_area.remove_card(card, false)
 
@@ -148,6 +144,9 @@ func on_card_drag_end(card: CardEntity) -> void:
 	if _is_over_board(pos):
 		var cells = board.get_card_cells(pos, card.rotation_degrees)
 		if board.add_card(card):
+			if card.card_instance:
+				card.card_instance.cur_zone = CardInstance.ZONE.BOARD
+			_clear_pending_chain_retraction()
 			_clear_drag_origin()
 			return
 		_show_hint(board.get_placement_hint(cells, card))
@@ -155,8 +154,15 @@ func on_card_drag_end(card: CardEntity) -> void:
 	card.rotation_degrees = 0
 	if card.card_instance:
 		card.card_instance.direction = 0
-	if hand_area:
-		hand_area.add_card(card)
+	if _return_existing_player_card_to_hand(card):
+		if card.card_instance:
+			card.card_instance.cur_zone = CardInstance.ZONE.HAND
+		_confirm_pending_chain_retraction()
+		_clear_drag_origin()
+		return
+
+	# A failed return cannot complete a retraction. Restore the original chain instead of charging faith.
+	_restore_cancelled_board_drag(card)
 	_clear_drag_origin()
 
 
@@ -179,14 +185,74 @@ func _cancel_active_drag() -> void:
 	card.cancel_drag_for_interaction_lock()
 	_restore_drag_origin_transform(card)
 	if _drag_origin_was_on_board:
-		if board and board.add_card(card):
-			_clear_drag_origin()
-			return
-		push_error("Failed to restore Board card after interaction lock")
-		_restore_failed_board_card_to_hand(card)
+		_restore_cancelled_board_drag(card)
 	else:
 		_restore_card_to_origin_parent(card)
+	_clear_pending_chain_retraction()
 	_clear_drag_origin()
+
+
+func _begin_chain_retraction(card: CardEntity) -> void:
+	if board == null:
+		return
+	var following := board.get_following_cards(card)
+	_pending_chain_retraction = ChainRetractionTransactionScript.new(card, following, board.cards.size())
+	_pending_follower_snapshots.clear()
+	for following_card in following:
+		_pending_follower_snapshots.append({
+			"card": following_card,
+			"position": following_card.global_position,
+			"rotation": following_card.rotation_degrees,
+			"direction": following_card.card_instance.direction if following_card.card_instance else 0,
+		})
+	board.remove_card(card)
+	for following_card in following:
+		board.remove_card(following_card)
+		following_card.rotation_degrees = 0
+		if following_card.card_instance:
+			following_card.card_instance.direction = 0
+			following_card.card_instance.cur_zone = CardInstance.ZONE.HAND
+		if not _return_existing_player_card_to_hand(following_card):
+			push_error("Failed to return a following card to HandArea during chain retraction")
+
+
+func _confirm_pending_chain_retraction() -> void:
+	if _pending_chain_retraction == null:
+		return
+	var transaction := _pending_chain_retraction
+	_clear_pending_chain_retraction()
+	chain_retraction_confirmed.emit(transaction)
+
+
+func _restore_cancelled_board_drag(card: CardEntity) -> void:
+	if board == null or not board.add_card(card):
+		push_error("Failed to restore Board card after an interrupted retraction")
+		_restore_failed_board_card_to_hand(card)
+		_clear_pending_chain_retraction()
+		return
+	if card.card_instance:
+		card.card_instance.cur_zone = CardInstance.ZONE.BOARD
+	for snapshot in _pending_follower_snapshots:
+		var follower := snapshot.get("card") as CardEntity
+		if follower == null or not is_instance_valid(follower):
+			continue
+		if hand_area != null and follower in hand_area.cards:
+			hand_area.remove_card(follower, false)
+		follower.global_position = snapshot["position"]
+		follower.rotation_degrees = snapshot["rotation"]
+		if follower.card_instance:
+			follower.card_instance.direction = snapshot["direction"]
+		if board.add_card(follower):
+			if follower.card_instance:
+				follower.card_instance.cur_zone = CardInstance.ZONE.BOARD
+		else:
+			push_error("Failed to restore a following Board card after an interrupted retraction")
+	_clear_pending_chain_retraction()
+
+
+func _clear_pending_chain_retraction() -> void:
+	_pending_chain_retraction = null
+	_pending_follower_snapshots.clear()
 
 
 func _restore_drag_origin_transform(card: CardEntity) -> void:
@@ -204,16 +270,20 @@ func _restore_failed_board_card_to_hand(card: CardEntity) -> void:
 
 
 func _return_card_to_hand_for_interaction_recovery(card: CardEntity) -> bool:
+	return _return_existing_player_card_to_hand(card)
+
+
+func _return_existing_player_card_to_hand(card: CardEntity) -> bool:
 	if hand_area == null or not is_instance_valid(hand_area):
 		return false
 
-	# A lock cancellation returns an existing player card; it is not a capacity-limited reward.
+	# Returning an owned card never competes with capacity-limited rewards or purchases.
 	var original_max_hand_size := hand_area.max_hand_size
 	if hand_area.cards.size() >= hand_area.max_hand_size:
 		hand_area.max_hand_size = hand_area.cards.size() + 1
-	var restored := hand_area.add_card(card, false)
+	var returned := hand_area.add_card(card, false)
 	hand_area.max_hand_size = original_max_hand_size
-	return restored
+	return returned
 
 
 func _hold_card_for_interaction_recovery(card: CardEntity) -> void:

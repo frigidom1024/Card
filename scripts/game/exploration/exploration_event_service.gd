@@ -54,6 +54,21 @@ func get_revealed_count() -> int:
 	return _revealed_count
 
 
+func request_faith_echo() -> bool:
+	if _event_lib == null or _board == null:
+		return false
+	var templates := _event_lib.get_templates_of_type(EventData.EventType.MONSTER)
+	if templates.is_empty():
+		push_warning("Faith consequence could not find a normal monster event template")
+		return false
+	var template := templates[_rng.randi_range(0, templates.size() - 1)]
+	var instance := template.create_instance()
+	if not _placement_service.place_event_instance(instance, _event_lib, _board, _rng):
+		return false
+	event_spawned.emit(_find_event_node(instance))
+	return true
+
+
 func is_boss_spawned() -> bool:
 	return _boss_spawned
 

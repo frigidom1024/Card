@@ -34,7 +34,6 @@ signal faith_changed(current_faith: int)
 @export var exploration_config: ExplorationConfig
 var starting_deck: StartingDeckData
 var player_stats: CombatStats
-var _event_placement_service := EventPlacementService.new()
 var _exploration_coordinator
 var _event_interaction_controller: EventInteractionController
 var _encounter_combat_flow: EncounterCombatFlowCoordinator
@@ -45,10 +44,8 @@ var _persistent_market_resolver
 var _market_rng := RandomNumberGenerator.new()
 var _treasure_event_resolver := TreasureEventResolver.new()
 var _treasure_rng := RandomNumberGenerator.new()
-var _faith_rng := RandomNumberGenerator.new()
 var _faith_service := FaithServiceScript.new()
 var _is_exploration_failed := false
-var _pending_faith_echo_spawns := 0
 var _market_ready := false
 
 # 所有玩家相关卡牌数据引用
@@ -95,8 +92,8 @@ func _ready() -> void:
 		persistent_market.refresh_requested.connect(_on_market_refresh_requested)
 	if shop_event_view != null and shop_event_view.has_method("set_pricing_service"):
 		shop_event_view.set_pricing_service(_market_pricing)
-	if not drag_layer.manual_chain_retracted.is_connected(_faith_service.resolve_manual_chain_retraction):
-		drag_layer.manual_chain_retracted.connect(_faith_service.resolve_manual_chain_retraction)
+	if not drag_layer.chain_retraction_confirmed.is_connected(_faith_service.resolve_confirmed_chain_retraction):
+		drag_layer.chain_retraction_confirmed.connect(_faith_service.resolve_confirmed_chain_retraction)
 	if _event_interaction_controller != null:
 		if not _event_interaction_controller.interaction_started.is_connected(_on_controller_interaction_started):
 			_event_interaction_controller.interaction_started.connect(_on_controller_interaction_started)
@@ -118,7 +115,6 @@ func _ready() -> void:
 	if not combat_event_view.settlement_confirmed.is_connected(_on_combat_settlement_confirmed):
 		combat_event_view.settlement_confirmed.connect(_on_combat_settlement_confirmed)
 	_treasure_rng.randomize()
-	_faith_rng.randomize()
 
 	init_events()
 	_center_layout()
@@ -292,24 +288,10 @@ func set_player_temporary_status(status_text: String) -> void:
 
 
 func _on_echo_spawn_requested() -> void:
-	_pending_faith_echo_spawns += 1
-	_try_spawn_pending_faith_echoes()
-
-
-func _try_spawn_pending_faith_echoes() -> void:
-	if board == null or event_lib == null:
+	if _exploration_coordinator == null:
+		push_warning("Faith consequence could not request an exploration encounter before the level was configured")
 		return
-	var templates := event_lib.get_templates_of_type(EventData.EventType.MONSTER)
-	if templates.is_empty():
-		push_warning("Faith consequence could not find a normal monster event template")
-		return
-	while _pending_faith_echo_spawns > 0:
-		var template := templates[_faith_rng.randi_range(0, templates.size() - 1)]
-		if not _event_placement_service.place_event_instance(
-			template.create_instance(), event_lib, board, _faith_rng
-		):
-			return
-		_pending_faith_echo_spawns -= 1
+	_exploration_coordinator.request_faith_echo()
 
 
 func _clear_initial_player_cards() -> void:
@@ -397,7 +379,6 @@ func _on_controller_interaction_finished(_instance: EventInstance) -> void:
 	if _is_exploration_failed:
 		return
 	drag_layer.set_interaction_locked(false)
-	_try_spawn_pending_faith_echoes()
 
 
 func _on_controller_combat_result_ready(instance: EventInstance, result: CombatResult) -> void:

@@ -51,6 +51,11 @@ func resolve_placement(result: BoardPlacementResult) -> void:
 		event_interaction_requested.emit(result.overlapped_event)
 
 
+## Uses the current level EventLib to place one normal residual encounter after a faith consequence.
+func request_faith_echo() -> bool:
+	return _event_service.request_faith_echo()
+
+
 func dismiss_defeated_boss(instance: EventInstance) -> bool:
 	if instance == null or instance.get_event_type() != EventData.EventType.BOSS or _board == null:
 		return false

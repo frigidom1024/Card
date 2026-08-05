@@ -13,7 +13,7 @@ func _init() -> void:
 
 func _run_tests() -> void:
 	await _test_new_run_starts_with_faith()
-	await _test_manually_removing_a_board_card_spends_one_faith()
+	await _test_confirmed_board_card_retraction_spends_one_faith()
 	await _test_faith_is_visible_and_system_tail_return_is_free()
 	await _test_zero_faith_allows_manual_chain_removal_and_generates_an_encounter()
 	await _test_reaching_zero_faith_spawns_a_random_monster()
@@ -30,7 +30,7 @@ func _test_new_run_starts_with_faith() -> void:
 	_cleanup_manager(manager)
 
 
-func _test_manually_removing_a_board_card_spends_one_faith() -> void:
+func _test_confirmed_board_card_retraction_spends_one_faith() -> void:
 	var manager := await _make_game_manager()
 	var board: Board = manager.board
 	var root_card := _place_card(manager, Vector2i(0, 0), CardData.CardType.ROOT)
@@ -38,7 +38,10 @@ func _test_manually_removing_a_board_card_spends_one_faith() -> void:
 	_expect(root_card != null and tail_card != null, "faith setup places a two-card chain")
 	if tail_card != null:
 		manager.drag_layer.on_card_drag_start(tail_card)
-	_expect(manager.player_data.get("faith") == 2, "manual chain removal spends PlayerData faith")
+		tail_card.global_position = Vector2(-1000, -1000)
+		manager.drag_layer.on_card_drag_end(tail_card)
+		await process_frame
+	_expect(manager.player_data.get("faith") == 2, "only a confirmed manual chain retraction spends PlayerData faith")
 	var faith_value := manager.get_node_or_null("GameplayCanvas/PilgrimCrestHud/FaithSeal/FaithValue") as Label
 	_expect(faith_value != null and faith_value.text == "FAITH · 2", "faith HUD refreshes after manual chain removal")
 	_cleanup_manager(manager)
@@ -65,8 +68,10 @@ func _test_zero_faith_allows_manual_chain_removal_and_generates_an_encounter() -
 	var events_before := board.events.size()
 	_expect(manager.drag_layer.can_start_drag(tail_card), "zero faith still permits manually dismantling the chain")
 	manager.drag_layer.on_card_drag_start(tail_card)
+	tail_card.global_position = Vector2(-1000, -1000)
+	manager.drag_layer.on_card_drag_end(tail_card)
 	await process_frame
-	_expect(manager.player_data.faith == -1, "manual retraction at zero faith can create faith debt")
+	_expect(manager.player_data.faith == -1, "confirmed manual retraction at zero faith can create faith debt")
 	_expect(tail_card not in board.cards, "manual retraction at zero faith removes the selected chain card")
 	_expect(board.events.size() == events_before + 1, "manual retraction at zero faith adds one map encounter")
 	_cleanup_manager(manager)
@@ -81,8 +86,10 @@ func _test_reaching_zero_faith_spawns_a_random_monster() -> void:
 	var events_before := board.events.size()
 	if tail_card != null:
 		manager.drag_layer.on_card_drag_start(tail_card)
+		tail_card.global_position = Vector2(-1000, -1000)
+		manager.drag_layer.on_card_drag_end(tail_card)
 	await process_frame
-	_expect(manager.player_data.faith == 0, "manual retraction reaches zero faith")
+	_expect(manager.player_data.faith == 0, "confirmed manual retraction reaches zero faith")
 	_expect(board.events.size() == events_before + 1, "zero faith retraction adds one map encounter")
 	if board.events.size() == events_before + 1:
 		var spawned_event: EventInstance = board.events.back().event_instance
