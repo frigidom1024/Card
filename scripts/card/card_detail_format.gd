@@ -11,6 +11,7 @@ const RARITY_NAMES := {
 const CARD_TYPE_NAMES := {
 	CardData.CardType.ROOT: "ROOT",
 	CardData.CardType.NORMAL: "CARD",
+	CardData.CardType.GUIDE: "GUIDE",
 }
 
 const TAG_NAMES := {

@@ -569,10 +569,13 @@ func add_card(card: CardEntity) -> bool:
 ## Legacy notifications remain temporarily while ExplorationCoordinator migrates to placement_committed.
 func _publish_placement(result) -> void:
 	placement_committed.emit(result)
-	card_placed.emit(result.source_card)
+	if result.kind == BoardPlacementResultScript.Kind.CHAIN_EXTENDED:
+		card_placed.emit(result.source_card)
 	if result.overlapped_event != null:
 		event_interaction_requested.emit(result.overlapped_event)
-		event_triggered.emit(result.overlapped_event)
+		# 保留旧通知，直到 ExplorationCoordinator 完成所有调用方迁移。
+		if result.kind == BoardPlacementResultScript.Kind.CHAIN_EXTENDED:
+			event_triggered.emit(result.overlapped_event)
 
 func _is_guide_card(card: CardEntity) -> bool:
 	return card.card_instance \
@@ -620,9 +623,15 @@ func _add_guide_card(card: CardEntity, guide_cells: Array[Vector2i]) -> void:
 	_rebuild_grid_owner()
 
 	var overlapping_event := get_overlapping_unresolved_event(guide_cells)
-	if overlapping_event:
-		event_triggered.emit(overlapping_event)
-
+	var result := BoardPlacementResultScript.new(
+		BoardPlacementResultScript.Kind.GUIDE_RESOLVED,
+		card,
+		cards.back(),
+		cards.duplicate(),
+		guide_cells,
+		overlapping_event
+	)
+	_publish_placement(result)
 	card_return_requested.emit(card)
 
 

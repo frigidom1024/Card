@@ -95,8 +95,8 @@ func _ready() -> void:
 		shop_event_view.set_pricing_service(_market_pricing)
 	if not drag_layer.manual_chain_retracted.is_connected(_faith_service.resolve_manual_chain_retraction):
 		drag_layer.manual_chain_retracted.connect(_faith_service.resolve_manual_chain_retraction)
-	if not board.event_triggered.is_connected(_on_board_event_triggered):
-		board.event_triggered.connect(_on_board_event_triggered)
+	if not board.event_interaction_requested.is_connected(_on_board_event_triggered):
+		board.event_interaction_requested.connect(_on_board_event_triggered)
 	if not board.card_return_requested.is_connected(_on_board_card_return_requested):
 		board.card_return_requested.connect(_on_board_card_return_requested)
 	if not shop_event_view.purchase_requested.is_connected(_on_shop_purchase_requested):
@@ -338,8 +338,12 @@ func _center_layout() -> void:
 
 
 func _on_board_card_return_requested(card: CardEntity) -> void:
-	if card == null or not is_instance_valid(card):
+	if card == null or not is_instance_valid(card) or card in hand_area.cards:
 		return
+
+	# GUIDE 属于玩家已持有的卡；手牌已满时先放宽一个位置，不能丢弃该卡。
+	if hand_area.is_full():
+		hand_area.max_hand_size = hand_area.cards.size() + 1
 	if not hand_area.add_card(card):
 		push_error("Failed to return guide card to hand")
 

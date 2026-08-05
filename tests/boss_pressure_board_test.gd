@@ -5,6 +5,7 @@ const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
 const EventScene = preload("res://scenes/game/event.tscn")
 const EventDataScript = preload("res://scripts/game/event/core/event_data.gd")
 const BossPressureServiceScript = preload("res://scripts/game/exploration/boss_pressure_service.gd")
+const BoardPlacementResultScript = preload("res://scripts/game/board_placement_result.gd")
 
 var _failure_count := 0
 
@@ -16,6 +17,7 @@ func _init() -> void:
 func _run_tests() -> void:
 	_test_intercepting_boss_allows_next_card_to_overlap()
 	_test_boss_pressure_intercepts_at_forward_cell_without_blocking_placement()
+	_test_guide_placement_does_not_advance_boss_pressure()
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -67,6 +69,31 @@ func _test_boss_pressure_intercepts_at_forward_cell_without_blocking_placement()
 	_expect(board.can_place_card(candidate_cells, candidate), "Boss pressure does not register an illegal placement blocker")
 	board.queue_free()
 
+
+func _test_guide_placement_does_not_advance_boss_pressure() -> void:
+	var board := BoardScene.instantiate() as Board
+	root.add_child(board)
+	var root_card := _make_card(board, Vector2(280, 200), 0.0, CardData.CardType.ROOT)
+	_expect(board.add_card(root_card), "root card establishes a chain before guide pressure verification")
+	var boss := _make_boss_event(Vector2i(0, 0))
+	_expect(board.attach_event(boss), "boss attaches before guide pressure verification")
+
+	var service := BossPressureServiceScript.new()
+	service.configure(true, 1, 1)
+	service.register_boss(boss)
+	var guide := _make_card(board, Vector2(208, 52), 90.0, CardData.CardType.GUIDE)
+	var guide_cells := board.get_card_cells(guide.global_position, guide.rotation_degrees)
+	var guide_result := BoardPlacementResultScript.new(
+		BoardPlacementResultScript.Kind.GUIDE_RESOLVED,
+		guide,
+		root_card,
+		[root_card],
+		guide_cells
+	)
+
+	service.record_placement(board, guide_result)
+	_expect(service.get_phase() == BossPressureServiceScript.Phase.ACTIVE, "guide resolution does not advance Boss pressure")
+	board.queue_free()
 
 func _make_card(board: Board, position: Vector2, rotation_degrees: float, card_type: CardData.CardType) -> CardEntity:
 	var card := CardEntityScene.instantiate() as CardEntity

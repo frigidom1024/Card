@@ -2,6 +2,7 @@ extends SceneTree
 
 const BoardScene := preload("res://scenes/game/board.tscn")
 const CardEntityScene := preload("res://scenes/card_view/card_entity.tscn")
+const BoardPlacementResultScript := preload("res://scripts/game/board_placement_result.gd")
 
 var _failure_count := 0
 var _returned_card: CardEntity = null
@@ -15,9 +16,11 @@ func _run_tests() -> void:
 	_expect(CardData.CardType.GUIDE != CardData.CardType.NORMAL, "GUIDE must be a distinct CardType")
 	var guide := _make_card(CardData.CardType.GUIDE)
 	_expect(guide.card_instance.card_data.card_type == CardData.CardType.GUIDE, "guide card keeps GUIDE type")
+	_expect(CardDetailFormat.card_type_name(CardData.CardType.GUIDE) == "GUIDE", "guide cards have a distinct detail label")
 	guide.queue_free()
 
 	_test_guide_card_shifts_chain_and_returns()
+	_test_guide_result_keeps_chain_order_and_reports_new_cells()
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -66,6 +69,50 @@ func _test_guide_card_shifts_chain_and_returns() -> void:
 	board.queue_free()
 	guide.queue_free()
 
+
+func _test_guide_result_keeps_chain_order_and_reports_new_cells() -> void:
+	var board := BoardScene.instantiate() as Board
+	root.add_child(board)
+
+	var root_card := _make_card(CardData.CardType.ROOT)
+	root_card.position = Vector2(156, 260)
+	root_card.card_instance.direction = 0
+	root_card.rotation_degrees = 0.0
+	_expect(board.add_card(root_card), "root card can be placed for the guide transaction")
+
+	var second_card := _make_card(CardData.CardType.NORMAL)
+	second_card.position = board.grid_to_world_center(Vector2i(1, 1))
+	second_card.card_instance.direction = 1
+	second_card.rotation_degrees = 90.0
+	_expect(board.add_card(second_card), "second card can be placed for the guide transaction")
+
+	var placement_results: Array = []
+	board.placement_committed.connect(func(result) -> void:
+		placement_results.append(result)
+	)
+
+	var guide := _make_card(CardData.CardType.GUIDE)
+	guide.position = board.grid_to_world_center(Vector2i(3, 1))
+	guide.card_instance.direction = 1
+	guide.rotation_degrees = 90.0
+	var guide_cells := board.get_card_cells(guide.global_position, guide.rotation_degrees)
+	_expect(board.add_card(guide), "guide card resolves a placement transaction")
+
+	_expect(placement_results.size() == 1, "guide placement publishes exactly one transaction")
+	if placement_results.size() == 1:
+		var result = placement_results[0]
+		_expect(result.kind == BoardPlacementResultScript.Kind.GUIDE_RESOLVED, "guide placement uses GUIDE_RESOLVED")
+		_expect(result.source_card == guide, "guide result retains the guide source")
+		_expect(result.chain_tail == second_card, "guide result reports the shifted chain tail")
+		_expect(result.affected_cards == [root_card, second_card], "guide result keeps the original chain order")
+		_expect(result.newly_occupied_cells == guide_cells, "guide result reports the endpoint cells newly occupied by the shifted chain")
+		_expect(result.overlapped_event == null, "guide result has no event when no event is contacted")
+	_expect(guide not in board.cards, "guide source never enters the chain")
+	_expect(board.cards == [root_card, second_card], "guide keeps existing board chain order")
+	_expect(second_card.global_position.is_equal_approx(guide.global_position), "guide endpoint is occupied by the final chain card")
+
+	board.queue_free()
+	guide.queue_free()
 
 func _make_card(card_type: CardData.CardType) -> CardEntity:
 	var card := CardEntityScene.instantiate() as CardEntity

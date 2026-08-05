@@ -52,6 +52,16 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 	manager._on_board_card_return_requested(returned_guide)
 	_expect(returned_guide in manager.hand_area.cards, "GameManager returns guide cards through HandArea")
 
+	manager.hand_area.max_hand_size = manager.hand_area.cards.size()
+	var returned_when_full := _make_guide_card()
+	manager.add_child(returned_when_full)
+	manager._on_board_card_return_requested(returned_when_full)
+	_expect(returned_when_full in manager.hand_area.cards, "GameManager never loses a guide card when the hand is full")
+	_expect(
+		manager.hand_area.max_hand_size >= manager.hand_area.cards.size(),
+		"GameManager temporarily expands hand capacity for an already-owned guide card"
+	)
+
 	manager.free()
 	await process_frame
 

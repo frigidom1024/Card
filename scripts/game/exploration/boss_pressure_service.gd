@@ -1,6 +1,8 @@
 class_name BossPressureService
 extends RefCounted
 
+const BoardPlacementResultScript := preload("res://scripts/game/board_placement_result.gd")
+
 ## Boss 追猎阶段。这里的“顶部”指最后一张卡牌朝向的连接格，而不是视觉上方。
 enum Phase {
 	HIDDEN,
@@ -43,6 +45,12 @@ func get_phase() -> Phase:
 
 func is_intercepting() -> bool:
 	return _phase == Phase.INTERCEPTING
+
+## Records only ordinary chain extensions. GUIDE resolves space but never advances pursuit.
+func record_placement(board: Board, result: BoardPlacementResult) -> void:
+	if result == null or result.kind != BoardPlacementResultScript.Kind.CHAIN_EXTENDED:
+		return
+	record_card_placed(board)
 
 ## 在成功放置一张卡后调用。拆牌不会调用本方法，因此追猎进度不会倒退。
 func record_card_placed(board: Board) -> void:
