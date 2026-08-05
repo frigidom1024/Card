@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 26
 card_name = "Miasma Dispelling Gale"
+value = 10
 heal = 4
 description = "Pure woodland wind blows across the field, clear all monster miasma debuffs and provide wide-range ally healing."
 tags = Array[int]([2, 3, 7, 10])

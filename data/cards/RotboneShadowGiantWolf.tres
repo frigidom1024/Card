@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 13
 card_name = "Rotbone Shadow Giant Wolf"
+value = 16
 damage = 6
 defense = 6
 description = "Giant wolves perished in miasma woods, bones reshaped by rotten vines, buff all shadow monsters on field and tear down player forest paths."

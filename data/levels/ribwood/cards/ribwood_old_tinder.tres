@@ -9,9 +9,10 @@ script = ExtResource("rule_script")
 
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_old_tinder.png"
 card_id = 1003
 card_name = "旧火绒"
+value = 6
+artwork_path = "res://assert/card/ribwood_old_tinder.png"
 damage = 1
 effect_rules = Array[ExtResource("1_ot2qa")]([SubResource("CardRule_main")])
 description = "旅人从旧营火里留下的火绒。若上一张牌是武器，本牌伤害 +1。"

@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 11
 card_name = "Hard-shell Giant Wood Beetle"
+value = 10
 damage = 3
 defense = 5
 description = "Giant beetles dwelling on thick tree trunks, bark-hard shells force all enemy monsters to target itself."

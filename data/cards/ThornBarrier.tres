@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 25
 card_name = "Thorn Barrier"
+value = 6
 defense = 4
 description = "Summon dense surrounding thorns, grant massive temporary defense to all allied creatures this round."
 tags = Array[int]([1, 7, 10])

@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 12
 card_name = "Nine-tailed Forest Spirit Fox"
+value = 16
 damage = 4
 defense = 5
 heal = 6

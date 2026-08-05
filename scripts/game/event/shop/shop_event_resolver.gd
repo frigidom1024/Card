@@ -2,9 +2,22 @@ class_name ShopEventResolver
 extends RefCounted
 
 
+const MarketPricingServiceScript = preload("res://scripts/game/market/market_pricing_service.gd")
+
+
+var _pricing: Object
+
+
+func _init(pricing: Object = null) -> void:
+	_pricing = pricing if pricing != null else MarketPricingServiceScript.new()
+
 
 func purchase_item(
-	instance: EventInstance, item_index: int, player: PlayerData, hand_has_capacity: bool
+	instance: EventInstance,
+	item_index: int,
+	player: PlayerData,
+	hand_has_capacity: bool,
+	context = null
 ) -> EventResolutionResult:
 	if instance == null or player == null:
 		return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_EVENT)
@@ -27,11 +40,12 @@ func purchase_item(
 	var item = content.items[item_index]
 	if item == null or item.card_data == null:
 		return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_EVENT)
-	if player.gold < item.price:
+	var price := int(_pricing.call("get_purchase_price", item.card_data, context))
+	if player.gold < price:
 		return EventResolutionResult.rejected(EventResolutionResult.Failure.INSUFFICIENT_GOLD)
 
 	_ensure_sold_flags(state, content.items.size())
-	player.gold -= item.price
+	player.gold -= price
 	state.sold_flags[item_index] = true
 
 	var result := EventResolutionResult.new()

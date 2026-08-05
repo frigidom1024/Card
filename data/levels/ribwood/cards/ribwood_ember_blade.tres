@@ -9,9 +9,10 @@ script = ExtResource("rule_script")
 
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_ember_blade.png"
 card_id = 1022
 card_name = "余烬短刃"
+value = 6
+artwork_path = "res://assert/card/ribwood_ember_blade.png"
 damage = 3
 effect_rules = Array[ExtResource("1_i61qa")]([SubResource("CardRule_main")])
 description = "刀身藏着未熄的火星。若上一张牌是武器，伤害 +1。"

@@ -73,6 +73,16 @@ theme_override_font_sizes/font_size = 14
 text = "FAITH · 0"
 horizontal_alignment = 1
 vertical_alignment = 1
+[node name="GoldSeal" type="Panel" parent="."]
+mouse_filter = 2
+
+[node name="GoldValue" type="Label" parent="GoldSeal"]
+mouse_filter = 2
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 14
+text = "GOLD · 0"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="StatusRow" type="Panel" parent="."]
 visible = false

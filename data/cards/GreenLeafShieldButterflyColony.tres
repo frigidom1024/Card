@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 6
 card_name = "Green Leaf Shield Butterfly Colony"
+value = 6
 damage = 2
 defense = 2
 heal = 1

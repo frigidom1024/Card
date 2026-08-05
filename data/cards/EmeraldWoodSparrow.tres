@@ -6,6 +6,7 @@
 script = ExtResource("1_fp1ix")
 card_id = 1
 card_name = "Emerald Wood Sparrow"
+value = 6
 damage = 2
 defense = 2
 description = "Small green birds living in woods, weaving vines to build forest paths."

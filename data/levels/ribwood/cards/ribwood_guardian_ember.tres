@@ -6,6 +6,7 @@ script = ExtResource("card_script")
 artwork_path = "res://assert/card/ribwood_guardian_ember.png"
 card_id = 1043
 card_name = "守护余烬"
+value = 6
 card_type = 1
 damage = 1
 heal = 4

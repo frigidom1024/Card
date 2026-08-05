@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 17
 card_name = "Log Blessing Pendant"
+value = 6
 defense = 1
 heal = 2
 description = "Pendant polished from ancient tree log, slowly restores wearer's HP each turn."

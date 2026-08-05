@@ -8,6 +8,7 @@ script = ExtResource("card_script")
 artwork_path = "res://assert/card/ribwood_guardian_root.png"
 card_id = 1001
 card_name = "守护之根"
+value = 6
 card_type = 0
 defense = 2
 description = "牌链唯一合法的开端。它不是武器，只是让旅人站稳脚步。"

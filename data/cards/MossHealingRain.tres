@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 24
 card_name = "Moss Healing Rain"
+value = 6
 heal = 3
 description = "Woodland rain carrying moss spores falls, restore HP for all player forest creatures."
 tags = Array[int]([2, 7, 10])

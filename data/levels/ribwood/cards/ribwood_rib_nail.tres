@@ -6,6 +6,7 @@ script = ExtResource("card_script")
 artwork_path = "res://assert/card/ribwood_rib_nail.png"
 card_id = 1011
 card_name = "肋骨穿钉"
+value = 6
 card_type = 1
 damage = 3
 description = "巡礼者用来固定帐篷和骨架的长钉，也能钉住扑来的残响。"

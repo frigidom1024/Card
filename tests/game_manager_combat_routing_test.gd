@@ -352,8 +352,8 @@ func _place_card(
 
 func _shop_item(card_data: CardData, price: int) -> ShopItemData:
 	var item := ShopItemData.new()
+	card_data.value = price
 	item.card_data = card_data
-	item.price = price
 	return item
 
 

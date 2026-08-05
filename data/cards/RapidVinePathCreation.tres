@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 23
 card_name = "Rapid Vine Path Creation"
+value = 6
 description = "Instantly spawn massive vines to fill a broken segment of forest path, generate stable natural energy."
 tags = Array[int]([3, 7, 10])
 rarity = 0

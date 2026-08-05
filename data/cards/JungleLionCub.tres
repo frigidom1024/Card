@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 8
 card_name = "Jungle Lion Cub"
+value = 10
 damage = 4
 defense = 4
 description = "Young cub of forest beast king, grass vines wrap its mane, balanced attack & defense as core path-building unit."

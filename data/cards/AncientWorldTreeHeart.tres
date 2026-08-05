@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 30
 card_name = "Ancient World Tree Heart"
+value = 10
 damage = 3
 defense = 3
 heal = 4

@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 3
 card_name = "Rock-shell Forest Turtle"
+value = 6
 damage = 1
 defense = 4
 description = "Ancient turtles rooted at tree roots, moss-covered shells block monsters from breaking paths."

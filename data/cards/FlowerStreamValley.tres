@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 29
 card_name = "Flower Stream Valley"
+value = 6
 defense = 2
 heal = 2
 description = "Woodland valley covered in wildflowers beside a stream, all natural creatures gain extra self-heal and minor defense boost every turn."

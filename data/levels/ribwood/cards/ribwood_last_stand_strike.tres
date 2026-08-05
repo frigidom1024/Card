@@ -6,6 +6,7 @@ script = ExtResource("card_script")
 artwork_path = "res://assert/card/ribwood_last_stand_strike.png"
 card_id = 1033
 card_name = "末路重击"
+value = 6
 card_type = 1
 damage = 4
 description = "把全身重量压在一次挥击上。没有花巧，只有在退无可退时留下的痕迹。"

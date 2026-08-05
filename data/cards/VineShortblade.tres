@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 15
 card_name = "Vine Shortblade"
+value = 6
 damage = 2
 description = "Blade solidified from tough aged vines, permanently grants +2 attack when equipped."
 tags = Array[int]([0, 6, 10])

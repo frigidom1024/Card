@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 5
 card_name = "Branch-antler Spirit Deer"
+value = 6
 damage = 2
 defense = 2
 description = "Pure white deer deep in thick woods, vine-wrapped antlers move nimbly to lay forest roads."

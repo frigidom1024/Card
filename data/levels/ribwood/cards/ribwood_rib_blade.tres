@@ -6,6 +6,7 @@ script = ExtResource("card_script")
 artwork_path = "res://assert/card/ribwood_rib_blade.png"
 card_id = 1002
 card_name = "肋骨短刃"
+value = 6
 card_type = 1
 damage = 2
 description = "从灰白肋骨上削下的短刃，刃口仍带着骨髓的暖光。"

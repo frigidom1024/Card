@@ -9,9 +9,10 @@ script = ExtResource("rule_script")
 
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_bone_stitch_needle.png"
 card_id = 1031
 card_name = "缝骨针"
+value = 6
+artwork_path = "res://assert/card/ribwood_bone_stitch_needle.png"
 damage = 1
 effect_rules = Array[ExtResource("1_3v4lb")]([SubResource("CardRule_main")])
 description = "缝骨者遗落的长针。若上一张牌提供防御，伤害 +2。"

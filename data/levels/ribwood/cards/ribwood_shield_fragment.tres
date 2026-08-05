@@ -9,9 +9,10 @@ script = ExtResource("rule_script")
 
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_shield_fragment.png"
 card_id = 1012
 card_name = "肋盾残片"
+value = 6
+artwork_path = "res://assert/card/ribwood_shield_fragment.png"
 defense = 3
 effect_rules = Array[ExtResource("1_ceb1i")]([SubResource("CardRule_main")])
 description = "从一面旧盾上剥落的骨片。若本牌是牌链最后一张，额外获得 1 点护甲。"

@@ -8,14 +8,14 @@
 [ext_resource type="Script" uid="uid://d4g532r3gevbr" path="res://scripts/game/drag_layer.gd" id="6_aonbx"]
 [ext_resource type="PackedScene" uid="uid://bf2h2gqo4hyjl" path="res://scenes/game/board.tscn" id="7_lcbjr"]
 [ext_resource type="Resource" uid="uid://b5ybu7vxrcp4j" path="res://data/player/player_data.tres" id="8_player"]
-[ext_resource type="Resource" path="res://data/levels/ribwood/event_lib.tres" id="9_event_lib"]
+[ext_resource type="Resource" uid="uid://5lnyr257q51n" path="res://data/levels/ribwood/event_lib.tres" id="9_event_lib"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_shop.tscn" id="10_shop_event"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_treasure.tscn" id="11_treasure_event"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_combat.tscn" id="12_combat_event"]
 [ext_resource type="Script" uid="uid://dkoovc0bwysbb" path="res://scripts/game/gameplay_canvas.gd" id="13_gameplay_canvas"]
-[ext_resource type="Texture2D" uid="uid://bdykofgan53ce" path="res://assert/bg/RidWoodBg.jpg" id="14_7ibbv"]
 [ext_resource type="PackedScene" path="res://scenes/game/hand_tray.tscn" id="15_hand_tray"]
 [ext_resource type="PackedScene" path="res://scenes/game/pilgrim_crest_hud.tscn" id="16_pilgrim_crest"]
+[ext_resource type="PackedScene" path="res://scenes/game/persistent_market.tscn" id="17_persistent_market"]
 
 [node name="GameManager" type="Node" unique_id=2111395174]
 script = ExtResource("1_q8mjp")
@@ -25,15 +25,36 @@ event_lib = ExtResource("9_event_lib")
 [node name="GameplayCanvas" type="Node2D" parent="." unique_id=249847659]
 script = ExtResource("13_gameplay_canvas")
 
-[node name="PilgrimCrestHud" parent="GameplayCanvas" instance=ExtResource("16_pilgrim_crest")]
+[node name="PilgrimCrestHud" parent="GameplayCanvas" unique_id=1551093594 instance=ExtResource("16_pilgrim_crest")]
 z_index = -5
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1581.0
+offset_top = 23.0
+offset_right = 1851.0
+offset_bottom = 247.0
 
-[node name="HandTray" parent="GameplayCanvas" instance=ExtResource("15_hand_tray")]
-z_index = -1
+[node name="PersistentMarket" parent="GameplayCanvas" unique_id=1950011221 instance=ExtResource("17_persistent_market")]
+z_index = -4
+layout_mode = 3
+anchors_preset = 0
+offset_left = 1267.0
+offset_top = 260.0
+offset_right = 1851.0
+offset_bottom = 730.0
+[node name="HandTray" parent="GameplayCanvas" unique_id=1277788652 instance=ExtResource("15_hand_tray")]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 286.0
+offset_top = 846.0
+offset_right = 1822.0
+offset_bottom = 1070.0
 
 [node name="HandManager" parent="GameplayCanvas" unique_id=279800638 instance=ExtResource("2_jdad8")]
+position = Vector2(971, 959)
 
 [node name="CardManager" parent="GameplayCanvas" unique_id=869829253 instance=ExtResource("3_k4jhu")]
+position = Vector2(965, 958)
 card_scene = ExtResource("4_frtjd")
 card_lib = ExtResource("5_0rse5")
 
@@ -41,7 +62,7 @@ card_lib = ExtResource("5_0rse5")
 script = ExtResource("6_aonbx")
 
 [node name="Board" parent="GameplayCanvas" unique_id=969095891 instance=ExtResource("7_lcbjr")]
-position = Vector2(453, 28)
+position = Vector2(146, 3)
 
 [node name="EventModalLayer" type="CanvasLayer" parent="." unique_id=1098015688]
 
@@ -56,8 +77,3 @@ visible = false
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=650841642]
 layer = -10
-
-[node name="Sprite2D" type="Sprite2D" parent="CanvasLayer" unique_id=1018254745]
-position = Vector2(1038.0001, 364)
-scale = Vector2(0.6546938, 0.65469384)
-texture = ExtResource("14_7ibbv")

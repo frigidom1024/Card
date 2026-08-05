@@ -6,6 +6,7 @@ script = ExtResource("card_script")
 artwork_path = "res://assert/card/ribwood_old_chest_cloak.png"
 card_id = 1032
 card_name = "覆胸旧斗篷"
+value = 6
 card_type = 1
 defense = 2
 heal = 2

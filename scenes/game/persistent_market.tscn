@@ -1,0 +1,184 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/game/market/persistent_market.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://scenes/card_view/card_entity.tscn" id="2_card"]
+[ext_resource type="FontFile" path="res://assert/font/bar-sady/BAR_SADY-Medium.otf" id="3_font"]
+
+[node name="PersistentMarket" type="Control"]
+custom_minimum_size = Vector2(584, 470)
+layout_mode = 3
+anchors_preset = 0
+mouse_filter = 2
+script = ExtResource("1_script")
+
+[node name="Backdrop" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HeaderRow" type="Panel" parent="."]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 576.0
+offset_bottom = 48.0
+mouse_filter = 2
+
+[node name="TitleLabel" type="Label" parent="HeaderRow"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 2.0
+offset_right = 326.0
+offset_bottom = 38.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.81, 0.72, 0.49, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 16
+text = "WAYSTOCK"
+vertical_alignment = 1
+
+[node name="RefreshButton" type="Button" parent="HeaderRow"]
+layout_mode = 0
+offset_left = 404.0
+offset_top = 5.0
+offset_right = 496.0
+offset_bottom = 35.0
+mouse_filter = 0
+theme_override_colors/font_color = Color(0.88, 0.8, 0.58, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 12
+text = "REFRESH"
+
+[node name="RefreshCostLabel" type="Label" parent="HeaderRow"]
+layout_mode = 0
+offset_left = 504.0
+offset_top = 5.0
+offset_right = 568.0
+offset_bottom = 35.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.77, 0.67, 0.41, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 10
+text = "1 GOLD"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="OfferRow" type="Control" parent="."]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 58.0
+offset_right = 576.0
+offset_bottom = 328.0
+mouse_filter = 2
+
+[node name="OfferSlot1" type="Panel" parent="OfferRow"]
+layout_mode = 0
+offset_right = 180.0
+offset_bottom = 270.0
+mouse_filter = 2
+
+[node name="CardPreview" parent="OfferRow/OfferSlot1" instance=ExtResource("2_card")]
+position = Vector2(90, 112)
+scale = Vector2(1, 1)
+
+[node name="PriceLabel" type="Label" parent="OfferRow/OfferSlot1"]
+layout_mode = 0
+offset_top = 224.0
+offset_right = 180.0
+offset_bottom = 260.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.79, 0.69, 0.43, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 13
+text = "6 GOLD"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="OfferSlot2" type="Panel" parent="OfferRow"]
+layout_mode = 0
+offset_left = 194.0
+offset_right = 374.0
+offset_bottom = 270.0
+mouse_filter = 2
+
+[node name="CardPreview" parent="OfferRow/OfferSlot2" instance=ExtResource("2_card")]
+position = Vector2(90, 112)
+scale = Vector2(1, 1)
+
+[node name="PriceLabel" type="Label" parent="OfferRow/OfferSlot2"]
+layout_mode = 0
+offset_top = 224.0
+offset_right = 180.0
+offset_bottom = 260.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.79, 0.69, 0.43, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 13
+text = "6 GOLD"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="OfferSlot3" type="Panel" parent="OfferRow"]
+layout_mode = 0
+offset_left = 388.0
+offset_right = 568.0
+offset_bottom = 270.0
+mouse_filter = 2
+
+[node name="CardPreview" parent="OfferRow/OfferSlot3" instance=ExtResource("2_card")]
+position = Vector2(90, 112)
+scale = Vector2(1, 1)
+
+[node name="PriceLabel" type="Label" parent="OfferRow/OfferSlot3"]
+layout_mode = 0
+offset_top = 224.0
+offset_right = 180.0
+offset_bottom = 260.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.79, 0.69, 0.43, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 13
+text = "6 GOLD"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="ReclaimArea" type="Panel" parent="."]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 342.0
+offset_right = 576.0
+offset_bottom = 462.0
+mouse_filter = 2
+
+[node name="TitleLabel" type="Label" parent="ReclaimArea"]
+layout_mode = 0
+offset_top = 8.0
+offset_right = 568.0
+offset_bottom = 37.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.68, 0.65, 0.57, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 13
+text = "RECLAIM RELICS"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HintLabel" type="Label" parent="ReclaimArea"]
+layout_mode = 0
+offset_left = 12.0
+offset_top = 40.0
+offset_right = 556.0
+offset_bottom = 76.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.47, 0.5, 0.51, 1)
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 11
+text = "DRAG A CARD HERE · RECEIVE HALF VALUE"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="pressed" from="HeaderRow/RefreshButton" to="." method="_on_refresh_button_pressed"]

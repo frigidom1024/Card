@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 16
 card_name = "Broadleaf Weave Robe"
+value = 6
 defense = 2
 heal = 1
 description = "Outer garment woven with broad leaves and soft moss, slightly boost defense and natural self-heal."

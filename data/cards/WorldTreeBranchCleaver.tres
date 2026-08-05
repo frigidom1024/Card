@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 22
 card_name = "World Tree Branch Cleaver"
+value = 16
 damage = 7
 defense = 2
 heal = 2

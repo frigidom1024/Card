@@ -1,6 +1,10 @@
 extends Node
 
 const FaithServiceScript := preload("res://scripts/player/faith_service.gd")
+const MarketPriceContextScript := preload("res://scripts/game/market/market_price_context.gd")
+const MarketPricingServiceScript := preload("res://scripts/game/market/market_pricing_service.gd")
+const PersistentMarketStateScript := preload("res://scripts/game/market/persistent_market_state.gd")
+const PersistentMarketResolverScript := preload("res://scripts/game/market/persistent_market_resolver.gd")
 
 signal combat_started(instance: EventInstance, monster: MobInstance)
 signal combat_resolved(instance: EventInstance, result: CombatResult)
@@ -16,6 +20,7 @@ signal faith_changed(current_faith: int)
 @onready var hand_tray: HandTray = $GameplayCanvas/HandTray
 @onready var pilgrim_crest_hud: PilgrimCrestHud = $GameplayCanvas/PilgrimCrestHud
 @onready var drag_layer: DragLayer = $GameplayCanvas/DragLayer
+@onready var persistent_market = $GameplayCanvas/PersistentMarket
 @onready var event_modal_layer: CanvasLayer = $EventModalLayer
 @onready var shop_event_view = $EventModalLayer/ShopEventView
 @onready var treasure_event_view = $EventModalLayer/TreasureEventView
@@ -28,7 +33,11 @@ var starting_deck: StartingDeckData
 var player_stats: CombatStats
 var _event_placement_service := EventPlacementService.new()
 var _encounter_combat_flow: EncounterCombatFlowCoordinator
-var _shop_event_resolver := ShopEventResolver.new()
+var _market_pricing := MarketPricingServiceScript.new()
+var _shop_event_resolver: ShopEventResolver
+var _persistent_market_state
+var _persistent_market_resolver
+var _market_rng := RandomNumberGenerator.new()
 var _treasure_event_resolver := TreasureEventResolver.new()
 var _treasure_rng := RandomNumberGenerator.new()
 var _faith_rng := RandomNumberGenerator.new()
@@ -38,6 +47,7 @@ var _pending_combat_instance: EventInstance
 var _pending_combat_result: CombatResult
 var _is_exploration_failed := false
 var _pending_faith_echo_spawns := 0
+var _market_ready := false
 
 # 所有玩家相关卡牌数据引用
 var cards_inst: Array[CardInstance]
@@ -73,6 +83,16 @@ func _ready() -> void:
 	# DragLayer only owns the interaction. FaithService observes deliberate retractions.
 	drag_layer.board = board
 	drag_layer.hand_area = hand_area
+	_setup_persistent_market()
+	drag_layer.set_market_context(persistent_market, hand_tray)
+	if not drag_layer.market_purchase_requested.is_connected(_on_market_purchase_requested):
+		drag_layer.market_purchase_requested.connect(_on_market_purchase_requested)
+	if not drag_layer.market_reclaim_requested.is_connected(_on_market_reclaim_requested):
+		drag_layer.market_reclaim_requested.connect(_on_market_reclaim_requested)
+	if persistent_market != null and not persistent_market.refresh_requested.is_connected(_on_market_refresh_requested):
+		persistent_market.refresh_requested.connect(_on_market_refresh_requested)
+	if shop_event_view != null and shop_event_view.has_method("set_pricing_service"):
+		shop_event_view.set_pricing_service(_market_pricing)
 	if not drag_layer.manual_chain_retracted.is_connected(_faith_service.resolve_manual_chain_retraction):
 		drag_layer.manual_chain_retracted.connect(_faith_service.resolve_manual_chain_retraction)
 	if not board.event_triggered.is_connected(_on_board_event_triggered):
@@ -117,6 +137,7 @@ func _initialize_run_state() -> bool:
 	player_data = runtime_player
 	player_data.faith = PlayerData.INITIAL_FAITH
 	_faith_service.configure(player_data)
+	_shop_event_resolver = ShopEventResolver.new(_market_pricing)
 	player_stats = CombatStats.from_data(player_data.base_stats)
 	if player_stats == null:
 		return _fail_run_initialization("GameManager could not create runtime combat stats")
@@ -170,12 +191,87 @@ func _on_faith_changed(current_faith: int) -> void:
 		pilgrim_crest_hud.set_faith(current_faith)
 
 
+func _setup_persistent_market() -> void:
+	if persistent_market == null or card_manager == null or card_manager.card_lib == null or player_data == null:
+		return
+	_persistent_market_state = PersistentMarketStateScript.new()
+	_market_rng.randomize()
+	_persistent_market_state.initialize(card_manager.card_lib, _market_rng)
+	_persistent_market_resolver = PersistentMarketResolverScript.new(_market_pricing)
+	persistent_market.configure(_persistent_market_state, player_data, _market_pricing)
+	_market_ready = true
+
+
+func _market_context():
+	var context = MarketPriceContextScript.new()
+	context.player = player_data
+	context.market_state = _persistent_market_state
+	return context
+
+
+func _on_market_purchase_requested(card: CardEntity, slot_index: int) -> void:
+	if not _market_ready or card == null or not is_instance_valid(card):
+		return
+	var result = _persistent_market_resolver.purchase(_persistent_market_state, slot_index, player_data, not hand_area.is_full(), _market_context())
+	if not result.success:
+		persistent_market.show_message(_market_failure_message(result.failure), true)
+		return
+	persistent_market.restore_offer_card(card, slot_index)
+	persistent_market.refresh_display()
+	if not _grant_card_to_hand(result.card_data):
+		persistent_market.show_message("CARD COULD NOT BE ADDED", true)
+		return
+	_sync_pilgrim_crest()
+	persistent_market.show_message("CARD PURCHASED", false)
+
+
+func _on_market_reclaim_requested(card: CardEntity) -> void:
+	if not _market_ready or card == null or not is_instance_valid(card):
+		return
+	if card not in card_entities or card.card_instance == null:
+		return
+	var result = _persistent_market_resolver.reclaim(card.card_instance.card_data, player_data, _market_context())
+	if not result.success:
+		persistent_market.show_message(_market_failure_message(result.failure), true)
+		return
+	card_entities.erase(card)
+	cards_inst.erase(card.card_instance)
+	drag_layer.confirm_market_reclaim(card)
+	_sync_hand_tray()
+	_sync_pilgrim_crest()
+	persistent_market.show_message("CARD RECLAIMED · +%d GOLD" % result.gold_delta, false)
+
+
+func _on_market_refresh_requested() -> void:
+	if not _market_ready:
+		return
+	var result = _persistent_market_resolver.refresh(_persistent_market_state, player_data, _market_context())
+	if not result.success:
+		persistent_market.show_message(_market_failure_message(result.failure), true)
+		return
+	persistent_market.refresh_display()
+	_sync_pilgrim_crest()
+	persistent_market.show_message("MARKET REFRESHED", false)
+
+
+func _market_failure_message(failure: int) -> String:
+	match failure:
+		PersistentMarketResolverScript.Failure.HAND_FULL:
+			return "HAND FULL"
+		PersistentMarketResolverScript.Failure.INSUFFICIENT_GOLD:
+			return "NOT ENOUGH GOLD"
+		PersistentMarketResolverScript.Failure.INVALID_CARD, PersistentMarketResolverScript.Failure.INVALID_OFFER:
+			return "TRANSACTION FAILED"
+		_:
+			return "TRANSACTION FAILED"
+
 func _sync_pilgrim_crest() -> void:
 	if pilgrim_crest_hud == null:
 		return
 	if player_stats != null:
 		pilgrim_crest_hud.set_vitality(player_stats.hp, player_stats.max_hp)
 	pilgrim_crest_hud.set_faith(_faith_service.get_faith())
+	pilgrim_crest_hud.set_gold(player_data.gold if player_data != null else 0)
 
 
 func set_player_temporary_status(status_text: String) -> void:
@@ -219,13 +315,23 @@ func init_events() -> void:
 	_event_placement_service.place_initial_events(event_lib, board)
 
 
-## 按固定设计坐标布置玩法内容，再统一缩放和居中玩法画布
+## 按固定设计坐标布置玩法内容，再统一缩放和居中玩法画布。
+## 当前由场景编辑器负责布局，因此保留 return 禁用这套自动定位。
 func _center_layout() -> void:
+	return
+	# 启用自动布局时，从这里统一调整设计坐标（1920×1080）。
 	var design_size := LayoutConfig.DESIGN_VIEWPORT_SIZE
 	board.position = LayoutConfig.board_origin(
 		design_size, board.width, board.height, board.cell_size
 	)
 	hand_area.position = LayoutConfig.hand_origin(design_size)
+
+	# 以下节点当前由 game_manager.tscn 的 Inspector 负责定位。
+	# 需要切回代码布局时，可在这里集中修改它们的位置。
+	hand_tray.position = Vector2(283.0, 656.0)
+	pilgrim_crest_hud.position = Vector2(1620.0, 28.0)
+
+	# GameplayCanvas 负责按窗口尺寸统一缩放并居中。
 	gameplay_canvas.fit_to_viewport(get_viewport().get_visible_rect().size)
 
 
@@ -310,7 +416,7 @@ func _on_shop_purchase_requested(item_index: int) -> void:
 		return
 
 	var result := _shop_event_resolver.purchase_item(
-		_active_event, item_index, player_data, true
+		_active_event, item_index, player_data, true, _market_context()
 	)
 	if not result.success:
 		shop_event_view.show_message(_resolution_failure_message(result.failure), true)

@@ -24,7 +24,8 @@ func get_faith() -> int:
 func resolve_manual_chain_retraction(_removed_card: CardEntity = null, _following_card_count: int = 0) -> void:
 	if _player_data == null:
 		return
-	_player_data.faith -= 1
+	#暂时去掉信仰值减少机制
+	#_player_data.faith -= 1
 	faith_changed.emit(_player_data.faith)
 	if _player_data.faith <= 0:
 		echo_spawn_requested.emit()

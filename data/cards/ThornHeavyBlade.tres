@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 19
 card_name = "Thorn Heavy Blade"
+value = 16
 damage = 4
 description = "Heavy blade forged from hard thorns and dark wood, sharp thorns pierce monster armor and grant massive attack bonus."
 tags = Array[int]([0, 6, 10])

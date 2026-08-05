@@ -9,9 +9,10 @@ script = ExtResource("rule_script")
 
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_warmth_charm.png"
 card_id = 1023
 card_name = "余温护符"
+value = 6
+artwork_path = "res://assert/card/ribwood_warmth_charm.png"
 defense = 1
 heal = 2
 effect_rules = Array[ExtResource("1_crsks")]([SubResource("CardRule_main")])

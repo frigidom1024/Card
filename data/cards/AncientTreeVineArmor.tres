@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 20
 card_name = "Ancient Tree Vine Armor"
+value = 10
 defense = 4
 heal = 1
 description = "Full body armor twisted from complete ancient tree vines, supreme physical defense, slowly self-recover with plant power each turn."

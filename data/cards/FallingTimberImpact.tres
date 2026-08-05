@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 27
 card_name = "Falling Timber Impact"
+value = 10
 damage = 5
 description = "Summon giant falling tree branches, deal heavy natural damage to enemy monsters and destroy enemy paths."
 tags = Array[int]([0, 7, 10])

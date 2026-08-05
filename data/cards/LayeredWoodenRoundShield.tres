@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 18
 card_name = "Layered Wooden Round Shield"
+value = 8
 defense = 3
 description = "Round shield pressed by multi-layer hard wood, reinforced with wrapped vines to greatly raise defense."
 tags = Array[int]([1, 6, 10])

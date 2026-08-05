@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 0
 card_name = "生命之根"
+value = 6
 card_type = 0
 defense = 3
 description = "古老森林的生命核心，是你探索的根基。"

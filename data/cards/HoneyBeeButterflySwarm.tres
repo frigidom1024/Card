@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 4
 card_name = "Honey Bee & Butterfly Swarm"
+value = 6
 damage = 1
 defense = 2
 description = "Swarm of pollinators gathering nectar, generate steady natural energy resources each turn."

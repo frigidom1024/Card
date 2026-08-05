@@ -6,6 +6,7 @@ script = ExtResource("card_script")
 artwork_path = "res://assert/card/ribwood_white_horn_relic.png"
 card_id = 1041
 card_name = "白角遗片"
+value = 6
 card_type = 1
 damage = 2
 defense = 2

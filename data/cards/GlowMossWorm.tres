@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 2
 card_name = "Glow Moss Worm"
+value = 6
 damage = 1
 defense = 3
 heal = 1

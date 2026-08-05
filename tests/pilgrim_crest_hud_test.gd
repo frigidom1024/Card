@@ -11,13 +11,19 @@ func _init() -> void:
 
 func _run_tests() -> void:
 	var hud := PilgrimCrestHudScene.instantiate() as PilgrimCrestHud
+	var editor_position := Vector2(1620.0, 28.0)
+	hud.position = editor_position
 	root.add_child(hud)
 	await process_frame
 
 	hud.set_display_context("PILGRIM", "LAST KNIGHT", "RIBWOOD")
 	hud.set_vitality(34, 50)
 	hud.set_faith(3)
+	_expect(hud.has_method("set_gold"), "HUD exposes a gold setter")
+	if hud.has_method("set_gold"):
+		hud.call("set_gold", 17)
 	hud.set_temporary_status("")
+	_expect(hud.position == editor_position, "player HUD preserves the position authored by its parent scene")
 
 	_expect((hud.get_node("IdentityLabel") as Label).get_theme_font_size("font_size") == 17, "HUD enlarges identity text")
 	_expect((hud.get_node("SubtitleLabel") as Label).get_theme_font_size("font_size") == 12, "HUD enlarges subtitle text")
@@ -31,6 +37,10 @@ func _run_tests() -> void:
 	_expect((hud.get_node("VitalityValue") as Label).text == "34 / 50", "HUD formats vitality")
 	_expect((hud.get_node("VitalityBar") as ProgressBar).value == 34.0, "HUD fills vitality bar")
 	_expect((hud.get_node("FaithSeal/FaithValue") as Label).text == "FAITH · 3", "HUD formats faith")
+	var gold_value := hud.get_node_or_null("GoldSeal/GoldValue") as Label
+	_expect(gold_value != null, "HUD exposes a gold value label")
+	if gold_value != null:
+		_expect(gold_value.text == "GOLD · 17", "HUD formats gold")
 	_expect(not (hud.get_node("StatusRow") as Control).visible, "empty status collapses status row")
 
 	hud.set_temporary_status("CURSE · BONE CHILL")

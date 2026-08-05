@@ -57,6 +57,7 @@ var _consume_next_left_release := false
 var _display_only := false
 var _display_info_enabled := false
 var _display_zoom_enabled := false
+var _market_offer := false
 var _on_board := false
 
 var drag_layer
@@ -97,13 +98,32 @@ func set_display_only(value: bool, show_info_on_hover := false, allow_zoom_on_ri
 	_display_only = value
 	_display_info_enabled = _display_only and show_info_on_hover
 	_display_zoom_enabled = _display_only and allow_zoom_on_right_click
-	input_pickable = not _display_only or _display_info_enabled or _display_zoom_enabled
+	input_pickable = not _display_only or _display_info_enabled or _display_zoom_enabled or _market_offer
 	_configure_card_view_pointer_input()
 
 
 func is_display_only() -> bool:
 	return _display_only
 
+
+
+func set_market_offer_mode(value: bool) -> void:
+	if value and state == State.ZOOMED:
+		_hide_zoom()
+	_dragging = false
+	state = State.NORMAL
+	set_process(false)
+	_market_offer = value
+	_display_only = false
+	_display_info_enabled = value
+	_display_zoom_enabled = value
+	input_pickable = true
+	_configure_card_view_pointer_input()
+	_show_info(false)
+
+
+func is_market_offer() -> bool:
+	return _market_offer
 
 func set_on_board(value: bool) -> void:
 	_on_board = value
@@ -115,7 +135,7 @@ func set_on_board(value: bool) -> void:
 # 生命周期
 # ============================
 func _ready() -> void:
-	input_pickable = not _display_only or _display_info_enabled or _display_zoom_enabled
+	input_pickable = not _display_only or _display_info_enabled or _display_zoom_enabled or _market_offer
 	set_notify_transform(true)
 	_combat_tag_anchor.z_index = RenderPriority.CARD_COMBAT_TAG
 	if not card_instance:
@@ -131,7 +151,7 @@ func _configure_card_view_pointer_input() -> void:
 	if _card_view == null:
 		return
 
-	var accepts_preview_pointer_input := _display_only and (
+	var accepts_preview_pointer_input := (_display_only or _market_offer) and (
 		_display_info_enabled or _display_zoom_enabled
 	)
 	_card_view.mouse_filter = (
@@ -313,6 +333,17 @@ func _on_mouse_exited() -> void:
 # ============================
 
 func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> void:
+	if _market_offer:
+		if event is InputEventMouseButton:
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				if event.pressed:
+					_start_drag()
+				elif _dragging:
+					_end_drag()
+			elif event.button_index == MOUSE_BUTTON_RIGHT and event.pressed:
+				_show_info(false)
+				_show_zoom()
+		return
 	if _display_only:
 		if _display_zoom_enabled and event is InputEventMouseButton \
 				and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
@@ -354,7 +385,7 @@ func _on_input_event(_viewport: Node, event: InputEvent, _shape_idx: int) -> voi
 # ============================
 
 func _start_drag() -> void:
-	if _display_only:
+	if _display_only and not _market_offer:
 		return
 
 	if drag_layer and drag_layer.is_interaction_locked():
@@ -407,7 +438,7 @@ func _process(_delta: float) -> void:
 # ============================
 
 func rotate_while_dragging() -> bool:
-	if not _dragging:
+	if _market_offer or not _dragging:
 		return false
 	_show_info(false)
 	_rotate_card()
@@ -415,7 +446,7 @@ func rotate_while_dragging() -> bool:
 
 
 func _rotate_card() -> void:
-	if _display_only:
+	if _display_only or _market_offer:
 		return
 
 	if not card_instance:

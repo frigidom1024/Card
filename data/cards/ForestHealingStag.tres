@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 9
 card_name = "Forest Healing Stag"
+value = 10
 damage = 2
 defense = 3
 heal = 4

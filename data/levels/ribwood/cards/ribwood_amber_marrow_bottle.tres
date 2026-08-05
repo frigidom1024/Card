@@ -6,6 +6,7 @@ script = ExtResource("card_script")
 artwork_path = "res://assert/card/ribwood_amber_marrow_bottle.png"
 card_id = 1013
 card_name = "琥珀骨髓瓶"
+value = 6
 card_type = 1
 heal = 3
 description = "凝固成琥珀色的骨髓，摇晃时仍会映出远处的火光。"

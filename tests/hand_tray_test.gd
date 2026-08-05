@@ -5,8 +5,6 @@ const HandAreaScript = preload("res://scripts/game/hand.gd")
 const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
 const FLOAT_TOLERANCE := 0.01
 const DEFAULT_TRAY_WIDTH := 1536.0
-const DEFAULT_TRAY_X := 192.0
-const DEFAULT_TRAY_Y := 876.0
 const DEFAULT_TRAY_HEIGHT := 224.0
 const METADATA_INSET := Vector2(48.0, 32.0)
 const EXPECTED_TRAY_COLOR := Color("0a1220d9")
@@ -22,6 +20,8 @@ func _init() -> void:
 
 func _run_tests() -> void:
 	var tray := HandTrayScene.instantiate() as HandTray
+	var editor_position := Vector2(283.0, 656.0)
+	tray.position = editor_position
 	root.add_child(tray)
 	await process_frame
 	_expect_all_controls_ignore_input(tray)
@@ -33,7 +33,7 @@ func _run_tests() -> void:
 	_expect(tray.get_node_or_null("RightClasp") is ColorRect, "hand tray exposes an editable right clasp")
 	_expect(tray.get_node_or_null("HandCount") is Label, "hand tray exposes an editable hand count label")
 	_expect(tray.get_node_or_null("FutureInfoAnchor") is Control, "hand tray exposes an editable future info anchor")
-	_expect_default_layout(tray)
+	_expect_default_layout(tray, editor_position)
 	_expect_metadata_layout(tray)
 	_expect_tray_appearance(tray)
 	tray.set_hand_count(4, 10)
@@ -55,19 +55,12 @@ func _expect_all_controls_ignore_input(node: Node) -> void:
 		_expect_all_controls_ignore_input(child)
 
 
-func _expect_default_layout(tray: HandTray) -> void:
+func _expect_default_layout(tray: HandTray, editor_position: Vector2) -> void:
 	_expect(
 		absf(tray.size.x - DEFAULT_TRAY_WIDTH) <= FLOAT_TOLERANCE,
 		"hand tray default width is 1536.0 in the 1920-wide design viewport"
 	)
-	_expect(
-		absf(tray.position.x - DEFAULT_TRAY_X) <= FLOAT_TOLERANCE,
-		"hand tray default x position is centered at 192.0"
-	)
-	_expect(
-		absf(tray.position.y - DEFAULT_TRAY_Y) <= FLOAT_TOLERANCE,
-		"hand tray default y position includes 20.0 pixels of bottom bleed"
-	)
+	_expect(tray.position == editor_position, "hand tray preserves the position authored by its parent scene")
 	_expect(
 		absf(tray.size.y - DEFAULT_TRAY_HEIGHT) <= FLOAT_TOLERANCE,
 		"hand tray default height is 224.0 pixels"

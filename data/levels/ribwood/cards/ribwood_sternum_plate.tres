@@ -9,9 +9,10 @@ script = ExtResource("rule_script")
 
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_sternum_plate.png"
 card_id = 1042
 card_name = "胸骨护板"
+value = 6
+artwork_path = "res://assert/card/ribwood_sternum_plate.png"
 defense = 4
 effect_rules = Array[ExtResource("1_14o2w")]([SubResource("CardRule_main")])
 description = "能覆盖胸口的厚重护板。若本牌是牌链最后一张，额外获得 2 点护甲。"

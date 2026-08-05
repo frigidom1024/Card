@@ -11,10 +11,7 @@ extends Control
 	set(value):
 		tray_height = value
 		_apply_visuals()
-@export_range(0.0, 48.0, 1.0) var bottom_bleed := 20.0:
-	set(value):
-		bottom_bleed = value
-		_apply_visuals()
+
 
 @export_group("Palette")
 @export var tray_color := Color("0a1220d9"):
@@ -47,7 +44,6 @@ func _apply_visuals() -> void:
 	var design_size := LayoutConfig.DESIGN_VIEWPORT_SIZE
 	var tray_width := design_size.x * width_ratio
 	size = Vector2(tray_width, tray_height)
-	position = Vector2((design_size.x - tray_width) * 0.5, design_size.y - tray_height + bottom_bleed)
 	_set_mouse_transparent(self)
 
 	var outer_tray := get_node_or_null("OuterTray") as Panel

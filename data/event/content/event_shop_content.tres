@@ -9,17 +9,14 @@
 [sub_resource type="Resource" id="ShopItem_shield"]
 script = ExtResource("2_item")
 card_data = ExtResource("3_shield")
-price = 8
 
 [sub_resource type="Resource" id="ShopItem_vial"]
 script = ExtResource("2_item")
 card_data = ExtResource("4_vial")
-price = 12
 
 [sub_resource type="Resource" id="ShopItem_blade"]
 script = ExtResource("2_item")
 card_data = ExtResource("5_blade")
-price = 16
 
 [resource]
 script = ExtResource("1_content")

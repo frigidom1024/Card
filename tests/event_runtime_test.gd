@@ -336,7 +336,6 @@ func _test_shop_rejects_null_card_data_without_state_writes() -> void:
 	var player := PlayerDataScript.new()
 	player.gold = 10
 	var invalid_item := ShopItemDataScript.new()
-	invalid_item.price = 6
 	var instance := _make_shop_instance([invalid_item])
 	var before := _snapshot_runtime_state(player, instance)
 	var result = shop_resolver.purchase_item(instance, 0, player, true)
@@ -695,7 +694,7 @@ func _make_instance(event_type: int, content: Resource) -> EventInstanceScript:
 func _offer(card_name: String, price: int):
 	var offer = ShopItemDataScript.new()
 	offer.card_data = _card(card_name)
-	offer.price = price
+	offer.card_data.value = price
 	return offer
 
 

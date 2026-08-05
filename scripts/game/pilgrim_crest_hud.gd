@@ -21,10 +21,6 @@ extends Control
 		_apply_visuals()
 
 @export_group("Layout")
-@export var outer_margin := Vector2(40, 36):
-	set(value):
-		outer_margin = value
-		_apply_visuals()
 @export_range(250.0, 290.0, 1.0) var plaque_width := 270.0:
 	set(value):
 		plaque_width = value
@@ -75,6 +71,7 @@ extends Control
 var _current_hp := 0
 var _max_hp := 1
 var _current_faith := 0
+var _current_gold := 0
 var _temporary_status := ""
 
 
@@ -82,6 +79,7 @@ func _ready() -> void:
 	_apply_visuals()
 	set_vitality(_current_hp, _max_hp)
 	set_faith(_current_faith)
+	set_gold(_current_gold)
 	set_temporary_status(_temporary_status)
 
 
@@ -111,6 +109,12 @@ func set_faith(current_faith: int) -> void:
 		faith_value.text = "FAITH · %d" % _current_faith
 
 
+func set_gold(current_gold: int) -> void:
+	_current_gold = maxi(0, current_gold)
+	var gold_value := get_node_or_null("GoldSeal/GoldValue") as Label
+	if gold_value != null:
+		gold_value.text = "GOLD · %d" % _current_gold
+
 func set_temporary_status(status_text: String) -> void:
 	_temporary_status = status_text.strip_edges()
 	var status_row := get_node_or_null("StatusRow") as Control
@@ -125,7 +129,6 @@ func set_temporary_status(status_text: String) -> void:
 func _apply_visuals() -> void:
 	var active_status := not _temporary_status.is_empty()
 	size = Vector2(plaque_width, compact_height + (status_height if active_status else 0.0))
-	position = outer_margin
 	_set_mouse_transparent(self)
 
 	var outer_plaque := get_node_or_null("OuterPlaque") as Panel
@@ -205,6 +208,17 @@ func _apply_visuals() -> void:
 		faith_value.size = faith_seal.size if faith_seal != null else Vector2(124, 26)
 		faith_value.add_theme_color_override("font_color", trim_color)
 
+	var gold_seal := get_node_or_null("GoldSeal") as Panel
+	if gold_seal != null:
+		gold_seal.position = Vector2(156, 194)
+		gold_seal.size = Vector2(90, 26)
+		gold_seal.add_theme_stylebox_override("panel", _make_panel_style(Color("3a3020"), 4, trim_color, 1))
+
+	var gold_value := get_node_or_null("GoldSeal/GoldValue") as Label
+	if gold_value != null:
+		gold_value.position = Vector2.ZERO
+		gold_value.size = gold_seal.size if gold_seal != null else Vector2(90, 26)
+		gold_value.add_theme_color_override("font_color", trim_color)
 	var status_row := get_node_or_null("StatusRow") as Panel
 	if status_row != null:
 		status_row.position = Vector2(14, compact_height - 4)

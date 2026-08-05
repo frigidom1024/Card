@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 14
 card_name = "Cloud-feather Ancient Forest Roc"
+value = 24
 damage = 9
 defense = 9
 heal = 8

@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 21
 card_name = "Clear Spring Wood Vial"
+value = 12
 damage = 1
 defense = 1
 heal = 3

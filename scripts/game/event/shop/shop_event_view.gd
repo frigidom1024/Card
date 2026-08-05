@@ -1,11 +1,15 @@
 class_name ShopEventView
 extends Control
 
+const MarketPriceContextScript = preload("res://scripts/game/market/market_price_context.gd")
+const MarketPricingServiceScript = preload("res://scripts/game/market/market_pricing_service.gd")
+
 signal purchase_requested(item_index: int)
 signal close_requested()
 
 var _instance: EventInstance
 var _player: PlayerData
+var _pricing: Object
 
 
 func _ready() -> void:
@@ -19,6 +23,11 @@ func _ready() -> void:
 	var close_button := find_child("CloseButton", true, false) as Button
 	if close_button != null and not close_button.pressed.is_connected(_on_close_pressed):
 		close_button.pressed.connect(_on_close_pressed)
+
+
+func set_pricing_service(pricing: Object) -> void:
+	_pricing = pricing
+	_refresh()
 
 
 func show_event(instance: EventInstance, player: PlayerData) -> void:
@@ -68,7 +77,7 @@ func _refresh() -> void:
 			preview.set_display_only(true, true, true)
 		var price_label := slot.find_child("PriceOrRewardLabel", true, false) as Label
 		if price_label != null:
-			price_label.text = "%d  GOLD" % item.price
+			price_label.text = "%d  GOLD" % _get_purchase_price(item.card_data)
 		var button := slot.find_child("ActionButton", true, false) as Button
 		if button != null:
 			var sold := state != null and item_index < state.sold_flags.size() and state.sold_flags[item_index]
@@ -98,3 +107,14 @@ func _on_purchase_pressed(item_index: int) -> void:
 
 func _on_close_pressed() -> void:
 	close_requested.emit()
+
+
+func _get_purchase_price(card_data: CardData) -> int:
+	var pricing := _pricing if _pricing != null else MarketPricingServiceScript.new()
+	return int(pricing.call("get_purchase_price", card_data, _build_price_context()))
+
+
+func _build_price_context():
+	var context = MarketPriceContextScript.new()
+	context.player = _player
+	return context

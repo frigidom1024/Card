@@ -24,6 +24,7 @@ enum Rarity { COMMON, RARE, EPIC, LEGENDARY }
 
 @export var card_id: int = 0
 @export var card_name: String = ""
+@export_range(1, 999, 1) var value: int = 1
 @export_file("*.png", "*.webp", "*.jpg", "*.jpeg") var artwork_path: String = ""
 @export var card_type: CardType = CardType.NORMAL
 

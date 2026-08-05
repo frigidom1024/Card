@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 10
 card_name = "Miasma Shadow Lizard"
+value = 10
 damage = 5
 defense = 3
 description = "Shadow lizards born in swamp underground, corrosive miasma covers skin, high attack power destroys forest paths."

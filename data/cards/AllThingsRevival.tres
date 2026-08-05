@@ -6,6 +6,7 @@
 script = ExtResource("1")
 card_id = 28
 card_name = "All Things Revival"
+value = 16
 heal = 7
 description = "Awaken primal life force of the whole forest, fully restore HP of all player cards on field and grant extra massive natural resources."
 tags = Array[int]([2, 3, 7, 10])

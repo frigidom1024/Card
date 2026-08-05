@@ -148,10 +148,11 @@ func rearrange_cards(animate: bool = true) -> void:
 var _tweens: Dictionary = {}
 
 func _animate_card(card: CardEntity, target_pos: Vector2, target_scale: Vector2, target_z: int) -> void:
+	var card_id := card.get_instance_id()
 	# 取消旧动画
-	if card in _tweens:
-		_tweens[card].kill()
-		_tweens.erase(card)
+	if card_id in _tweens:
+		_tweens[card_id].kill()
+		_tweens.erase(card_id)
 
 	# 创建新动画
 	var tween = create_tween()
@@ -165,13 +166,8 @@ func _animate_card(card: CardEntity, target_pos: Vector2, target_scale: Vector2,
 	# Z轴直接设置（不缓动）
 	card.z_index = target_z
 
-	_tweens[card] = tween
-
-	tween.finished.connect(func():
-		if card in _tweens:
-			_tweens.erase(card)
-	)
-
+	_tweens[card_id] = tween
+	tween.finished.connect(func(): _tweens.erase(card_id))
 # ============================================================
 # 信号管理
 # ============================================================
