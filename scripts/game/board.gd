@@ -1,7 +1,14 @@
 class_name Board
 extends Node2D
 
+const BoardPlacementResultScript = preload("res://scripts/game/board_placement_result.gd")
+
+signal placement_committed(result)
+signal event_interaction_requested(instance: EventInstance)
+signal card_return_requested(card: CardEntity)
+# Temporary compatibility notifications. Exploration will consume placement_committed in task 4.
 signal event_triggered(instance: EventInstance)
+signal card_placed(card: CardEntity)
 
 @export var cell_size: int = LayoutConfig.CELL_SIZE
 @export var width: int = 10
@@ -270,6 +277,34 @@ func can_attach_event(instance: EventInstance) -> bool:
 	return true
 
 
+## Moves an existing ordinary BoardEvent without changing event interaction semantics.
+func move_event(event_node: BoardEvent, target_origin: Vector2i) -> bool:
+	if event_node == null or event_node not in events or event_node.event_instance == null:
+		return false
+	var instance := event_node.event_instance
+	var target_cells := get_event_cells(target_origin, instance.get_size())
+	if target_cells.is_empty() or not _are_cells_in_bounds(target_cells):
+		return false
+	for cell in target_cells:
+		if _grid_owner.has(cell):
+			return false
+		var current_event := _event_grid_owner.get(cell) as BoardEvent
+		if current_event != null and current_event != event_node:
+			return false
+	for buffer_cell in get_event_buffer_cells(target_origin, instance.get_size()):
+		var buffered_event := _event_grid_owner.get(buffer_cell) as BoardEvent
+		if buffered_event != null and buffered_event != event_node:
+			return false
+	for cell in _event_grid_owner.keys():
+		if _event_grid_owner[cell] == event_node:
+			_event_grid_owner.erase(cell)
+	instance.origin = target_origin
+	event_node.position = Vector2(target_origin * cell_size)
+	for cell in target_cells:
+		_event_grid_owner[cell] = event_node
+	return true
+
+
 func get_overlapping_unresolved_event(cells: Array[Vector2i]) -> EventInstance:
 	var matches: Array[BoardEvent] = []
 	for cell in cells:
@@ -509,12 +544,28 @@ func add_card(card: CardEntity) -> bool:
 		_grid_owner[Vector2i(c.x, c.y)] = card
 
 	var overlapping_event := get_overlapping_unresolved_event(cells)
-	if overlapping_event:
-		print("触发事件")
-		event_triggered.emit(overlapping_event)
+	var result = BoardPlacementResultScript.new(
+		BoardPlacementResultScript.Kind.CHAIN_EXTENDED,
+		card,
+		cards.back(),
+		[card],
+		cells,
+		overlapping_event
+	)
 
 	clear_preview()
+	_publish_placement(result)
 	return true
+
+
+## Publishes the completed board mutation before any event flow begins.
+## Legacy notifications remain temporarily while ExplorationCoordinator migrates to placement_committed.
+func _publish_placement(result) -> void:
+	placement_committed.emit(result)
+	card_placed.emit(result.source_card)
+	if result.overlapped_event != null:
+		event_interaction_requested.emit(result.overlapped_event)
+		event_triggered.emit(result.overlapped_event)
 
 func get_combat_card_chain() -> Array[CardInstance]:
 	var chain: Array[CardInstance] = []
