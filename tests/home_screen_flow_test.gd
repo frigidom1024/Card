@@ -198,7 +198,7 @@ func _test_root_selection_filters_presets_and_requests_exploration_once() -> voi
 		var selected_option_tag_badge := selected_option.find_child("TagBadge", true, false) as PanelContainer if selected_option != null else null
 		var selected_option_tag_label := selected_option.find_child("TagLabel", true, false) as Label if selected_option != null else null
 		_expect(
-			selected_option_name != null and selected_option_name.text == "REVIVAL ROOT",
+			selected_option_name != null and selected_option_name.text == "RIBWOOD ROOT",
 			"root option renders its name separately from playstyle tags"
 		)
 		_expect(

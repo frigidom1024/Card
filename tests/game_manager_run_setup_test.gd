@@ -28,6 +28,18 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 		manager.cards_inst.size() == RevivalDeck.starter_cards.size(),
 		"run creates exactly every configured starter card"
 	)
+
+	var run_card_service = manager.get("_run_card_service")
+	_expect(run_card_service != null, "GameManager composes a dedicated runtime card ownership service")
+	if run_card_service != null:
+		_expect(
+			run_card_service.get_instances() == manager.cards_inst,
+			"GameManager exposes the card instances owned by its runtime card service"
+		)
+		_expect(
+			run_card_service.get_entities() == manager.card_entities,
+			"GameManager exposes the card entities owned by its runtime card service"
+		)
 	_expect(_count_roots(manager.cards_inst) == 1, "run creates exactly one root card")
 	for index in range(RevivalDeck.starter_cards.size()):
 		_expect(
@@ -43,6 +55,43 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 	manager.player_data.gold = 1
 	_expect(BasePlayerData.gold == 30, "run gold changes do not mutate the static PlayerData resource")
 	_expect(manager._encounter_combat_flow != null, "run creates an encounter combat flow")
+	_expect(
+		manager.board.card_return_requested.is_connected(manager._on_board_card_return_requested),
+		"GameManager listens for Board guide-card return requests"
+	)
+	var exploration_coordinator = manager.get("_exploration_coordinator")
+	_expect(exploration_coordinator != null, "GameManager creates a dedicated exploration coordinator")
+	var interaction_controller = manager.get("_event_interaction_controller")
+	_expect(interaction_controller != null, "GameManager creates an event interaction lifecycle controller")
+	_expect(manager.has_method("_on_board_placement_committed"), "GameManager exposes the single Board placement forwarding callback")
+	_expect(
+		manager.board.placement_committed.is_connected(Callable(manager, "_on_board_placement_committed")),
+		"GameManager forwards completed Board placements to the exploration coordinator"
+	)
+	if exploration_coordinator != null:
+		_expect(
+			exploration_coordinator.event_interaction_requested.is_connected(manager._on_board_event_triggered),
+			"GameManager receives all ordinary event interactions from the coordinator"
+		)
+	_expect(
+		not manager.board.event_interaction_requested.is_connected(manager._on_board_event_triggered),
+		"GameManager no longer opens events directly from Board mutations"
+	)
+	_expect(manager.board.events.is_empty(), "run setup leaves event creation to fog exploration instead of pre-spawning the level")
+	var returned_guide := _make_guide_card()
+	manager.add_child(returned_guide)
+	manager._on_board_card_return_requested(returned_guide)
+	_expect(returned_guide in manager.hand_area.cards, "GameManager returns guide cards through HandArea")
+
+	manager.hand_area.max_hand_size = manager.hand_area.cards.size()
+	var returned_when_full := _make_guide_card()
+	manager.add_child(returned_when_full)
+	manager._on_board_card_return_requested(returned_when_full)
+	_expect(returned_when_full in manager.hand_area.cards, "GameManager never loses a guide card when the hand is full")
+	_expect(
+		manager.hand_area.max_hand_size >= manager.hand_area.cards.size(),
+		"GameManager temporarily expands hand capacity for an already-owned guide card"
+	)
 
 	manager.free()
 	await process_frame
@@ -53,6 +102,15 @@ func _test_invalid_preset_is_rejected_before_scene_entry() -> void:
 	var manager = GameManagerScene.instantiate()
 	_expect(not manager.configure_run(invalid_preset), "invalid preset is rejected before GameManager enters the tree")
 	manager.free()
+
+
+func _make_guide_card() -> CardEntity:
+	var entity := preload("res://scenes/card_view/card_entity.tscn").instantiate() as CardEntity
+	var data := CardData.new()
+	data.card_type = CardData.CardType.GUIDE
+	data.card_name = "Guide"
+	entity.bind_instance(CardInstance.new(data))
+	return entity
 
 
 func _count_roots(cards: Array) -> int:

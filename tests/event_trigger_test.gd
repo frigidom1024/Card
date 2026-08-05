@@ -28,11 +28,11 @@ var _failure_count := 0
 func _init() -> void:
 	_test_event_placement_reserves_a_one_cell_gap()
 	_test_event_placement_rejects_card_occupied_footprint()
-	_test_successful_card_placement_triggers_exactly_one_event()
-	_test_resolved_or_failed_placement_never_triggers()
-	_test_failed_overlap_with_card_and_event_never_triggers()
-	_test_multiple_unresolved_event_overlap_never_triggers()
-	_test_preview_never_triggers()
+	_test_successful_card_placement_reports_exactly_one_event_overlap()
+	_test_resolved_or_failed_placement_never_reports_an_event_overlap()
+	_test_failed_overlap_with_card_and_event_never_publishes_a_transaction()
+	_test_multiple_unresolved_event_overlap_reports_no_ambiguous_event()
+	_test_preview_never_publishes_a_transaction()
 	call_deferred("_run_scene_interaction_tests")
 
 
@@ -70,66 +70,70 @@ func _test_event_placement_rejects_card_occupied_footprint() -> void:
 	candidate.free()
 
 
-func _test_successful_card_placement_triggers_exactly_one_event() -> void:
+func _test_successful_card_placement_reports_exactly_one_event_overlap() -> void:
 	var board := _make_board(5, 2)
 	_attach_event(board, "treasure", Vector2i(2, 0), Vector2i.ONE)
 	var card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
-	var triggered: Array[EventInstance] = []
-	board.event_triggered.connect(func(instance): triggered.append(instance))
+	var committed: Array[BoardPlacementResult] = []
+	var direct_event_requests := 0
+	board.placement_committed.connect(func(result: BoardPlacementResult) -> void: committed.append(result))
+	board.event_interaction_requested.connect(func(_instance: EventInstance) -> void: direct_event_requests += 1)
 	_expect(board.add_card(card), "card is legally placed")
-	_expect(
-		triggered.size() == 1 and triggered[0].template.event_id == "treasure",
-		"overlap emits matching event"
-	)
+	_expect(committed.size() == 1, "successful placement publishes one spatial transaction")
+	_expect(direct_event_requests == 0, "Board does not request interaction for an event overlap")
+	if committed.size() == 1:
+		_expect(
+			committed[0].overlapped_event != null and committed[0].overlapped_event.template.event_id == "treasure",
+			"spatial transaction exposes the matching unresolved event"
+		)
 
-
-func _test_resolved_or_failed_placement_never_triggers() -> void:
+func _test_resolved_or_failed_placement_never_reports_an_event_overlap() -> void:
 	var board := _make_board(3, 2)
 	var event_node := _attach_event(board, "resolved", Vector2i(1, 0), Vector2i.ONE)
 	event_node.event_instance.resolve()
-	var trigger_count := 0
-	board.event_triggered.connect(func(_instance): trigger_count += 1)
-	board.add_card(_make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0))
-	board.add_card(_make_card_at(board, Vector2(-80, 40), 90.0))
-	_expect(trigger_count == 0, "resolved and rejected placements do not trigger")
+	var committed: Array[BoardPlacementResult] = []
+	board.placement_committed.connect(func(result: BoardPlacementResult) -> void: committed.append(result))
+	_expect(board.add_card(_make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)), "resolved event does not block a legal placement")
+	_expect(not board.add_card(_make_card_at(board, Vector2(-80, 40), 90.0)), "out-of-bounds placement is rejected")
+	_expect(committed.size() == 1, "only the legal placement publishes a transaction")
+	if committed.size() == 1:
+		_expect(committed[0].overlapped_event == null, "resolved events are excluded from overlap data")
 
-
-func _test_failed_overlap_with_card_and_event_never_triggers() -> void:
+func _test_failed_overlap_with_card_and_event_never_publishes_a_transaction() -> void:
 	var board := _make_board(5, 2)
 	_attach_event(board, "overlap", Vector2i(1, 0), Vector2i.ONE)
 	var placed_card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	_expect(board.add_card(placed_card), "setup card can cover the unresolved event")
-	var trigger_count := 0
-	board.event_triggered.connect(func(_instance): trigger_count += 1)
+	var committed_count := 0
+	board.placement_committed.connect(func(_result: BoardPlacementResult) -> void: committed_count += 1)
 	var conflicting_candidate := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	_expect(
 		not board.add_card(conflicting_candidate),
 		"candidate overlapping an event and a placed card is rejected"
 	)
-	_expect(trigger_count == 0, "failed event overlap does not emit a trigger")
+	_expect(committed_count == 0, "failed overlap does not publish a spatial transaction")
 
-
-func _test_multiple_unresolved_event_overlap_never_triggers() -> void:
+func _test_multiple_unresolved_event_overlap_reports_no_ambiguous_event() -> void:
 	var board := _make_board(5, 2)
 	_inject_event_owner(board, _new_event("first", Vector2i.ONE, Vector2i(1, 0), board.cell_size))
 	_inject_event_owner(board, _new_event("second", Vector2i.ONE, Vector2i(2, 0), board.cell_size))
-	var trigger_count := 0
-	board.event_triggered.connect(func(_instance): trigger_count += 1)
+	var committed: Array[BoardPlacementResult] = []
+	board.placement_committed.connect(func(result: BoardPlacementResult) -> void: committed.append(result))
 	_expect(
 		board.add_card(_make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)),
 		"exception fixture still has a legal card placement"
 	)
-	_expect(trigger_count == 0, "multiple unresolved event overlap never emits a trigger")
+	_expect(committed.size() == 1, "ambiguous fixture still publishes its legal spatial transaction")
+	if committed.size() == 1:
+		_expect(committed[0].overlapped_event == null, "multiple unresolved event overlap does not select an arbitrary event")
 
-
-func _test_preview_never_triggers() -> void:
+func _test_preview_never_publishes_a_transaction() -> void:
 	var board := _make_board(5, 2)
 	_attach_event(board, "preview-only", Vector2i(2, 0), Vector2i.ONE)
-	var trigger_count := 0
-	board.event_triggered.connect(func(_instance): trigger_count += 1)
+	var committed_count := 0
+	board.placement_committed.connect(func(_result: BoardPlacementResult) -> void: committed_count += 1)
 	board.preview_card(_make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0))
-	_expect(trigger_count == 0, "preview does not trigger events")
-
+	_expect(committed_count == 0, "preview does not publish a spatial transaction")
 
 func _test_board_event_does_not_intercept_mouse_or_enable_selection() -> void:
 	var board := _make_board(3, 2)
@@ -138,11 +142,8 @@ func _test_board_event_does_not_intercept_mouse_or_enable_selection() -> void:
 		event_node.mouse_filter == Control.MOUSE_FILTER_IGNORE,
 		"BoardEvent root ignores mouse input"
 	)
-	_expect(event_node.select_button.disabled, "BoardEvent select button remains disabled")
-	_expect(
-		event_node.select_button.mouse_filter == Control.MOUSE_FILTER_IGNORE,
-		"BoardEvent disabled selection button passes mouse input through"
-	)
+	_expect(not event_node.has_signal("event_selected"), "BoardEvent exposes no click-selection signal")
+	_expect(event_node.get_node_or_null("SelectButton") == null, "BoardEvent scene has no click-selection control")
 
 
 func _test_drag_input_bypasses_event_controls_and_suspends_card_previews() -> void:

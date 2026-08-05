@@ -117,17 +117,3 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0.0666667, 0.0941176, 0.152941, 0.65)
-
-[node name="SelectButton" type="Button" parent="." unique_id=1910435513]
-layout_mode = 1
-mouse_filter = 2
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-focus_mode = 0
-mouse_default_cursor_shape = 2
-flat = true
-
-[connection signal="pressed" from="SelectButton" to="." method="_on_select_button_pressed"]

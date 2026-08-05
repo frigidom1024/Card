@@ -9,6 +9,7 @@
 [ext_resource type="PackedScene" uid="uid://bf2h2gqo4hyjl" path="res://scenes/game/board.tscn" id="7_lcbjr"]
 [ext_resource type="Resource" uid="uid://b5ybu7vxrcp4j" path="res://data/player/player_data.tres" id="8_player"]
 [ext_resource type="Resource" uid="uid://5lnyr257q51n" path="res://data/levels/ribwood/event_lib.tres" id="9_event_lib"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/exploration_config.tres" id="10_exploration_config"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_shop.tscn" id="10_shop_event"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_treasure.tscn" id="11_treasure_event"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_combat.tscn" id="12_combat_event"]
@@ -21,6 +22,7 @@
 script = ExtResource("1_q8mjp")
 player_data = ExtResource("8_player")
 event_lib = ExtResource("9_event_lib")
+exploration_config = ExtResource("10_exploration_config")
 
 [node name="GameplayCanvas" type="Node2D" parent="." unique_id=249847659]
 script = ExtResource("13_gameplay_canvas")

@@ -21,11 +21,10 @@ func get_faith() -> int:
 	return _player_data.faith if _player_data != null else 0
 
 
-func resolve_manual_chain_retraction(_removed_card: CardEntity = null, _following_card_count: int = 0) -> void:
-	if _player_data == null:
+func resolve_confirmed_chain_retraction(transaction: ChainRetractionTransaction) -> void:
+	if _player_data == null or transaction == null:
 		return
-	#暂时去掉信仰值减少机制
-	#_player_data.faith -= 1
+	_player_data.faith -= 1
 	faith_changed.emit(_player_data.faith)
 	if _player_data.faith <= 0:
 		echo_spawn_requested.emit()

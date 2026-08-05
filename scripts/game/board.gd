@@ -1,7 +1,14 @@
 class_name Board
 extends Node2D
 
+const BoardPlacementResultScript = preload("res://scripts/game/board_placement_result.gd")
+
+signal placement_committed(result)
+signal event_interaction_requested(instance: EventInstance)
+signal card_return_requested(card: CardEntity)
+# Temporary compatibility notifications. Exploration will consume placement_committed in task 4.
 signal event_triggered(instance: EventInstance)
+signal card_placed(card: CardEntity)
 
 @export var cell_size: int = LayoutConfig.CELL_SIZE
 @export var width: int = 10
@@ -270,6 +277,34 @@ func can_attach_event(instance: EventInstance) -> bool:
 	return true
 
 
+## Moves an existing ordinary BoardEvent without changing event interaction semantics.
+func move_event(event_node: BoardEvent, target_origin: Vector2i) -> bool:
+	if event_node == null or event_node not in events or event_node.event_instance == null:
+		return false
+	var instance := event_node.event_instance
+	var target_cells := get_event_cells(target_origin, instance.get_size())
+	if target_cells.is_empty() or not _are_cells_in_bounds(target_cells):
+		return false
+	for cell in target_cells:
+		if _grid_owner.has(cell):
+			return false
+		var current_event := _event_grid_owner.get(cell) as BoardEvent
+		if current_event != null and current_event != event_node:
+			return false
+	for buffer_cell in get_event_buffer_cells(target_origin, instance.get_size()):
+		var buffered_event := _event_grid_owner.get(buffer_cell) as BoardEvent
+		if buffered_event != null and buffered_event != event_node:
+			return false
+	for cell in _event_grid_owner.keys():
+		if _event_grid_owner[cell] == event_node:
+			_event_grid_owner.erase(cell)
+	instance.origin = target_origin
+	event_node.position = Vector2(target_origin * cell_size)
+	for cell in target_cells:
+		_event_grid_owner[cell] = event_node
+	return true
+
+
 func get_overlapping_unresolved_event(cells: Array[Vector2i]) -> EventInstance:
 	var matches: Array[BoardEvent] = []
 	for cell in cells:
@@ -497,6 +532,13 @@ func add_card(card: CardEntity) -> bool:
 		card.rotation_degrees
 	)
 
+	# GUIDE 卡沿用普通卡牌的校验和吸附，但不加入牌链；
+	# 它会把当前牌链整体向前移动，并由上层负责回收到手牌。
+	if _is_guide_card(card):
+		_add_guide_card(card, cells)
+		clear_preview()
+		return true
+
 	# 重新父节点到棋盘
 	card.reparent(self)
 	card.set_on_board(true)
@@ -509,12 +551,93 @@ func add_card(card: CardEntity) -> bool:
 		_grid_owner[Vector2i(c.x, c.y)] = card
 
 	var overlapping_event := get_overlapping_unresolved_event(cells)
-	if overlapping_event:
-		print("触发事件")
-		event_triggered.emit(overlapping_event)
+	var result = BoardPlacementResultScript.new(
+		BoardPlacementResultScript.Kind.CHAIN_EXTENDED,
+		card,
+		cards.back(),
+		[card],
+		cells,
+		overlapping_event
+	)
 
 	clear_preview()
+	_publish_placement(result)
 	return true
+
+
+## Publishes the completed spatial transaction. ExplorationCoordinator decides when an event is requested.
+func _publish_placement(result: BoardPlacementResult) -> void:
+	placement_committed.emit(result)
+	if result.kind == BoardPlacementResultScript.Kind.CHAIN_EXTENDED:
+		card_placed.emit(result.source_card)
+
+func _is_guide_card(card: CardEntity) -> bool:
+	return card.card_instance \
+		and card.card_instance.card_data \
+		and card.card_instance.card_data.card_type == CardData.CardType.GUIDE
+
+
+func _get_card_direction(card: CardEntity) -> int:
+	if card.card_instance != null:
+		return card.card_instance.direction
+	return _get_rotation_direction(card.rotation_degrees)
+
+
+func _add_guide_card(card: CardEntity, guide_cells: Array[Vector2i]) -> void:
+	var chain_snapshots: Array[Dictionary] = []
+	for chain_card in cards:
+		chain_snapshots.append({
+			"position": chain_card.global_position,
+			"rotation": chain_card.rotation_degrees,
+			"direction": _get_card_direction(chain_card),
+		})
+
+	var guide_snapshot := {
+		"position": card.global_position,
+		"rotation": card.rotation_degrees,
+		"direction": _get_card_direction(card),
+	}
+
+	# 先挂到棋盘，确保回手信号的接收方可以安全地重新挂载它。
+	card.reparent(self)
+	card.set_on_board(true)
+	card.z_index = RenderPriority.CARD_BASE + cards.size()
+
+	for index in range(cards.size()):
+		var target_snapshot: Dictionary = guide_snapshot
+		if index + 1 < chain_snapshots.size():
+			target_snapshot = chain_snapshots[index + 1]
+
+		var chain_card := cards[index]
+		chain_card.global_position = target_snapshot["position"]
+		chain_card.rotation_degrees = target_snapshot["rotation"]
+		if chain_card.card_instance != null:
+			chain_card.card_instance.direction = target_snapshot["direction"]
+
+	_rebuild_grid_owner()
+
+	var overlapping_event := get_overlapping_unresolved_event(guide_cells)
+	var result := BoardPlacementResultScript.new(
+		BoardPlacementResultScript.Kind.GUIDE_RESOLVED,
+		card,
+		cards.back(),
+		cards.duplicate(),
+		guide_cells,
+		overlapping_event
+	)
+	_publish_placement(result)
+	card_return_requested.emit(card)
+
+
+func _rebuild_grid_owner() -> void:
+	_grid_owner.clear()
+	for chain_card in cards:
+		var chain_cells := get_card_cells(
+			chain_card.global_position,
+			chain_card.rotation_degrees
+		)
+		for cell in chain_cells:
+			_grid_owner[cell] = chain_card
 
 func get_combat_card_chain() -> Array[CardInstance]:
 	var chain: Array[CardInstance] = []

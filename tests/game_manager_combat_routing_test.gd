@@ -14,6 +14,7 @@ func _init() -> void:
 
 func _run_tests() -> void:
 	await _test_monster_victory_resolves_event_and_unlocks_exploration()
+	await _test_boss_victory_removes_the_intercepting_event()
 	await _test_retreat_preserves_encounter_and_returns_the_real_tail_card()
 	await _test_defeat_emits_failure_and_keeps_exploration_locked()
 	await _test_shop_event_routes_purchase_and_close()
@@ -53,6 +54,30 @@ func _test_monster_victory_resolves_event_and_unlocks_exploration() -> void:
 	)
 	_expect(not manager.drag_layer.is_interaction_locked(), "confirmed victory unlocks exploration")
 	_expect(combat_view != null and not combat_view.visible, "confirmed victory hides the combat modal")
+	_cleanup_manager(manager)
+
+
+func _test_boss_victory_removes_the_intercepting_event() -> void:
+	var manager := await _make_game_manager()
+	if not _require_combat_signals(manager):
+		_cleanup_manager(manager)
+		return
+
+	var board: Board = manager.board
+	var event_node := _attach_encounter_event(board, EventData.EventType.BOSS, Vector2i(3, 0), 2, [])
+	var finished_instances: Array[EventInstance] = []
+	manager._event_interaction_controller.interaction_finished.connect(func(instance: EventInstance) -> void:
+		finished_instances.append(instance)
+	)
+
+	_expect(_place_card(manager, _horizontal_card_center(board, Vector2i(0, 0)), 90.0, CardData.CardType.ROOT, 0) != null, "boss victory setup places root")
+	_expect(_place_card(manager, _horizontal_card_center(board, Vector2i(2, 0)), 90.0, CardData.CardType.NORMAL, 2) != null, "boss victory setup places a card that contacts the boss")
+	_expect(event_node in board.events, "intercepting boss remains attached before settlement confirmation")
+
+	_confirm_combat_settlement(manager)
+	_expect(event_node.event_instance.is_resolved, "confirmed boss victory resolves the boss event")
+	_expect(event_node not in board.events, "confirmed boss victory removes the boss event from the board")
+	_expect(finished_instances == [event_node.event_instance], "boss event is removed before its interaction lifecycle finishes")
 	_cleanup_manager(manager)
 
 
@@ -116,7 +141,7 @@ func _test_retreat_preserves_encounter_and_returns_the_real_tail_card() -> void:
 		tail.rotation_degrees = 90.0
 		_expect(board.add_card(tail), "returned tail can be placed to challenge the same encounter again")
 		await process_frame
-		var next_result: CombatResult = manager._pending_combat_result
+		var next_result: CombatResult = manager._event_interaction_controller.get_pending_combat_result()
 		_expect(next_result != null and next_result.outcome == CombatResult.Outcome.RETREAT, "second challenge opens another retreat result")
 		_expect(next_result != null and next_result.steps.size() >= 3 and next_result.steps[2].effects[0].value == 4, "strengthening adds one to the next monster action")
 	_cleanup_manager(manager)

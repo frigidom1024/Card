@@ -13,4 +13,5 @@ script = ExtResource("1_starting_deck")
 deck_id = "revival"
 display_name = "RIBWOOD ROOT"
 description = "以守护之根站稳牌链，再用短刃、火绒、肋盾与水囊穿过肋骨林地。"
+playstyle_tags = PackedStringArray("HEALING", "ENDURANCE", "WEAPON CHAIN")
 starter_cards = Array[ExtResource("7_card_data")]([ExtResource("2_root"), ExtResource("3_blade"), ExtResource("4_barrier"), ExtResource("5_vial"), ExtResource("6_revival")])
