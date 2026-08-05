@@ -325,10 +325,8 @@ func _on_board_placement_committed(result: BoardPlacementResult) -> void:
 
 
 ## 按固定设计坐标布置玩法内容，再统一缩放和居中玩法画布。
-## 当前由场景编辑器负责布局，因此保留 return 禁用这套自动定位。
 func _center_layout() -> void:
-	return
-	# 启用自动布局时，从这里统一调整设计坐标（1920×1080）。
+	# 从这里统一调整设计坐标（1920×1080）。
 	var design_size := LayoutConfig.DESIGN_VIEWPORT_SIZE
 	board.position = LayoutConfig.board_origin(
 		design_size, board.width, board.height, board.cell_size
