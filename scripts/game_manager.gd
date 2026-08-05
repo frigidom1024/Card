@@ -3,11 +3,9 @@ extends Node
 const ExplorationCoordinatorScript := preload("res://scripts/game/exploration/exploration_coordinator.gd")
 const EncounterResolutionCoordinatorScript := preload("res://scripts/game/event/encounter/encounter_resolution_coordinator.gd")
 const FaithServiceScript := preload("res://scripts/player/faith_service.gd")
-const MarketPriceContextScript := preload("res://scripts/game/market/market_price_context.gd")
 const MarketPricingServiceScript := preload("res://scripts/game/market/market_pricing_service.gd")
-const PersistentMarketStateScript := preload("res://scripts/game/market/persistent_market_state.gd")
-const PersistentMarketResolverScript := preload("res://scripts/game/market/persistent_market_resolver.gd")
 const RunSetupCoordinatorScript := preload("res://scripts/game/run/run_setup_coordinator.gd")
+const PersistentMarketCoordinatorScript := preload("res://scripts/game/market/persistent_market_coordinator.gd")
 
 signal combat_started(instance: EventInstance, monster: MobInstance)
 signal combat_resolved(instance: EventInstance, result: CombatResult)
@@ -41,14 +39,12 @@ var _encounter_combat_flow: EncounterCombatFlowCoordinator
 var _encounter_resolution
 var _market_pricing := MarketPricingServiceScript.new()
 var _shop_event_resolver: ShopEventResolver
-var _persistent_market_state
-var _persistent_market_resolver
+var _persistent_market_coordinator
 var _market_rng := RandomNumberGenerator.new()
 var _treasure_event_resolver := TreasureEventResolver.new()
 var _treasure_rng := RandomNumberGenerator.new()
 var _faith_service := FaithServiceScript.new()
 var _is_exploration_failed := false
-var _market_ready := false
 var _run_card_service
 var _run_setup
 
@@ -86,14 +82,9 @@ func _ready() -> void:
 	# DragLayer only owns the interaction. FaithService observes deliberate retractions.
 	drag_layer.board = board
 	drag_layer.hand_area = hand_area
-	_setup_persistent_market()
-	drag_layer.set_market_context(persistent_market, hand_tray)
-	if not drag_layer.market_purchase_requested.is_connected(_on_market_purchase_requested):
-		drag_layer.market_purchase_requested.connect(_on_market_purchase_requested)
-	if not drag_layer.market_reclaim_requested.is_connected(_on_market_reclaim_requested):
-		drag_layer.market_reclaim_requested.connect(_on_market_reclaim_requested)
-	if persistent_market != null and not persistent_market.refresh_requested.is_connected(_on_market_refresh_requested):
-		persistent_market.refresh_requested.connect(_on_market_refresh_requested)
+	_configure_persistent_market()
+	if _persistent_market_coordinator != null:
+		_persistent_market_coordinator.connect_drag_layer(drag_layer, hand_tray)
 	if shop_event_view != null and shop_event_view.has_method("set_pricing_service"):
 		shop_event_view.set_pricing_service(_market_pricing)
 	if not drag_layer.chain_retraction_confirmed.is_connected(_faith_service.resolve_confirmed_chain_retraction):
@@ -177,79 +168,25 @@ func _on_faith_changed(current_faith: int) -> void:
 		pilgrim_crest_hud.set_faith(current_faith)
 
 
-func _setup_persistent_market() -> void:
+func _configure_persistent_market() -> void:
 	if persistent_market == null or card_manager == null or card_manager.card_lib == null or player_data == null:
 		return
-	_persistent_market_state = PersistentMarketStateScript.new()
 	_market_rng.randomize()
-	_persistent_market_state.initialize(card_manager.card_lib, _market_rng)
-	_persistent_market_resolver = PersistentMarketResolverScript.new(_market_pricing)
-	persistent_market.configure(_persistent_market_state, player_data, _market_pricing)
-	_market_ready = true
-
-
-func _market_context():
-	var context = MarketPriceContextScript.new()
-	context.player = player_data
-	context.market_state = _persistent_market_state
-	return context
-
-
-func _on_market_purchase_requested(card: CardEntity, slot_index: int) -> void:
-	if not _market_ready or card == null or not is_instance_valid(card):
+	_persistent_market_coordinator = PersistentMarketCoordinatorScript.new()
+	if not _persistent_market_coordinator.configure(
+		persistent_market,
+		card_manager.card_lib,
+		player_data,
+		hand_area,
+		_run_card_service,
+		_market_pricing,
+		_market_rng
+	):
+		push_error("GameManager could not configure persistent market")
 		return
-	var result = _persistent_market_resolver.purchase(_persistent_market_state, slot_index, player_data, not hand_area.is_full(), _market_context())
-	if not result.success:
-		persistent_market.show_message(_market_failure_message(result.failure), true)
-		return
-	persistent_market.restore_offer_card(card, slot_index)
-	persistent_market.refresh_display()
-	if not _grant_card_to_hand(result.card_data):
-		persistent_market.show_message("CARD COULD NOT BE ADDED", true)
-		return
-	_sync_pilgrim_crest()
-	persistent_market.show_message("CARD PURCHASED", false)
+	if not _persistent_market_coordinator.player_state_changed.is_connected(_sync_pilgrim_crest):
+		_persistent_market_coordinator.player_state_changed.connect(_sync_pilgrim_crest)
 
-
-func _on_market_reclaim_requested(card: CardEntity) -> void:
-	if not _market_ready or card == null or not is_instance_valid(card):
-		return
-	if card not in card_entities or card.card_instance == null:
-		return
-	var result = _persistent_market_resolver.reclaim(card.card_instance.card_data, player_data, _market_context())
-	if not result.success:
-		persistent_market.show_message(_market_failure_message(result.failure), true)
-		return
-	if _run_card_service == null or not _run_card_service.forget_card(card):
-		return
-	drag_layer.confirm_market_reclaim(card)
-	_sync_hand_tray()
-	_sync_pilgrim_crest()
-	persistent_market.show_message("CARD RECLAIMED · +%d GOLD" % result.gold_delta, false)
-
-
-func _on_market_refresh_requested() -> void:
-	if not _market_ready:
-		return
-	var result = _persistent_market_resolver.refresh(_persistent_market_state, player_data, _market_context())
-	if not result.success:
-		persistent_market.show_message(_market_failure_message(result.failure), true)
-		return
-	persistent_market.refresh_display()
-	_sync_pilgrim_crest()
-	persistent_market.show_message("MARKET REFRESHED", false)
-
-
-func _market_failure_message(failure: int) -> String:
-	match failure:
-		PersistentMarketResolverScript.Failure.HAND_FULL:
-			return "HAND FULL"
-		PersistentMarketResolverScript.Failure.INSUFFICIENT_GOLD:
-			return "NOT ENOUGH GOLD"
-		PersistentMarketResolverScript.Failure.INVALID_CARD, PersistentMarketResolverScript.Failure.INVALID_OFFER:
-			return "TRANSACTION FAILED"
-		_:
-			return "TRANSACTION FAILED"
 
 func _sync_pilgrim_crest() -> void:
 	if pilgrim_crest_hud == null:
@@ -416,7 +353,7 @@ func _on_shop_purchase_requested(item_index: int) -> void:
 		return
 
 	var result := _shop_event_resolver.purchase_item(
-		active_event, item_index, player_data, true, _market_context()
+		active_event, item_index, player_data, true, _persistent_market_coordinator.create_price_context() if _persistent_market_coordinator != null else null
 	)
 	if not result.success:
 		shop_event_view.show_message(_resolution_failure_message(result.failure), true)

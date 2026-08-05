@@ -27,7 +27,7 @@ func _test_market_purchase_via_drag_adds_card_and_charges_value() -> void:
 
 	var market = manager.persistent_market
 	var offer_card := _offer_card(market, 0)
-	var offered_data: CardData = manager._persistent_market_state.get_offer(0)
+	var offered_data: CardData = manager._persistent_market_coordinator.get_state().get_offer(0)
 	var price := _purchase_price(manager, offered_data)
 	var gold_before: int = manager.player_data.gold
 	var hand_count_before: int = manager.hand_area.get_card_count()
@@ -47,7 +47,7 @@ func _test_market_purchase_via_drag_adds_card_and_charges_value() -> void:
 	_expect(offer_card != null and offer_card.get_parent() == offer_slot, "purchased slot keeps its preview under the slot")
 	_expect(offer_card != null and offer_card.position == Vector2(90, 112), "purchased slot restores the card to its centered slot position")
 	_expect(offer_card != null and offer_card.scale == Vector2.ONE, "purchased slot restores the standard card scale")
-	_expect(manager._persistent_market_state.get_offer(0) != null, "successful purchase replaces the consumed market offer")
+	_expect(manager._persistent_market_coordinator.get_state().get_offer(0) != null, "successful purchase replaces the consumed market offer")
 	await _free_manager(manager)
 
 
@@ -58,7 +58,7 @@ func _test_market_purchase_restores_offer_when_gold_is_insufficient() -> void:
 
 	var market = manager.persistent_market
 	var offer_card := _offer_card(market, 0)
-	var offered_data: CardData = manager._persistent_market_state.get_offer(0)
+	var offered_data: CardData = manager._persistent_market_coordinator.get_state().get_offer(0)
 	var price := _purchase_price(manager, offered_data)
 	manager.player_data.gold = max(price - 1, 0)
 	var gold_before: int = manager.player_data.gold
@@ -72,7 +72,7 @@ func _test_market_purchase_restores_offer_when_gold_is_insufficient() -> void:
 	_expect(manager.player_data.gold == gold_before, "insufficient-gold purchase does not change player gold")
 	_expect(manager.hand_area.get_card_count() == hand_count_before, "insufficient-gold purchase does not add a hand card")
 	_expect(manager.cards_inst.size() == cards_before, "insufficient-gold purchase does not create a card instance")
-	_expect(manager._persistent_market_state.get_offer(0) == offered_data, "insufficient-gold purchase preserves the market offer")
+	_expect(manager._persistent_market_coordinator.get_state().get_offer(0) == offered_data, "insufficient-gold purchase preserves the market offer")
 	_expect(offer_card != null and offer_card.get_parent() != manager.drag_layer, "insufficient-gold purchase restores the dragged offer preview")
 	await _free_manager(manager)
 
@@ -84,7 +84,7 @@ func _test_market_purchase_restores_offer_when_hand_is_full() -> void:
 
 	var market = manager.persistent_market
 	var offer_card := _offer_card(market, 0)
-	var offered_data: CardData = manager._persistent_market_state.get_offer(0)
+	var offered_data: CardData = manager._persistent_market_coordinator.get_state().get_offer(0)
 	var gold_before: int = manager.player_data.gold
 	var hand_count_before: int = manager.hand_area.get_card_count()
 	var cards_before: int = manager.cards_inst.size()
@@ -98,7 +98,7 @@ func _test_market_purchase_restores_offer_when_hand_is_full() -> void:
 	_expect(manager.player_data.gold == gold_before, "full-hand purchase does not change player gold")
 	_expect(manager.hand_area.get_card_count() == hand_count_before, "full-hand purchase does not add a hand card")
 	_expect(manager.cards_inst.size() == cards_before, "full-hand purchase does not create a card instance")
-	_expect(manager._persistent_market_state.get_offer(0) == offered_data, "full-hand purchase preserves the market offer")
+	_expect(manager._persistent_market_coordinator.get_state().get_offer(0) == offered_data, "full-hand purchase preserves the market offer")
 	_expect(offer_card != null and offer_card.get_parent() != manager.drag_layer, "full-hand purchase restores the dragged offer preview")
 	manager.hand_area.max_hand_size = original_max_hand_size
 	await _free_manager(manager)
@@ -148,19 +148,19 @@ func _test_refresh_button_charges_gold_and_repopulates_offers() -> void:
 	var refresh_button := market.get_node("HeaderRow/RefreshButton") as Button
 	var refresh_cost := 1
 	var gold_before: int = manager.player_data.gold
-	manager._persistent_market_state.offers.clear()
+	manager._persistent_market_coordinator.get_state().offers.clear()
 	market.refresh_display()
 
 	refresh_button.emit_signal("pressed")
 	await process_frame
 
 	_expect(manager.player_data.gold == gold_before - refresh_cost, "refresh button deducts the market refresh gold cost")
-	_expect(manager._persistent_market_state.offers.size() == 3, "refresh button repopulates all three market offers")
+	_expect(manager._persistent_market_coordinator.get_state().offers.size() == 3, "refresh button repopulates all three market offers")
 	for slot_index in 3:
 		var displayed_card := _offer_card(market, slot_index)
-		_expect(manager._persistent_market_state.get_offer(slot_index) != null, "refresh creates offer data for slot %d" % slot_index)
+		_expect(manager._persistent_market_coordinator.get_state().get_offer(slot_index) != null, "refresh creates offer data for slot %d" % slot_index)
 		_expect(
-			displayed_card != null and displayed_card.card_instance != null and displayed_card.card_instance.card_data == manager._persistent_market_state.get_offer(slot_index),
+			displayed_card != null and displayed_card.card_instance != null and displayed_card.card_instance.card_data == manager._persistent_market_coordinator.get_state().get_offer(slot_index),
 			"refresh updates the preview card for slot %d" % slot_index
 		)
 	await _free_manager(manager)
@@ -171,7 +171,7 @@ func _create_manager():
 	_expect(manager.configure_run(RevivalDeck), "valid starter deck configures persistent market test run")
 	root.add_child(manager)
 	await process_frame
-	_expect(manager._market_ready, "configured run initializes the persistent market")
+	_expect(manager._persistent_market_coordinator != null and manager._persistent_market_coordinator.is_ready(), "configured run initializes the persistent market")
 	return manager
 
 
@@ -195,7 +195,7 @@ func _purchase_price(manager, card_data: CardData) -> int:
 	var context = MarketPricingServiceScript.new()
 	var price_context = load("res://scripts/game/market/market_price_context.gd").new()
 	price_context.player = manager.player_data
-	price_context.market_state = manager._persistent_market_state
+	price_context.market_state = manager._persistent_market_coordinator.get_state()
 	return context.get_purchase_price(card_data, price_context)
 
 
@@ -203,7 +203,7 @@ func _reclaim_price(manager, card_data: CardData) -> int:
 	var pricing = MarketPricingServiceScript.new()
 	var price_context = load("res://scripts/game/market/market_price_context.gd").new()
 	price_context.player = manager.player_data
-	price_context.market_state = manager._persistent_market_state
+	price_context.market_state = manager._persistent_market_coordinator.get_state()
 	return pricing.get_reclaim_price(card_data, price_context)
 
 
