@@ -1,13 +1,12 @@
 extends Node
 
 const ExplorationCoordinatorScript := preload("res://scripts/game/exploration/exploration_coordinator.gd")
-const EventInteractionControllerScript := preload("res://scripts/game/event/event_interaction_controller.gd")
 const FaithServiceScript := preload("res://scripts/player/faith_service.gd")
 const MarketPriceContextScript := preload("res://scripts/game/market/market_price_context.gd")
 const MarketPricingServiceScript := preload("res://scripts/game/market/market_pricing_service.gd")
 const PersistentMarketStateScript := preload("res://scripts/game/market/persistent_market_state.gd")
 const PersistentMarketResolverScript := preload("res://scripts/game/market/persistent_market_resolver.gd")
-const RunCardServiceScript := preload("res://scripts/game/run/run_card_service.gd")
+const RunSetupCoordinatorScript := preload("res://scripts/game/run/run_setup_coordinator.gd")
 
 signal combat_started(instance: EventInstance, monster: MobInstance)
 signal combat_resolved(instance: EventInstance, result: CombatResult)
@@ -49,6 +48,7 @@ var _faith_service := FaithServiceScript.new()
 var _is_exploration_failed := false
 var _market_ready := false
 var _run_card_service
+var _run_setup
 
 # 所有玩家相关卡牌数据引用
 var cards_inst: Array[CardInstance]
@@ -139,29 +139,22 @@ func _initialize_run_state() -> bool:
 	if player_data == null or player_data.base_stats == null:
 		return _fail_run_initialization("GameManager is missing PlayerData.base_stats")
 
-	var runtime_player := player_data.duplicate(true) as PlayerData
-	if runtime_player == null or runtime_player.base_stats == null:
-		return _fail_run_initialization("GameManager could not duplicate PlayerData")
-	player_data = runtime_player
-	player_data.faith = PlayerData.INITIAL_FAITH
-	_faith_service.configure(player_data)
-	_shop_event_resolver = ShopEventResolver.new(_market_pricing)
-	player_stats = CombatStats.from_data(player_data.base_stats)
-	if player_stats == null:
-		return _fail_run_initialization("GameManager could not create runtime combat stats")
-	_run_card_service = RunCardServiceScript.new()
-	if not _run_card_service.configure(card_manager, hand_area, drag_layer):
-		return _fail_run_initialization("GameManager could not configure runtime card service")
+	_run_setup = RunSetupCoordinatorScript.new()
+	if not _run_setup.configure(player_data, starting_deck, card_manager, hand_area, drag_layer):
+		return _fail_run_initialization("GameManager could not configure run setup")
+	if not _run_setup.initialize():
+		return _fail_run_initialization(_run_setup.get_failure_reason())
+
+	player_data = _run_setup.get_player_data()
+	player_stats = _run_setup.get_player_stats()
+	_run_card_service = _run_setup.get_card_service()
+	_encounter_combat_flow = _run_setup.get_encounter_combat_flow()
+	_event_interaction_controller = _run_setup.get_event_interaction_controller()
 	# Compatibility references for existing scene consumers and integration tests.
 	cards_inst = _run_card_service.get_instances()
 	card_entities = _run_card_service.get_entities()
-	if not init_player_cards():
-		return _fail_run_initialization("GameManager could not create configured starter cards")
-
-	var root_card := starting_deck.get_root_card()
-	_encounter_combat_flow = EncounterCombatFlowCoordinator.new(_create_combat_service_for_root(root_card))
-	_event_interaction_controller = EventInteractionControllerScript.new()
-	_event_interaction_controller.configure(_encounter_combat_flow)
+	_faith_service.configure(player_data)
+	_shop_event_resolver = ShopEventResolver.new(_market_pricing)
 	return true
 
 
@@ -173,16 +166,6 @@ func _fail_run_initialization(reason: String) -> bool:
 
 func _emit_run_initialization_failed(reason: String) -> void:
 	run_initialization_failed.emit(reason)
-
-
-## Extension point for future root-specific combat services.
-func _create_combat_service_for_root(_root_card: CardData) -> CombatService2:
-	return CombatService2.new()
-
-
-# 初始化玩家卡牌：委托本局卡牌服务创建完整起始牌组并发到手牌区。
-func init_player_cards() -> bool:
-	return _run_card_service != null and _run_card_service.initialize_starting_deck(starting_deck)
 
 
 func _on_faith_changed(current_faith: int) -> void:
