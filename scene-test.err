@@ -1,0 +1,28 @@
+SCRIPT ERROR: Parse Error: Cannot infer the type of "refresh_cost" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/game/market/persistent_market.gd:44)
+SCRIPT ERROR: Parse Error: Cannot infer the type of "purchase_price" variable because the value doesn't have a set type.
+   at: GDScript::reload (res://scripts/game/market/persistent_market.gd:57)
+ERROR: Failed to load script "res://scripts/game/market/persistent_market.gd" with error "Parse error".
+   at: load (modules/gdscript/gdscript_resource_format.cpp:46)
+ERROR: Resource file not found: res://assert/font/bar-sady/BarSady.ttf (expected type: FontFile)
+   at: _load (core/io/resource_loader.cpp:325)
+ERROR: res://scenes/game/persistent_market.tscn:39 - Parse Error: [ext_resource] referenced non-existent resource at: res://assert/font/bar-sady/BarSady.ttf.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: res://scenes/game/persistent_market.tscn:52 - Parse Error: [ext_resource] referenced non-existent resource at: res://assert/font/bar-sady/BarSady.ttf.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: res://scenes/game/persistent_market.tscn:64 - Parse Error: [ext_resource] referenced non-existent resource at: res://assert/font/bar-sady/BarSady.ttf.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: res://scenes/game/persistent_market.tscn:95 - Parse Error: [ext_resource] referenced non-existent resource at: res://assert/font/bar-sady/BarSady.ttf.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: res://scenes/game/persistent_market.tscn:119 - Parse Error: [ext_resource] referenced non-existent resource at: res://assert/font/bar-sady/BarSady.ttf.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: res://scenes/game/persistent_market.tscn:143 - Parse Error: [ext_resource] referenced non-existent resource at: res://assert/font/bar-sady/BarSady.ttf.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: res://scenes/game/persistent_market.tscn:164 - Parse Error: [ext_resource] referenced non-existent resource at: res://assert/font/bar-sady/BarSady.ttf.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+ERROR: res://scenes/game/persistent_market.tscn:178 - Parse Error: [ext_resource] referenced non-existent resource at: res://assert/font/bar-sady/BarSady.ttf.
+   at: _printerr (scene/resources/resource_format_text.cpp:41)
+SCRIPT ERROR: Invalid call. Nonexistent function 'configure (via call)' in base 'Control'.
+   at: _run_tests (res://tests/persistent_market_scene_test.gd:19)
+   GDScript backtrace (most recent call first):
+       [0] _run_tests (res://tests/persistent_market_scene_test.gd:19)

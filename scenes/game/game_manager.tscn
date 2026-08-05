@@ -29,19 +29,18 @@ script = ExtResource("13_gameplay_canvas")
 z_index = -5
 layout_mode = 3
 anchors_preset = 0
-offset_left = 1581.0
+offset_left = 1267.0
 offset_top = 23.0
 offset_right = 1851.0
 offset_bottom = 247.0
 
 [node name="PersistentMarket" parent="GameplayCanvas" unique_id=1950011221 instance=ExtResource("17_persistent_market")]
 z_index = -4
-layout_mode = 3
-anchors_preset = 0
 offset_left = 1267.0
 offset_top = 260.0
 offset_right = 1851.0
 offset_bottom = 730.0
+
 [node name="HandTray" parent="GameplayCanvas" unique_id=1277788652 instance=ExtResource("15_hand_tray")]
 layout_mode = 3
 anchors_preset = 0
@@ -51,7 +50,7 @@ offset_right = 1822.0
 offset_bottom = 1070.0
 
 [node name="HandManager" parent="GameplayCanvas" unique_id=279800638 instance=ExtResource("2_jdad8")]
-position = Vector2(971, 959)
+position = Vector2(963, 955)
 
 [node name="CardManager" parent="GameplayCanvas" unique_id=869829253 instance=ExtResource("3_k4jhu")]
 position = Vector2(965, 958)
