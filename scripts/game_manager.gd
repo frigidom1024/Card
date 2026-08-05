@@ -1,5 +1,6 @@
 extends Node
 
+const ExplorationCoordinatorScript := preload("res://scripts/game/exploration/exploration_coordinator.gd")
 const FaithServiceScript := preload("res://scripts/player/faith_service.gd")
 const MarketPriceContextScript := preload("res://scripts/game/market/market_price_context.gd")
 const MarketPricingServiceScript := preload("res://scripts/game/market/market_pricing_service.gd")
@@ -29,9 +30,11 @@ signal faith_changed(current_faith: int)
 ## Static base data supplied by the scene. It is duplicated before a run starts.
 @export var player_data: PlayerData
 @export var event_lib: EventLib
+@export var exploration_config: ExplorationConfig
 var starting_deck: StartingDeckData
 var player_stats: CombatStats
 var _event_placement_service := EventPlacementService.new()
+var _exploration_coordinator
 var _encounter_combat_flow: EncounterCombatFlowCoordinator
 var _market_pricing := MarketPricingServiceScript.new()
 var _shop_event_resolver: ShopEventResolver
@@ -95,8 +98,7 @@ func _ready() -> void:
 		shop_event_view.set_pricing_service(_market_pricing)
 	if not drag_layer.manual_chain_retracted.is_connected(_faith_service.resolve_manual_chain_retraction):
 		drag_layer.manual_chain_retracted.connect(_faith_service.resolve_manual_chain_retraction)
-	if not board.event_interaction_requested.is_connected(_on_board_event_triggered):
-		board.event_interaction_requested.connect(_on_board_event_triggered)
+
 	if not board.card_return_requested.is_connected(_on_board_card_return_requested):
 		board.card_return_requested.connect(_on_board_card_return_requested)
 	if not shop_event_view.purchase_requested.is_connected(_on_shop_purchase_requested):
@@ -311,10 +313,24 @@ func _clear_initial_player_cards() -> void:
 
 
 func init_events() -> void:
-	if event_lib == null:
-		push_warning("GameManager is missing EventLib")
+	if event_lib == null or exploration_config == null:
+		push_warning("GameManager is missing level exploration data")
 		return
-	_event_placement_service.place_initial_events(event_lib, board)
+	_exploration_coordinator = ExplorationCoordinatorScript.new()
+	if not _exploration_coordinator.configure(event_lib, board, exploration_config):
+		push_error("GameManager could not configure exploration coordinator")
+		_exploration_coordinator = null
+		return
+	if not board.placement_committed.is_connected(_on_board_placement_committed):
+		board.placement_committed.connect(_on_board_placement_committed)
+	if not _exploration_coordinator.event_interaction_requested.is_connected(_on_board_event_triggered):
+		_exploration_coordinator.event_interaction_requested.connect(_on_board_event_triggered)
+
+
+func _on_board_placement_committed(result: BoardPlacementResult) -> void:
+	if _is_exploration_failed or _exploration_coordinator == null:
+		return
+	_exploration_coordinator.resolve_placement(result)
 
 
 ## 按固定设计坐标布置玩法内容，再统一缩放和居中玩法画布。

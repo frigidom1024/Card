@@ -94,3 +94,7 @@ func _move_to_surrounding(board: Board) -> bool:
 		if board.move_event(_boss_event, candidate):
 			return true
 	return false
+
+
+func get_registered_boss() -> BoardEvent:
+	return _boss_event

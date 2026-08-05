@@ -14,11 +14,11 @@ func _init() -> void:
 
 
 func _run_tests() -> void:
-	_test_chain_placement_emits_commit_before_event_request()
+	_test_chain_placement_publishes_only_spatial_transaction()
 	quit(1 if _failure_count > 0 else 0)
 
 
-func _test_chain_placement_emits_commit_before_event_request() -> void:
+func _test_chain_placement_publishes_only_spatial_transaction() -> void:
 	var board := BoardScene.instantiate() as Board
 	root.add_child(board)
 	var root_card := _make_root_card(board, Vector2(280, 200), 0.0)
@@ -26,30 +26,24 @@ func _test_chain_placement_emits_commit_before_event_request() -> void:
 	var echo := _make_monster_event(event_cell)
 	_expect(board.attach_event(echo), "an unresolved echo can occupy the root card cell")
 
-	var signal_order: Array[String] = []
-	var committed_results: Array = []
-	board.placement_committed.connect(func(result) -> void:
-		signal_order.append("placement_committed")
+	var committed_results: Array[BoardPlacementResult] = []
+	var direct_event_requests := 0
+	board.placement_committed.connect(func(result: BoardPlacementResult) -> void:
 		committed_results.append(result)
 	)
-	board.event_interaction_requested.connect(func(instance: EventInstance) -> void:
-		signal_order.append("event_interaction_requested")
-		_expect(instance == echo.event_instance, "event request uses the event overlapped by the placement")
+	board.event_interaction_requested.connect(func(_instance: EventInstance) -> void:
+		direct_event_requests += 1
 	)
 
 	_expect(board.add_card(root_card), "root card commits over an unresolved echo")
-	_expect(
-		signal_order == ["placement_committed", "event_interaction_requested"],
-		"placement commit is published before event interaction is requested"
-	)
-	_expect(committed_results.size() == 1, "placement publishes exactly one result")
+	_expect(committed_results.size() == 1, "placement publishes exactly one spatial result")
+	_expect(direct_event_requests == 0, "Board never requests event interaction directly")
 	if committed_results.size() == 1:
-		var committed_result = committed_results[0]
+		var committed_result := committed_results[0]
 		_expect(committed_result.source_card == root_card, "result keeps the source card")
 		_expect(committed_result.overlapped_event == echo.event_instance, "result exposes the overlapped event")
 		_expect(committed_result.newly_occupied_cells == board.get_card_cells(root_card.global_position, root_card.rotation_degrees), "result records newly occupied cells")
 	board.queue_free()
-
 
 func _make_root_card(board: Board, position: Vector2, rotation_degrees: float) -> CardEntity:
 	var card := CardEntityScene.instantiate() as CardEntity

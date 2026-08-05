@@ -47,6 +47,23 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 		manager.board.card_return_requested.is_connected(manager._on_board_card_return_requested),
 		"GameManager listens for Board guide-card return requests"
 	)
+	var exploration_coordinator = manager.get("_exploration_coordinator")
+	_expect(exploration_coordinator != null, "GameManager creates a dedicated exploration coordinator")
+	_expect(manager.has_method("_on_board_placement_committed"), "GameManager exposes the single Board placement forwarding callback")
+	_expect(
+		manager.board.placement_committed.is_connected(Callable(manager, "_on_board_placement_committed")),
+		"GameManager forwards completed Board placements to the exploration coordinator"
+	)
+	if exploration_coordinator != null:
+		_expect(
+			exploration_coordinator.event_interaction_requested.is_connected(manager._on_board_event_triggered),
+			"GameManager receives all ordinary event interactions from the coordinator"
+		)
+	_expect(
+		not manager.board.event_interaction_requested.is_connected(manager._on_board_event_triggered),
+		"GameManager no longer opens events directly from Board mutations"
+	)
+	_expect(manager.board.events.is_empty(), "run setup leaves event creation to fog exploration instead of pre-spawning the level")
 	var returned_guide := _make_guide_card()
 	manager.add_child(returned_guide)
 	manager._on_board_card_return_requested(returned_guide)

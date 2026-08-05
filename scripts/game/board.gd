@@ -565,17 +565,11 @@ func add_card(card: CardEntity) -> bool:
 	return true
 
 
-## Publishes the completed board mutation before any event flow begins.
-## Legacy notifications remain temporarily while ExplorationCoordinator migrates to placement_committed.
-func _publish_placement(result) -> void:
+## Publishes the completed spatial transaction. ExplorationCoordinator decides when an event is requested.
+func _publish_placement(result: BoardPlacementResult) -> void:
 	placement_committed.emit(result)
 	if result.kind == BoardPlacementResultScript.Kind.CHAIN_EXTENDED:
 		card_placed.emit(result.source_card)
-	if result.overlapped_event != null:
-		event_interaction_requested.emit(result.overlapped_event)
-		# 保留旧通知，直到 ExplorationCoordinator 完成所有调用方迁移。
-		if result.kind == BoardPlacementResultScript.Kind.CHAIN_EXTENDED:
-			event_triggered.emit(result.overlapped_event)
 
 func _is_guide_card(card: CardEntity) -> bool:
 	return card.card_instance \
