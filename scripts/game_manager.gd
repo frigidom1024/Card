@@ -7,6 +7,7 @@ const MarketPriceContextScript := preload("res://scripts/game/market/market_pric
 const MarketPricingServiceScript := preload("res://scripts/game/market/market_pricing_service.gd")
 const PersistentMarketStateScript := preload("res://scripts/game/market/persistent_market_state.gd")
 const PersistentMarketResolverScript := preload("res://scripts/game/market/persistent_market_resolver.gd")
+const RunCardServiceScript := preload("res://scripts/game/run/run_card_service.gd")
 
 signal combat_started(instance: EventInstance, monster: MobInstance)
 signal combat_resolved(instance: EventInstance, result: CombatResult)
@@ -47,6 +48,7 @@ var _treasure_rng := RandomNumberGenerator.new()
 var _faith_service := FaithServiceScript.new()
 var _is_exploration_failed := false
 var _market_ready := false
+var _run_card_service
 
 # 所有玩家相关卡牌数据引用
 var cards_inst: Array[CardInstance]
@@ -147,6 +149,12 @@ func _initialize_run_state() -> bool:
 	player_stats = CombatStats.from_data(player_data.base_stats)
 	if player_stats == null:
 		return _fail_run_initialization("GameManager could not create runtime combat stats")
+	_run_card_service = RunCardServiceScript.new()
+	if not _run_card_service.configure(card_manager, hand_area, drag_layer):
+		return _fail_run_initialization("GameManager could not configure runtime card service")
+	# Compatibility references for existing scene consumers and integration tests.
+	cards_inst = _run_card_service.get_instances()
+	card_entities = _run_card_service.get_entities()
 	if not init_player_cards():
 		return _fail_run_initialization("GameManager could not create configured starter cards")
 
@@ -172,25 +180,9 @@ func _create_combat_service_for_root(_root_card: CardData) -> CombatService2:
 	return CombatService2.new()
 
 
-# 初始化玩家卡牌：由所选预设创建完整起始牌组并全部发到手牌区。
+# 初始化玩家卡牌：委托本局卡牌服务创建完整起始牌组并发到手牌区。
 func init_player_cards() -> bool:
-	cards_inst = card_manager.create_starting_instances(starting_deck)
-	if cards_inst.is_empty():
-		return false
-
-	card_entities.clear()
-	for inst in cards_inst:
-		var entity = card_manager.create_card_entity(inst)
-		if entity == null:
-			_clear_initial_player_cards()
-			return false
-		entity.drag_layer = drag_layer
-		if not hand_area.add_card(entity):
-			entity.queue_free()
-			_clear_initial_player_cards()
-			return false
-		card_entities.append(entity)
-	return true
+	return _run_card_service != null and _run_card_service.initialize_starting_deck(starting_deck)
 
 
 func _on_faith_changed(current_faith: int) -> void:
@@ -242,8 +234,8 @@ func _on_market_reclaim_requested(card: CardEntity) -> void:
 	if not result.success:
 		persistent_market.show_message(_market_failure_message(result.failure), true)
 		return
-	card_entities.erase(card)
-	cards_inst.erase(card.card_instance)
+	if _run_card_service == null or not _run_card_service.forget_card(card):
+		return
 	drag_layer.confirm_market_reclaim(card)
 	_sync_hand_tray()
 	_sync_pilgrim_crest()
@@ -294,14 +286,6 @@ func _on_echo_spawn_requested() -> void:
 	_exploration_coordinator.request_faith_echo()
 
 
-func _clear_initial_player_cards() -> void:
-	for entity in card_entities:
-		if is_instance_valid(entity):
-			entity.queue_free()
-	card_entities.clear()
-	cards_inst.clear()
-
-
 ## Creates the exploration facade; fog, event scheduling, and Boss pressure stay inside it.
 func _configure_exploration() -> void:
 	if event_lib == null or exploration_config == null:
@@ -343,14 +327,12 @@ func _center_layout() -> void:
 
 
 func _on_board_card_return_requested(card: CardEntity) -> void:
-	if card == null or not is_instance_valid(card) or card in hand_area.cards:
+	if _run_card_service == null:
 		return
-
-	# GUIDE 属于玩家已持有的卡；手牌已满时先放宽一个位置，不能丢弃该卡。
-	if hand_area.is_full():
-		hand_area.max_hand_size = hand_area.cards.size() + 1
-	if not hand_area.add_card(card):
-		push_error("Failed to return guide card to hand")
+	# GUIDE 属于玩家已持有的卡；手牌已满时也不能丢弃该卡。
+	if card != null and is_instance_valid(card) and card not in hand_area.cards:
+		if not _run_card_service.return_existing_to_hand(card, true):
+			push_error("Failed to return guide card to hand")
 
 
 func _on_board_event_triggered(instance: EventInstance) -> void:
@@ -479,20 +461,7 @@ func _on_treasure_close_requested() -> void:
 	treasure_event_view.show_message("必须领取一项奖励后才能离开。", true)
 
 func _grant_card_to_hand(card_data: CardData) -> bool:
-	if card_data == null or hand_area.is_full():
-		return false
-	var card_instance := CardInstance.new(card_data)
-	card_instance.cur_zone = CardInstance.ZONE.HAND
-	var entity: CardEntity = card_manager.create_card_entity(card_instance)
-	if entity == null:
-		return false
-	entity.drag_layer = drag_layer
-	if not hand_area.add_card(entity):
-		entity.queue_free()
-		return false
-	cards_inst.append(card_instance)
-	card_entities.append(entity)
-	return true
+	return _run_card_service != null and _run_card_service.grant_to_hand(card_data)
 
 
 func _resolution_failure_message(failure: EventResolutionResult.Failure) -> String:
@@ -586,16 +555,8 @@ func _return_tail_card_to_hand() -> void:
 	var tail: CardEntity = board.cards.back()
 	if tail == null or not board.remove_card(tail):
 		return
-	if tail.card_instance != null:
-		tail.card_instance.cur_zone = CardInstance.ZONE.HAND
-	var previous_max_hand_size := hand_area.max_hand_size
-	if hand_area.is_full():
-		hand_area.max_hand_size = hand_area.cards.size() + 1
-	if not hand_area.add_card(tail):
-		hand_area.max_hand_size = previous_max_hand_size
+	if _run_card_service == null or not _run_card_service.return_existing_to_hand_temporarily(tail):
 		push_error("RETREAT failed to return the final card to hand")
-		return
-	hand_area.max_hand_size = previous_max_hand_size
 
 
 func _refresh_event_display(instance: EventInstance) -> void:

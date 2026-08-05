@@ -28,6 +28,18 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 		manager.cards_inst.size() == RevivalDeck.starter_cards.size(),
 		"run creates exactly every configured starter card"
 	)
+
+	var run_card_service = manager.get("_run_card_service")
+	_expect(run_card_service != null, "GameManager composes a dedicated runtime card ownership service")
+	if run_card_service != null:
+		_expect(
+			run_card_service.get_instances() == manager.cards_inst,
+			"GameManager exposes the card instances owned by its runtime card service"
+		)
+		_expect(
+			run_card_service.get_entities() == manager.card_entities,
+			"GameManager exposes the card entities owned by its runtime card service"
+		)
 	_expect(_count_roots(manager.cards_inst) == 1, "run creates exactly one root card")
 	for index in range(RevivalDeck.starter_cards.size()):
 		_expect(
