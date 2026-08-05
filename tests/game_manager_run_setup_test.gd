@@ -49,6 +49,8 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 	)
 	var exploration_coordinator = manager.get("_exploration_coordinator")
 	_expect(exploration_coordinator != null, "GameManager creates a dedicated exploration coordinator")
+	var interaction_controller = manager.get("_event_interaction_controller")
+	_expect(interaction_controller != null, "GameManager creates an event interaction lifecycle controller")
 	_expect(manager.has_method("_on_board_placement_committed"), "GameManager exposes the single Board placement forwarding callback")
 	_expect(
 		manager.board.placement_committed.is_connected(Callable(manager, "_on_board_placement_committed")),

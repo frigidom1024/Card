@@ -1,6 +1,7 @@
 extends Node
 
 const ExplorationCoordinatorScript := preload("res://scripts/game/exploration/exploration_coordinator.gd")
+const EventInteractionControllerScript := preload("res://scripts/game/event/event_interaction_controller.gd")
 const FaithServiceScript := preload("res://scripts/player/faith_service.gd")
 const MarketPriceContextScript := preload("res://scripts/game/market/market_price_context.gd")
 const MarketPricingServiceScript := preload("res://scripts/game/market/market_pricing_service.gd")
@@ -35,6 +36,7 @@ var starting_deck: StartingDeckData
 var player_stats: CombatStats
 var _event_placement_service := EventPlacementService.new()
 var _exploration_coordinator
+var _event_interaction_controller: EventInteractionController
 var _encounter_combat_flow: EncounterCombatFlowCoordinator
 var _market_pricing := MarketPricingServiceScript.new()
 var _shop_event_resolver: ShopEventResolver
@@ -98,6 +100,11 @@ func _ready() -> void:
 		shop_event_view.set_pricing_service(_market_pricing)
 	if not drag_layer.manual_chain_retracted.is_connected(_faith_service.resolve_manual_chain_retraction):
 		drag_layer.manual_chain_retracted.connect(_faith_service.resolve_manual_chain_retraction)
+	if _event_interaction_controller != null:
+		if not _event_interaction_controller.interaction_started.is_connected(_on_controller_interaction_started):
+			_event_interaction_controller.interaction_started.connect(_on_controller_interaction_started)
+		if not _event_interaction_controller.combat_result_ready.is_connected(_on_controller_combat_result_ready):
+			_event_interaction_controller.combat_result_ready.connect(_on_controller_combat_result_ready)
 
 	if not board.card_return_requested.is_connected(_on_board_card_return_requested):
 		board.card_return_requested.connect(_on_board_card_return_requested)
@@ -150,6 +157,8 @@ func _initialize_run_state() -> bool:
 
 	var root_card := starting_deck.get_root_card()
 	_encounter_combat_flow = EncounterCombatFlowCoordinator.new(_create_combat_service_for_root(root_card))
+	_event_interaction_controller = EventInteractionControllerScript.new()
+	_event_interaction_controller.configure(_encounter_combat_flow)
 	return true
 
 
@@ -374,9 +383,26 @@ func _on_board_event_triggered(instance: EventInstance) -> void:
 		EventData.EventType.TREASURE:
 			_open_treasure_event(instance)
 		EventData.EventType.MONSTER, EventData.EventType.BOSS:
-			_begin_encounter(instance)
+			_event_interaction_controller.begin(instance, player_stats, board.get_combat_card_chain())
 		_:
 			push_warning("GameManager received an unsupported event type")
+
+
+func _on_controller_interaction_started(instance: EventInstance) -> void:
+	if instance == null or instance.get_event_type() not in [EventData.EventType.MONSTER, EventData.EventType.BOSS]:
+		return
+	_active_event = instance
+	drag_layer.set_interaction_locked(true)
+	combat_started.emit(instance, _get_event_monster(instance))
+
+
+func _on_controller_combat_result_ready(instance: EventInstance, result: CombatResult) -> void:
+	if instance == null or result == null:
+		return
+	_print_combat_result_detail(result)
+	_pending_combat_instance = instance
+	_pending_combat_result = result
+	combat_event_view.show_combat(instance, _get_event_monster(instance), result)
 
 
 func _begin_encounter(instance: EventInstance) -> void:
@@ -412,6 +438,7 @@ func _on_combat_settlement_confirmed() -> void:
 	_pending_combat_instance = null
 	_pending_combat_result = null
 	_apply_combat_result(instance, result)
+	_event_interaction_controller.confirm_combat_settlement()
 	combat_resolved.emit(instance, result)
 
 
