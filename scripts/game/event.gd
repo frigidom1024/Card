@@ -1,8 +1,6 @@
 class_name BoardEvent
 extends Control
 
-signal event_selected(instance: EventInstance)
-
 @export_category("Scene Preview")
 ## 编辑此资源的 size 可调整预览事件占用的棋盘格数。
 @export var preview_event: EventData = preload("res://data/event/events/forest_wolf_event.tres")
@@ -16,8 +14,6 @@ signal event_selected(instance: EventInstance)
 @onready var type_label: Label = $TypeLabel
 @onready var name_label: Label = $NameLabel
 @onready var resolved_overlay: ColorRect = $ResolvedOverlay
-@onready var select_button: Button = $SelectButton
-
 var event_instance: EventInstance
 var _cell_size := 80
 
@@ -64,12 +60,6 @@ func _refresh() -> void:
 	name_label.text = _get_display_name(data)
 	resolved_overlay.visible = is_resolved
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	select_button.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	select_button.disabled = true
-
-func _on_select_button_pressed() -> void:
-	if event_instance and not event_instance.is_resolved:
-		event_selected.emit(event_instance)
 
 func _get_type_color(event_type: EventData.EventType) -> Color:
 	match event_type:

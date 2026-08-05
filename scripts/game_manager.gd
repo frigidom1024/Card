@@ -47,9 +47,6 @@ var _treasure_event_resolver := TreasureEventResolver.new()
 var _treasure_rng := RandomNumberGenerator.new()
 var _faith_rng := RandomNumberGenerator.new()
 var _faith_service := FaithServiceScript.new()
-var _active_event: EventInstance
-var _pending_combat_instance: EventInstance
-var _pending_combat_result: CombatResult
 var _is_exploration_failed := false
 var _pending_faith_echo_spawns := 0
 var _market_ready := false
@@ -103,6 +100,8 @@ func _ready() -> void:
 	if _event_interaction_controller != null:
 		if not _event_interaction_controller.interaction_started.is_connected(_on_controller_interaction_started):
 			_event_interaction_controller.interaction_started.connect(_on_controller_interaction_started)
+		if not _event_interaction_controller.interaction_finished.is_connected(_on_controller_interaction_finished):
+			_event_interaction_controller.interaction_finished.connect(_on_controller_interaction_finished)
 		if not _event_interaction_controller.combat_result_ready.is_connected(_on_controller_combat_result_ready):
 			_event_interaction_controller.combat_result_ready.connect(_on_controller_combat_result_ready)
 
@@ -374,82 +373,56 @@ func _on_board_card_return_requested(card: CardEntity) -> void:
 
 
 func _on_board_event_triggered(instance: EventInstance) -> void:
-	if _is_exploration_failed or _active_event != null or instance == null or instance.is_resolved:
+	if _is_exploration_failed or _event_interaction_controller == null or instance == null or instance.is_resolved:
 		return
+	if _event_interaction_controller.get_active_event() != null:
+		return
+	_event_interaction_controller.begin(instance, player_stats, board.get_combat_card_chain())
 
+func _on_controller_interaction_started(instance: EventInstance) -> void:
+	if instance == null:
+		return
+	drag_layer.set_interaction_locked(true)
 	match instance.get_event_type():
 		EventData.EventType.SHOP:
 			_open_shop_event(instance)
 		EventData.EventType.TREASURE:
 			_open_treasure_event(instance)
 		EventData.EventType.MONSTER, EventData.EventType.BOSS:
-			_event_interaction_controller.begin(instance, player_stats, board.get_combat_card_chain())
+			combat_started.emit(instance, _get_event_monster(instance))
 		_:
 			push_warning("GameManager received an unsupported event type")
 
-
-func _on_controller_interaction_started(instance: EventInstance) -> void:
-	if instance == null or instance.get_event_type() not in [EventData.EventType.MONSTER, EventData.EventType.BOSS]:
+func _on_controller_interaction_finished(_instance: EventInstance) -> void:
+	if _is_exploration_failed:
 		return
-	_active_event = instance
-	drag_layer.set_interaction_locked(true)
-	combat_started.emit(instance, _get_event_monster(instance))
+	drag_layer.set_interaction_locked(false)
+	_try_spawn_pending_faith_echoes()
 
 
 func _on_controller_combat_result_ready(instance: EventInstance, result: CombatResult) -> void:
 	if instance == null or result == null:
 		return
 	_print_combat_result_detail(result)
-	_pending_combat_instance = instance
-	_pending_combat_result = result
 	combat_event_view.show_combat(instance, _get_event_monster(instance), result)
 
-
-func _begin_encounter(instance: EventInstance) -> void:
-	_active_event = instance
-	drag_layer.set_interaction_locked(true)
-	var monster := _encounter_combat_flow.begin(instance)
-	if monster == null:
-		_finish_encounter()
-		return
-
-	combat_started.emit(instance, monster)
-	var result := _encounter_combat_flow.resolve(
-		player_stats,
-		board.get_combat_card_chain(),
-		monster
-	)
-	if result == null:
-		_finish_encounter()
-		return
-	_print_combat_result_detail(result)
-	_pending_combat_instance = instance
-	_pending_combat_result = result
-	combat_event_view.show_combat(instance, monster, result)
-
-
 func _on_combat_settlement_confirmed() -> void:
-	if _pending_combat_instance == null or _pending_combat_result == null:
+	if _event_interaction_controller == null:
 		return
-
-	var instance := _pending_combat_instance
-	var result := _pending_combat_result
+	var instance := _event_interaction_controller.get_pending_combat_instance()
+	var result := _event_interaction_controller.get_pending_combat_result()
+	if instance == null or result == null:
+		return
 	combat_event_view.hide_combat()
-	_pending_combat_instance = null
-	_pending_combat_result = null
 	_apply_combat_result(instance, result)
 	_event_interaction_controller.confirm_combat_settlement()
 	combat_resolved.emit(instance, result)
-
 
 func _open_shop_event(instance: EventInstance) -> void:
 	if instance.get_content() is not ShopEventContent:
 		push_warning("Shop event is missing ShopEventContent")
 		return
-	_active_event = instance
-	drag_layer.set_interaction_locked(true)
 	shop_event_view.show_event(instance, player_data)
-
 
 func _open_treasure_event(instance: EventInstance) -> void:
 	if instance.get_content() is not TreasureEventContent:
@@ -459,20 +432,18 @@ func _open_treasure_event(instance: EventInstance) -> void:
 	if options.is_empty():
 		push_warning("Treasure event produced no reward options")
 		return
-	_active_event = instance
-	drag_layer.set_interaction_locked(true)
 	treasure_event_view.show_event(instance, options)
 
-
 func _on_shop_purchase_requested(item_index: int) -> void:
-	if _active_event == null or _active_event.get_event_type() != EventData.EventType.SHOP:
+	var active_event := _event_interaction_controller.get_active_event() if _event_interaction_controller != null else null
+	if active_event == null or active_event.get_event_type() != EventData.EventType.SHOP:
 		return
 	if hand_area.is_full():
 		shop_event_view.show_message("手牌已满，无法购买。", true)
 		return
 
 	var result := _shop_event_resolver.purchase_item(
-		_active_event, item_index, player_data, true, _market_context()
+		active_event, item_index, player_data, true, _market_context()
 	)
 	if not result.success:
 		shop_event_view.show_message(_resolution_failure_message(result.failure), true)
@@ -484,18 +455,17 @@ func _on_shop_purchase_requested(item_index: int) -> void:
 	shop_event_view.refresh()
 	shop_event_view.show_message("购买成功。", false)
 
-
 func _on_shop_close_requested() -> void:
-	if _active_event == null or _active_event.get_event_type() != EventData.EventType.SHOP:
+	if _event_interaction_controller == null or _event_interaction_controller.get_active_event() == null:
 		return
 	shop_event_view.hide_event()
-	_finish_event_interaction()
-
+	_event_interaction_controller.close_shop()
 
 func _on_treasure_reward_requested(option_index: int) -> void:
-	if _active_event == null or _active_event.get_event_type() != EventData.EventType.TREASURE:
+	var active_event := _event_interaction_controller.get_active_event() if _event_interaction_controller != null else null
+	if active_event == null or active_event.get_event_type() != EventData.EventType.TREASURE:
 		return
-	var options := _treasure_event_resolver.ensure_options(_active_event, _treasure_rng)
+	var options := _treasure_event_resolver.ensure_options(active_event, _treasure_rng)
 	if option_index < 0 or option_index >= options.size():
 		treasure_event_view.show_message("无效的奖励选项。", true)
 		return
@@ -505,7 +475,7 @@ func _on_treasure_reward_requested(option_index: int) -> void:
 		return
 
 	var result := _treasure_event_resolver.claim_reward(
-		_active_event,
+		active_event,
 		option_index,
 		player_data,
 		true,
@@ -518,16 +488,15 @@ func _on_treasure_reward_requested(option_index: int) -> void:
 		push_error("Treasure reward succeeded but card creation failed")
 		treasure_event_view.show_message("卡牌创建失败。", true)
 		return
-	_refresh_event_display(_active_event)
+	_refresh_event_display(active_event)
 	treasure_event_view.hide_event()
-	_finish_event_interaction()
-
+	_event_interaction_controller.claim_treasure(option_index)
 
 func _on_treasure_close_requested() -> void:
-	if _active_event == null or _active_event.get_event_type() != EventData.EventType.TREASURE:
+	var active_event := _event_interaction_controller.get_active_event() if _event_interaction_controller != null else null
+	if active_event == null or active_event.get_event_type() != EventData.EventType.TREASURE:
 		return
 	treasure_event_view.show_message("必须领取一项奖励后才能离开。", true)
-
 
 func _grant_card_to_hand(card_data: CardData) -> bool:
 	if card_data == null or hand_area.is_full():
@@ -568,8 +537,10 @@ func _apply_combat_result(instance: EventInstance, result: CombatResult) -> void
 			_apply_player_combat_state(result.player_stats_after)
 			_apply_monster_combat_state(instance, result.monster_stats_after)
 			instance.resolve()
-			_refresh_event_display(instance)
-			_finish_encounter()
+			if instance.get_event_type() == EventData.EventType.BOSS and _exploration_coordinator != null:
+				_exploration_coordinator.dismiss_defeated_boss(instance)
+			else:
+				_refresh_event_display(instance)
 		CombatResult.Outcome.RETREAT:
 			_apply_player_combat_state(result.player_stats_after)
 			_apply_monster_combat_state(
@@ -578,11 +549,9 @@ func _apply_combat_result(instance: EventInstance, result: CombatResult) -> void
 			_return_tail_card_to_hand()
 			_strengthen_encounter_monster(instance)
 			_refresh_event_display(instance)
-			_finish_encounter()
 		CombatResult.Outcome.DEFEAT:
 			_apply_player_combat_state(result.player_stats_after)
 			_clear_monster_transient_state(instance)
-			_active_event = null
 			_is_exploration_failed = true
 			exploration_failed.emit(result)
 
@@ -656,18 +625,6 @@ func _refresh_event_display(instance: EventInstance) -> void:
 			return
 
 
-func _finish_encounter() -> void:
-	_finish_event_interaction()
-
-
-func _finish_event_interaction() -> void:
-	_active_event = null
-	if not _is_exploration_failed:
-		drag_layer.set_interaction_locked(false)
-		_try_spawn_pending_faith_echoes()
-
-
-## 调试：打印一次战斗结算的完整详细信息
 func _print_combat_result_detail(result: CombatResult) -> void:
 	print("========== 战斗结算详细结果 ==========")
 	print("结局: ", CombatResult.Outcome.keys()[result.outcome])

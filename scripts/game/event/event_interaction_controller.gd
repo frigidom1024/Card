@@ -48,8 +48,10 @@ func close_shop() -> void:
 
 
 func claim_treasure(_option_index: int) -> void:
-	# Reward resolution is owned by the treasure adapter. This method reserves the lifecycle API.
-	pass
+	# The treasure adapter resolves and grants the selected reward before this lifecycle completion call.
+	if _active_event == null or _active_event.get_event_type() != EventData.EventType.TREASURE:
+		return
+	_finish_active_interaction()
 
 
 func confirm_combat_settlement() -> void:

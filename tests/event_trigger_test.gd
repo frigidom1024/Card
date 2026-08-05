@@ -142,11 +142,8 @@ func _test_board_event_does_not_intercept_mouse_or_enable_selection() -> void:
 		event_node.mouse_filter == Control.MOUSE_FILTER_IGNORE,
 		"BoardEvent root ignores mouse input"
 	)
-	_expect(event_node.select_button.disabled, "BoardEvent select button remains disabled")
-	_expect(
-		event_node.select_button.mouse_filter == Control.MOUSE_FILTER_IGNORE,
-		"BoardEvent disabled selection button passes mouse input through"
-	)
+	_expect(not event_node.has_signal("event_selected"), "BoardEvent exposes no click-selection signal")
+	_expect(event_node.get_node_or_null("SelectButton") == null, "BoardEvent scene has no click-selection control")
 
 
 func _test_drag_input_bypasses_event_controls_and_suspends_card_previews() -> void:
