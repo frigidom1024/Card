@@ -34,7 +34,7 @@ signal faith_changed(current_faith: int)
 @export var exploration_config: ExplorationConfig
 var starting_deck: StartingDeckData
 var player_stats: CombatStats
-var _exploration_coordinator
+var _exploration_coordinator: ExplorationCoordinator
 var _event_interaction_controller: EventInteractionController
 var _encounter_combat_flow: EncounterCombatFlowCoordinator
 var _market_pricing := MarketPricingServiceScript.new()
@@ -116,7 +116,7 @@ func _ready() -> void:
 		combat_event_view.settlement_confirmed.connect(_on_combat_settlement_confirmed)
 	_treasure_rng.randomize()
 
-	init_events()
+	_configure_exploration()
 	_center_layout()
 
 	# 窗口实时缩放时重新居中（带重复连接防护）
@@ -302,7 +302,8 @@ func _clear_initial_player_cards() -> void:
 	cards_inst.clear()
 
 
-func init_events() -> void:
+## Creates the exploration facade; fog, event scheduling, and Boss pressure stay inside it.
+func _configure_exploration() -> void:
 	if event_lib == null or exploration_config == null:
 		push_warning("GameManager is missing level exploration data")
 		return

@@ -72,6 +72,13 @@ Boss 移到牌头连接格
 
 这既保留了“Boss 压住牌链去路”的紧迫感，也不引入与所有其他事件相矛盾的鼠标点击交互。
 
+## GUIDE、信仰与回退边界
+
+- `BoardPlacementResult.Kind.GUIDE_RESOLVED` 也会进入 `ExplorationCoordinator.resolve_placement()`：GUIDE 可以揭开迷雾，也可以在移动后的卡牌占格接触事件；但 `BossPressureService.record_placement()` 只接受 `CHAIN_EXTENDED`，因此 GUIDE 永远不推进 Boss 追击计数。
+- Boss 进入 `INTERCEPTING` 后，仍由**下一张卡牌放置到牌头连接格**产生 `overlapped_event` 并开启战斗；它没有点击入口，也不会把格子变为无法放牌的硬阻塞。
+- 玩家拖起棋盘卡时只创建待确认的拆链事务。只有源卡最终成功回到手牌，`DragLayer` 才发出 `chain_retraction_confirmed`；取消拖拽、重新放回棋盘、GUIDE 自动回手都不会扣除信仰。
+- `FaithService` 只修改 `PlayerData.faith`，不依赖棋盘或事件库。信仰在确认拆链后降至 `<= 0` 时，它仅发出残响请求；`ExplorationCoordinator` 再从当前关卡 `EventLib` 的 `MONSTER` 模板生成普通残响事件。
+
 ## 代码职责
 
 - `FogService`：只管理已揭开格子和本次新增揭雾结果。
