@@ -53,9 +53,23 @@ func _test_faith_is_visible_and_system_tail_return_is_free() -> void:
 	var follower := _place_card(manager, Vector2i(2, 0), CardData.CardType.NORMAL)
 	var faith_value := manager.get_node_or_null("GameplayCanvas/PilgrimCrestHud/FaithSeal/FaithValue") as Label
 	_expect(faith_value != null and faith_value.text == "FAITH · 3", "faith HUD shows the current faith")
-	manager._return_tail_card_to_hand()
-	_expect(manager.player_data.get("faith") == 3, "system tail return does not spend PlayerData faith")
-	_expect(tail_card in manager.board.cards and follower in manager.hand_area.cards, "system tail return keeps the root and returns only the tail")
+	var retreat_event_data := EventData.new()
+	retreat_event_data.event_id = "faith-retreat"
+	retreat_event_data.event_type = EventData.EventType.MONSTER
+	var player_after := _combat_stats(manager.player_stats.max_hp, manager.player_stats.hp)
+	var monster_after := _combat_stats(1, 1)
+	var retreat_result := CombatResult.new(
+		CombatResult.Outcome.RETREAT,
+		player_after,
+		monster_after,
+		[],
+		0,
+		[],
+		0
+	)
+	manager._on_modal_combat_settlement_confirmed(retreat_event_data.create_instance(), retreat_result)
+	_expect(manager.player_data.get("faith") == 3, "RETREAT tail return does not spend PlayerData faith")
+	_expect(tail_card in manager.board.cards and follower in manager.hand_area.cards, "RETREAT keeps the root and returns only the tail")
 	_cleanup_manager(manager)
 
 
@@ -121,6 +135,13 @@ func _place_card(manager: Node, left_cell: Vector2i, card_type: CardData.CardTyp
 	manager.card_entities.append(card)
 	_expect(manager.board.add_card(card), "faith test card is added to the Board")
 	return card
+
+
+func _combat_stats(max_hp: int, hp: int) -> CombatStats:
+	var stats := CombatStats.new()
+	stats.max_hp = max_hp
+	stats.hp = hp
+	return stats
 
 
 func _horizontal_card_center(board: Board, left_cell: Vector2i) -> Vector2:

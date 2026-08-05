@@ -38,7 +38,22 @@ func _test_player_hud_syncs_updates_and_status() -> void:
 	var after_combat := CombatStats.new()
 	after_combat.max_hp = manager.player_stats.max_hp
 	after_combat.hp = manager.player_stats.hp - 4
-	manager._apply_player_combat_state(after_combat)
+	var event_data := EventData.new()
+	event_data.event_id = "hud-combat"
+	event_data.event_type = EventData.EventType.MONSTER
+	var monster_after := CombatStats.new()
+	monster_after.max_hp = 1
+	monster_after.hp = 0
+	var result := CombatResult.new(
+		CombatResult.Outcome.VICTORY,
+		after_combat,
+		monster_after,
+		[],
+		0,
+		[],
+		0
+	)
+	manager._on_modal_combat_settlement_confirmed(event_data.create_instance(), result)
 	_expect(
 		(hud.get_node("VitalityValue") as Label).text == "%d / %d" % [after_combat.hp, after_combat.max_hp],
 		"HUD refreshes after combat"

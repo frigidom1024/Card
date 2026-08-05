@@ -35,16 +35,15 @@ var starting_deck: StartingDeckData
 var player_stats: CombatStats
 var _exploration_coordinator: ExplorationCoordinator
 var _event_interaction_controller: EventInteractionController
-var _encounter_combat_flow: EncounterCombatFlowCoordinator
-var _encounter_resolution
+var _encounter_resolution: EncounterResolutionCoordinator
 var _market_pricing := MarketPricingServiceScript.new()
-var _persistent_market_coordinator
-var _event_modal_coordinator
+var _persistent_market_coordinator: PersistentMarketCoordinator
+var _event_modal_coordinator: EventModalCoordinator
 var _market_rng := RandomNumberGenerator.new()
 var _faith_service := FaithServiceScript.new()
 var _is_exploration_failed := false
-var _run_card_service
-var _run_setup
+var _run_card_service: RunCardService
+var _run_setup: RunSetupCoordinator
 
 # 所有玩家相关卡牌数据引用
 var cards_inst: Array[CardInstance]
@@ -120,7 +119,6 @@ func _initialize_run_state() -> bool:
 	player_data = _run_setup.get_player_data()
 	player_stats = _run_setup.get_player_stats()
 	_run_card_service = _run_setup.get_card_service()
-	_encounter_combat_flow = _run_setup.get_encounter_combat_flow()
 	_event_interaction_controller = _run_setup.get_event_interaction_controller()
 	# Compatibility references for existing scene consumers and integration tests.
 	cards_inst = _run_card_service.get_instances()

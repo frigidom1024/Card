@@ -54,7 +54,13 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 	)
 	manager.player_data.gold = 1
 	_expect(BasePlayerData.gold == 30, "run gold changes do not mutate the static PlayerData resource")
-	_expect(manager._encounter_combat_flow != null, "run creates an encounter combat flow")
+	var run_setup = manager.get("_run_setup")
+	_expect(run_setup != null, "GameManager composes the run-setup coordinator")
+	if run_setup != null:
+		_expect(
+			run_setup.get_encounter_combat_flow() != null,
+			"run setup creates the encounter combat flow used by event interaction"
+		)
 	_expect(
 		manager.board.card_return_requested.is_connected(manager._on_board_card_return_requested),
 		"GameManager listens for Board guide-card return requests"
