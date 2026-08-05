@@ -1,7 +1,7 @@
 class_name CardData
 extends Resource
 
-enum CardType { ROOT, NORMAL }
+enum CardType { ROOT, NORMAL, GUIDE }
 
 enum CardTag {
 	# 功能
@@ -41,3 +41,4 @@ enum Rarity { COMMON, RARE, EPIC, LEGENDARY }
 
 # 稀有度
 @export var rarity: Rarity = Rarity.COMMON
+
