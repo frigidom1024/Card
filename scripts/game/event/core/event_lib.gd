@@ -2,18 +2,25 @@ class_name EventLib
 extends Resource
 
 @export var entries: Array[EventEntry] = []
-@export var event_scene:PackedScene
+@export var event_scene: PackedScene
+
+
+## Returns each valid template once, preserving EventLib entry order.
+func get_all_templates() -> Array[EventData]:
+	var templates: Array[EventData] = []
+	for entry in entries:
+		if entry == null or entry.event_data == null or entry.event_data in templates:
+			continue
+		templates.append(entry.event_data)
+	return templates
 
 
 ## Returns templates that can be instantiated as one dynamic encounter of the requested type.
 func get_templates_of_type(event_type: EventData.EventType) -> Array[EventData]:
 	var templates: Array[EventData] = []
-	for entry in entries:
-		if entry == null or entry.event_data == null:
-			continue
-		if entry.event_data.event_type != event_type or entry.event_data in templates:
-			continue
-		templates.append(entry.event_data)
+	for template in get_all_templates():
+		if template.event_type == event_type:
+			templates.append(template)
 	return templates
 
 
@@ -33,8 +40,8 @@ func generate_event_datas() -> Array[EventInstance]:
 		if entry.max_count < entry.min_count:
 			push_warning("Skipping invalid event entry: max_count is less than min_count")
 			continue
-		var count = randi_range(entry.min_count, entry.max_count)
-		for i in count:
+		var count := randi_range(entry.min_count, entry.max_count)
+		for index in count:
 			datas.append(entry.event_data.create_instance())
 	return datas
 
