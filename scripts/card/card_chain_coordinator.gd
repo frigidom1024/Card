@@ -3,9 +3,8 @@ extends RefCounted
 
 const CardChainRuleServiceScript := preload("res://scripts/card/card_chain_rule_service.gd")
 
-## Coordinates card-chain reactions after Board commits a normal card placement.
-## This is deliberately outside ExplorationCoordinator: exploration only reacts
-## to the placement after card-domain effects have been resolved.
+## Resolves card-chain reactions after a committed normal card placement.
+## PlacementPipelineCoordinator owns the Board signal subscription and invokes this explicitly.
 signal card_chain_rules_applied(result: BoardPlacementResult, applied_count: int)
 
 var _board: Board
@@ -15,11 +14,7 @@ var _card_chain_rule_service := CardChainRuleServiceScript.new()
 func configure(board: Board) -> bool:
 	if board == null:
 		return false
-	if _board != null and _board.placement_committed.is_connected(_on_placement_committed):
-		_board.placement_committed.disconnect(_on_placement_committed)
 	_board = board
-	if not _board.placement_committed.is_connected(_on_placement_committed):
-		_board.placement_committed.connect(_on_placement_committed)
 	return true
 
 
@@ -38,7 +33,3 @@ func resolve_placement(result: BoardPlacementResult) -> int:
 	)
 	card_chain_rules_applied.emit(result, applied_count)
 	return applied_count
-
-
-func _on_placement_committed(result: BoardPlacementResult) -> void:
-	resolve_placement(result)

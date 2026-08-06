@@ -17,12 +17,12 @@ func _init() -> void:
 
 
 func _run_tests() -> void:
-	_test_board_placement_is_resolved_by_card_chain_coordinator()
+	_test_explicit_placement_resolution_applies_rules_without_board_subscription()
 	_test_guide_placement_does_not_resolve_normal_chain_rules()
 	quit(1 if _failure_count > 0 else 0)
 
 
-func _test_board_placement_is_resolved_by_card_chain_coordinator() -> void:
+func _test_explicit_placement_resolution_applies_rules_without_board_subscription() -> void:
 	var board := _make_board()
 	var coordinator := CardChainCoordinatorScript.new()
 	_expect(coordinator.configure(board), "card-chain coordinator configures with Board")
@@ -40,9 +40,14 @@ func _test_board_placement_is_resolved_by_card_chain_coordinator() -> void:
 		func(_result: BoardPlacementResult, count: int) -> void: applied_counts.append(count)
 	)
 
-	board.placement_committed.emit(result)
+	var has_card_chain_subscription := false
+	for connection in board.placement_committed.get_connections():
+		if connection.callable.get_object() == coordinator:
+			has_card_chain_subscription = true
+	_expect(not has_card_chain_subscription, "CardChainCoordinator does not subscribe to Board placement commits")
 
-	_expect(applied_counts == [1], "Board placement invokes card-chain rules once")
+	_expect(coordinator.resolve_placement(result) == 1, "explicit placement resolution applies card-chain rules")
+	_expect(applied_counts == [1], "explicit placement resolution emits the applied rule count")
 	_expect(added.card_instance.current_points == 3, "rule modifies the newly added card")
 	_expect(source.card_instance.get_rule_trigger_count(0) == 1, "source instance owns rule usage")
 	board.queue_free()
@@ -62,7 +67,7 @@ func _test_guide_placement_does_not_resolve_normal_chain_rules() -> void:
 		BoardPlacementResult.Kind.GUIDE_RESOLVED, guide, guide, [guide], []
 	)
 
-	board.placement_committed.emit(result)
+	coordinator.resolve_placement(result)
 
 	_expect(guide.card_instance.current_points == 1, "GUIDE placement skips normal chain rules")
 	_expect(source.card_instance.get_rule_trigger_count(0) == 0, "GUIDE placement does not consume rule use")

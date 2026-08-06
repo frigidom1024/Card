@@ -290,8 +290,6 @@ func _configure_exploration() -> void:
 		push_error("GameManager could not configure exploration coordinator")
 		_exploration_coordinator = null
 		return
-	if not board.placement_committed.is_connected(_on_board_placement_committed):
-		board.placement_committed.connect(_on_board_placement_committed)
 	if not _exploration_coordinator.event_interaction_requested.is_connected(
 		_on_board_event_triggered
 	):

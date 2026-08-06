@@ -4,7 +4,7 @@ extends RefCounted
 const ExplorationEventServiceScript := preload("res://scripts/game/exploration/exploration_event_service.gd")
 const BossPressureServiceScript := preload("res://scripts/game/exploration/boss_pressure_service.gd")
 
-## Coordinates committed board transactions. Event interaction remains a single path for
+## Responds to placements resolved by PlacementPipelineCoordinator. Event interaction remains a single path for
 ## every event type, including a pursuing Boss.
 signal event_spawned(event_node: BoardEvent)
 signal event_interaction_requested(instance: EventInstance)
