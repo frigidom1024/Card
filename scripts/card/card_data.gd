@@ -29,6 +29,11 @@ enum Rarity { COMMON, RARE, EPIC, LEGENDARY }
 @export var card_type: CardType = CardType.NORMAL
 
 # 战斗属性
+## value remains the store price. max_points is the persistent combat value.
+@export_range(1, 999, 1) var max_points: int = 1
+## Starting armor. Runtime rule effects may increase current armor without a global cap.
+@export_range(0, 999, 1) var armor: int = 0
+# Legacy combat fields retained until the point-combat migration is complete.
 @export var damage: int = 0
 @export var defense: int = 0
 @export var heal: int = 0
