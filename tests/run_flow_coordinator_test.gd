@@ -9,18 +9,22 @@ const STATE_FAILED := 3
 const STATE_FINISHED := 4
 
 
-class RecordingModal extends EventModalCoordinator:
+class RecordingModal:
+	extends EventModalCoordinator
 	var begun_instances: Array[EventInstance] = []
 	var completed_settlements := 0
 
-	func begin(instance: EventInstance, _player_stats: CombatStats, _chain: Array[CardInstance]) -> void:
+	func begin(
+		instance: EventInstance, _player_stats: CombatStats, _chain: Array[CardInstance]
+	) -> void:
 		begun_instances.append(instance)
 
 	func complete_combat_settlement() -> void:
 		completed_settlements += 1
 
 
-class RecordingResolution extends EncounterResolutionCoordinator:
+class RecordingResolution:
+	extends EncounterResolutionCoordinator
 	var apply_result := true
 	var applied_instances: Array[EventInstance] = []
 	var emit_failure_on_defeat := false
@@ -34,7 +38,8 @@ class RecordingResolution extends EncounterResolutionCoordinator:
 		return true
 
 
-class RecordingExploration extends ExplorationCoordinator:
+class RecordingExploration:
+	extends ExplorationCoordinator
 	var faith_echo_requests := 0
 
 	func request_faith_echo() -> bool:
@@ -42,7 +47,17 @@ class RecordingExploration extends ExplorationCoordinator:
 		return true
 
 
-class RecordingCardService extends RunCardService:
+class RecordingFaithEchoEndpoint:
+	extends RefCounted
+	var request_count := 0
+
+	func request() -> bool:
+		request_count += 1
+		return true
+
+
+class RecordingCardService:
+	extends RunCardService
 	var returned_cards: Array[CardEntity] = []
 	var return_allow_overflow: Array[bool] = []
 
@@ -66,6 +81,7 @@ func _run_tests() -> void:
 	_test_resolution_failure_enters_failed_once()
 	_test_boss_victory_enters_finished()
 	_test_faith_echo_and_guide_return_delegate_to_runtime_services()
+	_test_explicit_faith_echo_port_overrides_pipeline_internals()
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -127,7 +143,10 @@ func _test_resolution_failure_enters_failed_once() -> void:
 	fixture.resolution.emit_failure_on_defeat = true
 	var defeat := _result(CombatResult.Outcome.DEFEAT)
 
-	_expect(flow.handle_combat_settlement_request(instance, defeat), "flow accepts applied defeat settlement")
+	_expect(
+		flow.handle_combat_settlement_request(instance, defeat),
+		"flow accepts applied defeat settlement"
+	)
 	_expect(flow.get_state() == STATE_FAILED, "resolution failure enters failed state")
 	_expect(failures == [defeat], "flow forwards resolution failure exactly once")
 	_expect(
@@ -183,6 +202,27 @@ func _test_faith_echo_and_guide_return_delegate_to_runtime_services() -> void:
 	)
 
 
+func _test_explicit_faith_echo_port_overrides_pipeline_internals() -> void:
+	var fixture := _make_started_fixture()
+	var flow = fixture.flow
+	if flow == null:
+		return
+	var endpoint := RecordingFaithEchoEndpoint.new()
+	_expect(flow.has_method("set_faith_echo_request"), "flow exposes an explicit faith-echo port")
+	if not flow.has_method("set_faith_echo_request"):
+		return
+	_expect(
+		flow.call("set_faith_echo_request", Callable(endpoint, "request")),
+		"flow accepts the configured faith-echo port"
+	)
+	fixture.faith.echo_spawn_requested.emit()
+	_expect(endpoint.request_count == 1, "flow invokes the configured faith-echo port")
+	_expect(
+		fixture.exploration.faith_echo_requests == 0,
+		"flow does not reflect into PlacementPipelineCoordinator internals for faith echo"
+	)
+
+
 func _make_started_fixture() -> Dictionary:
 	var fixture := _make_fixture()
 	if fixture.flow != null:
@@ -229,6 +269,11 @@ func _make_fixture() -> Dictionary:
 		flow.configure(context, pipeline, modal, resolution, faith, board),
 		"flow configures all run dependencies"
 	)
+	if flow.has_method("set_faith_echo_request"):
+		_expect(
+			flow.call("set_faith_echo_request", Callable(exploration, "request_faith_echo")),
+			"fixture configures the explicit faith-echo port"
+		)
 	return {
 		"board": board,
 		"card_service": card_service,

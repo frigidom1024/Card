@@ -20,7 +20,14 @@ func _run_tests() -> void:
 
 func _test_valid_preset_initializes_isolated_run_state() -> void:
 	var manager = GameManagerScene.instantiate()
-	_expect(manager.configure_run(RevivalDeck), "valid preset is accepted before GameManager enters the tree")
+	_expect(
+		manager.configure_run(RevivalDeck),
+		"valid preset is accepted before GameManager enters the tree"
+	)
+	_expect(
+		not manager.configure_run(RevivalDeck),
+		"GameManager rejects a second run configuration before scene entry"
+	)
 	root.add_child(manager)
 	await process_frame
 
@@ -30,7 +37,9 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 	)
 
 	var run_card_service = manager.get("_run_card_service")
-	_expect(run_card_service != null, "GameManager composes a dedicated runtime card ownership service")
+	_expect(
+		run_card_service != null, "GameManager composes a dedicated runtime card ownership service"
+	)
 	if run_card_service != null:
 		_expect(
 			run_card_service.get_instances() == manager.cards_inst,
@@ -53,7 +62,9 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 		"run owns a copied nested CombatStatsData resource"
 	)
 	manager.player_data.gold = 1
-	_expect(BasePlayerData.gold == 30, "run gold changes do not mutate the static PlayerData resource")
+	_expect(
+		BasePlayerData.gold == 30, "run gold changes do not mutate the static PlayerData resource"
+	)
 	var run_setup = manager.get("_run_setup")
 	_expect(run_setup != null, "GameManager composes the run-setup coordinator")
 	if run_setup != null:
@@ -61,39 +72,87 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 			run_setup.get_encounter_combat_flow() != null,
 			"run setup creates the encounter combat flow used by event interaction"
 		)
+	_expect(manager.has_method("get_run_context"), "GameManager exposes the composed RunContext")
 	_expect(
-		manager.board.card_return_requested.is_connected(manager._on_board_card_return_requested),
-		"GameManager listens for Board guide-card return requests"
+		manager.has_method("get_run_flow"), "GameManager exposes the composed RunFlowCoordinator"
+	)
+	var context: RunContext = (
+		manager.get_run_context() if manager.has_method("get_run_context") else null
+	)
+	var flow: RunFlowCoordinator = (
+		manager.get_run_flow() if manager.has_method("get_run_flow") else null
+	)
+	_expect(context != null, "GameManager obtains the runtime graph from RunSetupCoordinator")
+	_expect(flow != null, "GameManager configures a run-flow coordinator")
+	if context != null:
+		_expect(
+			context.player_data == manager.player_data, "GameManager reuses RunContext PlayerData"
+		)
+		_expect(
+			context.player_stats == manager.player_stats,
+			"GameManager reuses RunContext CombatStats"
+		)
+		_expect(
+			context.card_service == run_card_service, "GameManager reuses RunContext card service"
+		)
+	if flow != null:
+		_expect(
+			flow.get_state() == RunFlowCoordinator.State.EXPLORING,
+			"configured run flow enters EXPLORING exactly once"
+		)
+	var placement_connections: Array = manager.board.placement_committed.get_connections()
+	_expect(
+		placement_connections.size() == 1, "Board placement has exactly one production subscriber"
+	)
+	if placement_connections.size() == 1:
+		var placement_subscriber: Object = placement_connections[0].callable.get_object()
+		_expect(
+			placement_subscriber is PlacementPipelineCoordinator,
+			"PlacementPipelineCoordinator is the sole Board placement subscriber"
+		)
+		_expect(
+			not placement_subscriber is CardChainCoordinator,
+			"CardChainCoordinator does not subscribe to Board placements directly"
+		)
+	_expect(
+		not manager.board.card_return_requested.is_connected(
+			Callable(manager, "_on_board_card_return_requested")
+		),
+		"GameManager exposes guide return as a compatibility delegate instead of a Board subscriber"
 	)
 	var exploration_coordinator = manager.get("_exploration_coordinator")
-	_expect(exploration_coordinator != null, "GameManager creates a dedicated exploration coordinator")
-	var interaction_controller = manager.get("_event_interaction_controller")
-	_expect(interaction_controller != null, "GameManager creates an event interaction lifecycle controller")
-	_expect(manager.has_method("_on_board_placement_committed"), "GameManager exposes the single Board placement forwarding callback")
 	_expect(
-		manager.board.placement_committed.is_connected(Callable(manager, "_on_board_placement_committed")),
-		"GameManager forwards completed Board placements to the exploration coordinator"
+		exploration_coordinator != null, "GameManager creates a dedicated exploration coordinator"
 	)
-	if exploration_coordinator != null:
-		_expect(
-			exploration_coordinator.event_interaction_requested.is_connected(manager._on_board_event_triggered),
-			"GameManager receives all ordinary event interactions from the coordinator"
-		)
+	var interaction_controller = manager.get("_event_interaction_controller")
+	_expect(
+		interaction_controller != null,
+		"GameManager creates an event interaction lifecycle controller"
+	)
 	_expect(
 		not manager.board.has_signal("event_interaction_requested"),
 		"Board no longer exposes a direct event-interaction signal"
 	)
-	_expect(not manager.board.events.is_empty(), "run setup immediately pre-spawns the configured level events")
+	_expect(
+		not manager.board.events.is_empty(),
+		"run setup immediately pre-spawns the configured level events"
+	)
 	var returned_guide := _make_guide_card()
 	manager.add_child(returned_guide)
 	manager._on_board_card_return_requested(returned_guide)
-	_expect(returned_guide in manager.hand_area.cards, "GameManager returns guide cards through HandArea")
+	_expect(
+		returned_guide in manager.hand_area.cards,
+		"GameManager returns guide cards through HandArea"
+	)
 
 	manager.hand_area.max_hand_size = manager.hand_area.cards.size()
 	var returned_when_full := _make_guide_card()
 	manager.add_child(returned_when_full)
 	manager._on_board_card_return_requested(returned_when_full)
-	_expect(returned_when_full in manager.hand_area.cards, "GameManager never loses a guide card when the hand is full")
+	_expect(
+		returned_when_full in manager.hand_area.cards,
+		"GameManager never loses a guide card when the hand is full"
+	)
 	_expect(
 		manager.hand_area.max_hand_size >= manager.hand_area.cards.size(),
 		"GameManager temporarily expands hand capacity for an already-owned guide card"
@@ -106,7 +165,10 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 func _test_invalid_preset_is_rejected_before_scene_entry() -> void:
 	var invalid_preset = StartingDeckDataScript.new()
 	var manager = GameManagerScene.instantiate()
-	_expect(not manager.configure_run(invalid_preset), "invalid preset is rejected before GameManager enters the tree")
+	_expect(
+		not manager.configure_run(invalid_preset),
+		"invalid preset is rejected before GameManager enters the tree"
+	)
 	manager.free()
 
 
@@ -122,7 +184,11 @@ func _make_guide_card() -> CardEntity:
 func _count_roots(cards: Array) -> int:
 	var count := 0
 	for card in cards:
-		if card != null and card.card_data != null and card.card_data.card_type == CardData.CardType.ROOT:
+		if (
+			card != null
+			and card.card_data != null
+			and card.card_data.card_type == CardData.CardType.ROOT
+		):
 			count += 1
 	return count
 

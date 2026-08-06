@@ -22,6 +22,7 @@ var _modal: EventModalCoordinator
 var _resolution: EncounterResolutionCoordinator
 var _faith: FaithService
 var _board: Board
+var _faith_echo_request: Callable
 var _state := State.UNINITIALIZED
 
 
@@ -33,7 +34,14 @@ func configure(
 	faith: FaithService,
 	board: Board
 ) -> bool:
-	if context == null or pipeline == null or modal == null or resolution == null or faith == null or board == null:
+	if (
+		context == null
+		or pipeline == null
+		or modal == null
+		or resolution == null
+		or faith == null
+		or board == null
+	):
 		return false
 	if not context.is_valid():
 		return false
@@ -44,8 +52,16 @@ func configure(
 	_resolution = resolution
 	_faith = faith
 	_board = board
+	_faith_echo_request = Callable()
 	_state = State.UNINITIALIZED
 	_connect_signals()
+	return true
+
+
+func set_faith_echo_request(request: Callable) -> bool:
+	if not request.is_valid():
+		return false
+	_faith_echo_request = request
 	return true
 
 
@@ -81,7 +97,10 @@ func handle_combat_settlement_request(instance: EventInstance, result: CombatRes
 	if result.outcome == CombatResult.Outcome.DEFEAT:
 		_enter_failed(result)
 		return true
-	if instance.get_event_type() == EventData.EventType.BOSS and result.outcome == CombatResult.Outcome.VICTORY:
+	if (
+		instance.get_event_type() == EventData.EventType.BOSS
+		and result.outcome == CombatResult.Outcome.VICTORY
+	):
 		_state = State.FINISHED
 		run_finished.emit()
 		return true
@@ -113,13 +132,22 @@ func _connect_signals() -> void:
 
 
 func _disconnect_signals() -> void:
-	if _pipeline != null and _pipeline.event_interaction_requested.is_connected(_on_event_interaction_requested):
+	if (
+		_pipeline != null
+		and _pipeline.event_interaction_requested.is_connected(_on_event_interaction_requested)
+	):
 		_pipeline.event_interaction_requested.disconnect(_on_event_interaction_requested)
-	if _modal != null and _modal.combat_settlement_confirmed.is_connected(handle_combat_settlement_request):
+	if (
+		_modal != null
+		and _modal.combat_settlement_confirmed.is_connected(handle_combat_settlement_request)
+	):
 		_modal.combat_settlement_confirmed.disconnect(handle_combat_settlement_request)
 	if _modal != null and _modal.combat_started.is_connected(_forward_combat_started):
 		_modal.combat_started.disconnect(_forward_combat_started)
-	if _resolution != null and _resolution.exploration_failed.is_connected(_on_resolution_exploration_failed):
+	if (
+		_resolution != null
+		and _resolution.exploration_failed.is_connected(_on_resolution_exploration_failed)
+	):
 		_resolution.exploration_failed.disconnect(_on_resolution_exploration_failed)
 	if _faith != null and _faith.faith_changed.is_connected(_forward_faith_changed):
 		_faith.faith_changed.disconnect(_forward_faith_changed)
@@ -159,13 +187,5 @@ func _forward_faith_changed(current_faith: int) -> void:
 
 
 func _on_faith_echo_spawn_requested() -> void:
-	var exploration := _get_current_exploration()
-	if exploration != null:
-		exploration.request_faith_echo()
-
-
-func _get_current_exploration() -> ExplorationCoordinator:
-	if _pipeline == null:
-		return null
-	# Compatibility bridge until Task 4 supplies the narrow explicit port.
-	return _pipeline.get("_exploration") as ExplorationCoordinator
+	if _faith_echo_request.is_valid():
+		_faith_echo_request.call()
