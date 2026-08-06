@@ -23,7 +23,8 @@ func _run_tests() -> void:
 
 func _test_initialize_failure_clears_partial_runtime_state() -> void:
 	var fixture := _create_fixture()
-	fixture.hand_area.max_hand_size = 0
+	_expect(RevivalDeck.starter_cards.size() > 1, "failure fixture requires multiple starter cards")
+	fixture.hand_area.max_hand_size = 1
 	var coordinator = _create_coordinator()
 	if coordinator == null:
 		await _free_fixture(fixture, null)
@@ -39,7 +40,9 @@ func _test_initialize_failure_clears_partial_runtime_state() -> void:
 		),
 		"run setup accepts dependencies before a failure test"
 	)
-	_expect(not coordinator.initialize(), "run setup rejects a deck that cannot enter the hand")
+	_expect(not coordinator.initialize(), "run setup rejects a deck that cannot fully enter the hand")
+	await process_frame
+	_expect(fixture.hand_area.cards.is_empty(), "failed run setup cleans up the first created starter card")
 	_expect(coordinator.get_context() == null, "failed run setup does not expose a context")
 	_expect(coordinator.get_player_data() == null, "failed run setup clears runtime player data")
 	_expect(coordinator.get_player_stats() == null, "failed run setup clears runtime combat stats")
@@ -52,7 +55,6 @@ func _test_initialize_failure_clears_partial_runtime_state() -> void:
 		coordinator.get_event_interaction_controller() == null,
 		"failed run setup clears the event interaction controller"
 	)
-	_expect(fixture.hand_area.cards.is_empty(), "failed run setup cleans up created starter cards")
 
 	await _free_fixture(fixture, coordinator)
 

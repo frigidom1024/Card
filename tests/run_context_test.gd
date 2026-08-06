@@ -10,6 +10,7 @@ func _init() -> void:
 func _run_tests() -> void:
 	await _test_context_rejects_null_and_repeated_configuration()
 	await _test_context_owns_one_runtime_graph()
+	await _test_runtime_references_are_getter_only()
 	await _test_seeded_random_streams_are_replayable()
 	quit(1 if _failure_count > 0 else 0)
 
@@ -80,6 +81,37 @@ func _test_context_owns_one_runtime_graph() -> void:
 	)
 	_expect(context.combat_flow == flow, "run context preserves the combat flow reference")
 	_expect(context.random == random, "run context preserves the random service reference")
+
+
+func _test_runtime_references_are_getter_only() -> void:
+	var context := RunContext.new()
+	var player := PlayerData.new()
+	var stats := CombatStats.new()
+	var cards := RunCardService.new()
+	var flow := EncounterCombatFlowCoordinator.new(CombatService2.new())
+	var interactions := EventInteractionController.new()
+	var random := RunRandomService.new()
+	_expect(
+		context.configure(player, stats, cards, flow, interactions, random),
+		"run context configures before getter-only reference checks"
+	)
+
+	context.set(&"player_data", PlayerData.new())
+	context.set(&"player_stats", CombatStats.new())
+	context.set(&"card_service", RunCardService.new())
+	context.set(&"combat_flow", EncounterCombatFlowCoordinator.new(CombatService2.new()))
+	context.set(&"event_interaction_controller", EventInteractionController.new())
+	context.set(&"random", RunRandomService.new())
+
+	_expect(context.player_data == player, "player data getter cannot be replaced through Object.set")
+	_expect(context.player_stats == stats, "player stats getter cannot be replaced through Object.set")
+	_expect(context.card_service == cards, "card service getter cannot be replaced through Object.set")
+	_expect(context.combat_flow == flow, "combat flow getter cannot be replaced through Object.set")
+	_expect(
+		context.event_interaction_controller == interactions,
+		"interaction controller getter cannot be replaced through Object.set"
+	)
+	_expect(context.random == random, "random service getter cannot be replaced through Object.set")
 
 
 func _test_seeded_random_streams_are_replayable() -> void:
