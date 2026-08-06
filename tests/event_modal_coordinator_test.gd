@@ -159,6 +159,11 @@ func _test_combat_confirmation_emits_pending_result_without_mutating_encounter()
 
 	_expect(_emitted_instance == fixture.monster_instance, "modal exposes pending encounter for settlement")
 	_expect(monster.stats.hp == hp_before, "modal confirmation does not apply combat mutation")
+	_expect(fixture.combat_view.visible, "modal keeps combat result visible until settlement applies")
+	_expect(
+		fixture.controller.get_pending_combat_instance() == fixture.monster_instance,
+		"modal keeps the combat tuple pending until settlement completes"
+	)
 	await _free_fixture(fixture)
 
 

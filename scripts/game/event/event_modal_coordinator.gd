@@ -72,15 +72,21 @@ func confirm_combat_settlement() -> bool:
 	var result := _controller.get_pending_combat_result()
 	if instance == null or result == null:
 		return false
-	_combat_view.hide_combat()
 	combat_settlement_confirmed.emit(instance, result)
 	return true
 
 
 ## Completes controller lifecycle only after encounter settlement was applied.
 func complete_combat_settlement() -> void:
-	if _controller != null:
-		_controller.confirm_combat_settlement()
+	if _controller == null:
+		return
+	_combat_view.hide_combat()
+	_controller.confirm_combat_settlement()
+
+
+## Retains the input lock after a terminal combat failure releases the normal modal lifecycle.
+func lock_interaction() -> void:
+	_set_interaction_lock(true)
 
 
 func _connect_signals() -> void:
