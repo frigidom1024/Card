@@ -2,7 +2,7 @@ class_name ExplorationEventService
 extends RefCounted
 
 ## Creates level events only from cells made visible by the current exploration transaction.
-signal event_spawned(event_node: BoardEvent)
+signal event_spawned(event_node: BoardEvent)#exploration_coordinator
 
 var _event_lib: EventLib
 var _board: Board

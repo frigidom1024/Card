@@ -6,10 +6,10 @@ const ExplorationEventServiceScript := preload("res://scripts/game/exploration/e
 const BossPressureServiceScript := preload("res://scripts/game/exploration/boss_pressure_service.gd")
 
 ## Coordinates a completed board transaction. Board remains responsible only for spatial state.
-signal fog_revealed(cells: Array[Vector2i])
-signal event_spawned(event_node: BoardEvent)
-signal event_interaction_requested(instance: EventInstance)
-signal boss_registered(event_node: BoardEvent)
+signal fog_revealed(cells: Array[Vector2i]) #暂时外部无监听
+
+signal event_spawned(event_node: BoardEvent)#暂时外部无监听
+signal boss_registered(event_node: BoardEvent) #暂时外部无监听
 
 var _fog_service := FogServiceScript.new()
 var _event_service := ExplorationEventServiceScript.new()
@@ -47,8 +47,6 @@ func resolve_placement(result: BoardPlacementResult) -> void:
 	_event_service.on_cells_revealed(newly_revealed)
 	if boss_before_reveal != null and result.overlapped_event != boss_before_reveal.event_instance:
 		_boss_pressure_service.record_placement(_board, result)
-	if result.overlapped_event != null and not result.overlapped_event.is_resolved:
-		event_interaction_requested.emit(result.overlapped_event)
 
 
 ## Uses the current level EventLib to place one normal residual encounter after a faith consequence.

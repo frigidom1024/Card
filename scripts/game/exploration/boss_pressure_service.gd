@@ -11,7 +11,7 @@ enum Phase {
 	INTERCEPTING,
 }
 
-signal phase_changed(phase: Phase)
+signal phase_changed(phase: Phase) #暂时无监听
 
 var pursuit_enabled := true
 var cards_to_surround: int = 2

@@ -4,7 +4,6 @@ extends Node2D
 const BoardPlacementResultScript = preload("res://scripts/game/board_placement_result.gd")
 
 signal placement_committed(result)
-signal event_interaction_requested(instance: EventInstance)
 signal card_return_requested(card: CardEntity)
 # Temporary compatibility notifications. Exploration will consume placement_committed in task 4.
 signal event_triggered(instance: EventInstance)
@@ -568,8 +567,6 @@ func add_card(card: CardEntity) -> bool:
 ## Publishes the completed spatial transaction. ExplorationCoordinator decides when an event is requested.
 func _publish_placement(result: BoardPlacementResult) -> void:
 	placement_committed.emit(result)
-	if result.kind == BoardPlacementResultScript.Kind.CHAIN_EXTENDED:
-		card_placed.emit(result.source_card)
 
 func _is_guide_card(card: CardEntity) -> bool:
 	return card.card_instance \
