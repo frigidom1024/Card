@@ -91,6 +91,19 @@ func _test_initialize_exposes_runtime_card_and_interaction_services() -> void:
 	_expect(coordinator.get_encounter_combat_flow() != null, "run setup creates combat flow")
 	_expect(coordinator.get_event_interaction_controller() != null, "run setup creates event interaction lifecycle")
 
+	var context = coordinator.get_context()
+	_expect(context != null, "run setup exposes a configured run context")
+	if context != null:
+		_expect(context.is_valid(), "run setup context is valid after initialization")
+		_expect(context.player_data == coordinator.get_player_data(), "context shares runtime player with legacy getter")
+		_expect(context.player_stats == coordinator.get_player_stats(), "context shares runtime stats with legacy getter")
+		_expect(context.card_service == coordinator.get_card_service(), "context shares card service with legacy getter")
+		_expect(context.combat_flow == coordinator.get_encounter_combat_flow(), "context shares combat flow with legacy getter")
+		_expect(
+			context.event_interaction_controller == coordinator.get_event_interaction_controller(),
+			"context shares interaction controller with legacy getter"
+		)
+
 	await _free_fixture(fixture, coordinator)
 
 

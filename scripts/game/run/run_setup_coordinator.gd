@@ -10,6 +10,8 @@ signal initialization_failed(reason: String)
 
 const RunCardServiceScript := preload("res://scripts/game/run/run_card_service.gd")
 const EventInteractionControllerScript := preload("res://scripts/game/event/event_interaction_controller.gd")
+const RunContextScript := preload("res://scripts/game/run/run_context.gd")
+const RunRandomServiceScript := preload("res://scripts/game/run/run_random_service.gd")
 
 var _source_player: PlayerData
 var _starting_deck: StartingDeckData
@@ -22,6 +24,7 @@ var _player_stats: CombatStats
 var _card_service: RunCardService
 var _encounter_combat_flow: EncounterCombatFlowCoordinator
 var _event_interaction_controller: EventInteractionController
+var _context: RunContext
 var _failure_reason := ""
 
 
@@ -71,7 +74,23 @@ func initialize() -> bool:
 	_encounter_combat_flow = EncounterCombatFlowCoordinator.new(_create_combat_service_for_root(root_card))
 	_event_interaction_controller = EventInteractionControllerScript.new()
 	_event_interaction_controller.configure(_encounter_combat_flow)
+
+	var random := RunRandomServiceScript.new()
+	_context = RunContextScript.new()
+	if not _context.configure(
+		_runtime_player,
+		_player_stats,
+		_card_service,
+		_encounter_combat_flow,
+		_event_interaction_controller,
+		random
+	):
+		return _fail("Run setup could not configure RunContext")
 	return true
+
+
+func get_context() -> RunContext:
+	return _context
 
 
 func get_player_data() -> PlayerData:
@@ -104,6 +123,7 @@ func _create_combat_service_for_root(_root_card: CardData) -> CombatService2:
 
 
 func _fail(reason: String) -> bool:
+	_context = null
 	_failure_reason = reason
 	initialization_failed.emit(reason)
 	return false
