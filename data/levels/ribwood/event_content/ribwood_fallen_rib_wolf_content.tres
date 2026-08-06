@@ -2,8 +2,23 @@
 
 [ext_resource type="Script" path="res://scripts/game/event/encounter/monster_event_content.gd" id="content"]
 [ext_resource type="Resource" path="res://data/levels/ribwood/mobs/ribwood_fallen_rib_wolf_echo.tres" id="mob"]
+[ext_resource type="Script" path="res://scripts/game/event/encounter/encounter_drop_entry.gd" id="drop_entry"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_folded_rib_shield.tres" id="folded_rib_shield"]
+
+[sub_resource type="Resource" id="Drop_gold"]
+script = ExtResource("drop_entry")
+kind = 0
+chance = 1.0
+gold_amount = 12
+
+[sub_resource type="Resource" id="Drop_card"]
+script = ExtResource("drop_entry")
+kind = 1
+chance = 0.35
+card_data = ExtResource("folded_rib_shield")
 
 [resource]
 script = ExtResource("content")
 mob = ExtResource("mob")
 count = 1
+drop_entries = Array[ExtResource("drop_entry")]([SubResource("Drop_gold"), SubResource("Drop_card")])

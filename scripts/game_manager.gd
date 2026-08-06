@@ -1,11 +1,17 @@
 extends Node
 
-const ExplorationCoordinatorScript := preload("res://scripts/game/exploration/exploration_coordinator.gd")
-const EncounterResolutionCoordinatorScript := preload("res://scripts/game/event/encounter/encounter_resolution_coordinator.gd")
+const ExplorationCoordinatorScript := preload(
+	"res://scripts/game/exploration/exploration_coordinator.gd"
+)
+const EncounterResolutionCoordinatorScript := preload(
+	"res://scripts/game/event/encounter/encounter_resolution_coordinator.gd"
+)
 const FaithServiceScript := preload("res://scripts/player/faith_service.gd")
 const MarketPricingServiceScript := preload("res://scripts/game/market/market_pricing_service.gd")
 const RunSetupCoordinatorScript := preload("res://scripts/game/run/run_setup_coordinator.gd")
-const PersistentMarketCoordinatorScript := preload("res://scripts/game/market/persistent_market_coordinator.gd")
+const PersistentMarketCoordinatorScript := preload(
+	"res://scripts/game/market/persistent_market_coordinator.gd"
+)
 const EventModalCoordinatorScript := preload("res://scripts/game/event/event_modal_coordinator.gd")
 
 signal combat_started(instance: EventInstance, monster: MobInstance)
@@ -40,6 +46,7 @@ var _market_pricing := MarketPricingServiceScript.new()
 var _persistent_market_coordinator: PersistentMarketCoordinator
 var _event_modal_coordinator: EventModalCoordinator
 var _market_rng := RandomNumberGenerator.new()
+var _encounter_reward_rng := RandomNumberGenerator.new()
 var _faith_service := FaithServiceScript.new()
 var _is_exploration_failed := false
 var _run_card_service: RunCardService
@@ -83,8 +90,12 @@ func _ready() -> void:
 	if _persistent_market_coordinator != null:
 		_persistent_market_coordinator.connect_drag_layer(drag_layer, hand_tray)
 	_configure_event_modal()
-	if not drag_layer.chain_retraction_confirmed.is_connected(_faith_service.resolve_confirmed_chain_retraction):
-		drag_layer.chain_retraction_confirmed.connect(_faith_service.resolve_confirmed_chain_retraction)
+	if not drag_layer.chain_retraction_confirmed.is_connected(
+		_faith_service.resolve_confirmed_chain_retraction
+	):
+		drag_layer.chain_retraction_confirmed.connect(
+			_faith_service.resolve_confirmed_chain_retraction
+		)
 	if not board.card_return_requested.is_connected(_on_board_card_return_requested):
 		board.card_return_requested.connect(_on_board_card_return_requested)
 
@@ -97,12 +108,13 @@ func _ready() -> void:
 	if not viewport.size_changed.is_connected(_center_layout):
 		viewport.size_changed.connect(_center_layout)
 
+
 func _sync_hand_tray(
-	current_count: int = hand_area.get_card_count(),
-	max_count: int = hand_area.max_hand_size
+	current_count: int = hand_area.get_card_count(), max_count: int = hand_area.max_hand_size
 ) -> void:
 	if hand_tray != null:
 		hand_tray.set_hand_count(current_count, max_count)
+
 
 func _initialize_run_state() -> bool:
 	if starting_deck == null:
@@ -124,6 +136,7 @@ func _initialize_run_state() -> bool:
 	cards_inst = _run_card_service.get_instances()
 	card_entities = _run_card_service.get_entities()
 	_faith_service.configure(player_data)
+	_encounter_reward_rng.randomize()
 	return true
 
 
@@ -144,7 +157,12 @@ func _on_faith_changed(current_faith: int) -> void:
 
 
 func _configure_persistent_market() -> void:
-	if persistent_market == null or card_manager == null or card_manager.card_lib == null or player_data == null:
+	if (
+		persistent_market == null
+		or card_manager == null
+		or card_manager.card_lib == null
+		or player_data == null
+	):
 		return
 	_market_rng.randomize()
 	_persistent_market_coordinator = PersistentMarketCoordinatorScript.new()
@@ -182,11 +200,21 @@ func _configure_event_modal() -> void:
 		return
 	if not _event_modal_coordinator.combat_started.is_connected(_forward_combat_started):
 		_event_modal_coordinator.combat_started.connect(_forward_combat_started)
-	if not _event_modal_coordinator.combat_settlement_confirmed.is_connected(_on_modal_combat_settlement_confirmed):
-		_event_modal_coordinator.combat_settlement_confirmed.connect(_on_modal_combat_settlement_confirmed)
-	if not _event_modal_coordinator.interaction_lock_changed.is_connected(_on_modal_interaction_lock_changed):
-		_event_modal_coordinator.interaction_lock_changed.connect(_on_modal_interaction_lock_changed)
-	if not _event_modal_coordinator.event_display_refresh_requested.is_connected(_refresh_event_display):
+	if not _event_modal_coordinator.combat_settlement_confirmed.is_connected(
+		_on_modal_combat_settlement_confirmed
+	):
+		_event_modal_coordinator.combat_settlement_confirmed.connect(
+			_on_modal_combat_settlement_confirmed
+		)
+	if not _event_modal_coordinator.interaction_lock_changed.is_connected(
+		_on_modal_interaction_lock_changed
+	):
+		_event_modal_coordinator.interaction_lock_changed.connect(
+			_on_modal_interaction_lock_changed
+		)
+	if not _event_modal_coordinator.event_display_refresh_requested.is_connected(
+		_refresh_event_display
+	):
 		_event_modal_coordinator.event_display_refresh_requested.connect(_refresh_event_display)
 	if not _event_modal_coordinator.unsupported_event.is_connected(_on_unsupported_modal_event):
 		_event_modal_coordinator.unsupported_event.connect(_on_unsupported_modal_event)
@@ -208,7 +236,9 @@ func set_player_temporary_status(status_text: String) -> void:
 
 func _on_echo_spawn_requested() -> void:
 	if _exploration_coordinator == null:
-		push_warning("Faith consequence could not request an exploration encounter before the level was configured")
+		push_warning(
+			"Faith consequence could not request an exploration encounter before the level was configured"
+		)
 		return
 	_exploration_coordinator.request_faith_echo()
 
@@ -220,9 +250,11 @@ func _configure_encounter_resolution() -> void:
 	if not _encounter_resolution.configure(
 		board,
 		player_stats,
+		player_data,
 		_run_card_service,
 		_exploration_coordinator,
-		Callable(self, "_sync_pilgrim_crest")
+		Callable(self, "_sync_pilgrim_crest"),
+		_encounter_reward_rng
 	):
 		push_error("GameManager could not configure encounter resolution")
 		return
@@ -247,7 +279,9 @@ func _configure_exploration() -> void:
 		return
 	if not board.placement_committed.is_connected(_on_board_placement_committed):
 		board.placement_committed.connect(_on_board_placement_committed)
-	if not _exploration_coordinator.event_interaction_requested.is_connected(_on_board_event_triggered):
+	if not _exploration_coordinator.event_interaction_requested.is_connected(
+		_on_board_event_triggered
+	):
 		_exploration_coordinator.event_interaction_requested.connect(_on_board_event_triggered)
 	_exploration_coordinator.initialize_events()
 
@@ -286,7 +320,12 @@ func _on_board_card_return_requested(card: CardEntity) -> void:
 
 
 func _on_board_event_triggered(instance: EventInstance) -> void:
-	if _is_exploration_failed or _event_modal_coordinator == null or instance == null or instance.is_resolved:
+	if (
+		_is_exploration_failed
+		or _event_modal_coordinator == null
+		or instance == null
+		or instance.is_resolved
+	):
 		return
 	_event_modal_coordinator.begin(instance, player_stats, board.get_combat_card_chain())
 

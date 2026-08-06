@@ -15,7 +15,9 @@ var _instances: Array[CardInstance] = []
 var _entities: Array[CardEntity] = []
 
 
-func configure(next_card_manager: Node2D, next_hand_area: HandArea, next_drag_layer: Node2D) -> bool:
+func configure(
+	next_card_manager: Node2D, next_hand_area: HandArea, next_drag_layer: Node2D
+) -> bool:
 	if next_card_manager == null or next_hand_area == null or next_drag_layer == null:
 		return false
 	card_manager = next_card_manager
@@ -29,7 +31,9 @@ func initialize_starting_deck(starting_deck: StartingDeckData) -> bool:
 		return false
 	clear()
 
-	var starter_instances: Array[CardInstance] = card_manager.create_starting_instances(starting_deck)
+	var starter_instances: Array[CardInstance] = card_manager.create_starting_instances(
+		starting_deck
+	)
 	if starter_instances.size() != starting_deck.starter_cards.size():
 		return false
 	for instance in starter_instances:
@@ -47,10 +51,31 @@ func grant_to_hand(card_data: CardData) -> bool:
 	return _add_new_instance_to_hand(instance)
 
 
+## Grants a newly earned card without permanently changing the normal hand limit.
+## Encounter drops use this so a full hand never destroys an already won reward.
+func grant_to_hand_temporarily(card_data: CardData) -> bool:
+	if not _is_configured() or card_data == null:
+		return false
+	var previous_max_hand_size := hand_area.max_hand_size
+	var used_temporary_overflow := hand_area.is_full()
+	if used_temporary_overflow:
+		hand_area.max_hand_size = hand_area.cards.size() + 1
+	var granted := grant_to_hand(card_data)
+	if used_temporary_overflow:
+		hand_area.max_hand_size = previous_max_hand_size
+		hand_area.hand_count_changed.emit(hand_area.cards.size(), hand_area.max_hand_size)
+	return granted
+
+
 ## Adds an already existing card to hand. GUIDE cards use allow_overflow so they
 ## cannot be lost solely because the hand reached its normal size limit.
 func return_existing_to_hand(card: CardEntity, allow_overflow := false) -> bool:
-	if not _is_configured() or card == null or not is_instance_valid(card) or card in hand_area.cards:
+	if (
+		not _is_configured()
+		or card == null
+		or not is_instance_valid(card)
+		or card in hand_area.cards
+	):
 		return false
 	if hand_area.is_full():
 		if not allow_overflow:
@@ -68,8 +93,11 @@ func return_existing_to_hand_temporarily(card: CardEntity) -> bool:
 	if not _is_configured():
 		return false
 	var previous_max_hand_size := hand_area.max_hand_size
+	var used_temporary_overflow := hand_area.is_full()
 	var returned := return_existing_to_hand(card, true)
-	hand_area.max_hand_size = previous_max_hand_size
+	if used_temporary_overflow:
+		hand_area.max_hand_size = previous_max_hand_size
+		hand_area.hand_count_changed.emit(hand_area.cards.size(), hand_area.max_hand_size)
 	return returned
 
 

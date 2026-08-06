@@ -9,35 +9,60 @@ signal exploration_failed(result: CombatResult)
 
 var _board: Board
 var _player_stats: CombatStats
+var _player_data: PlayerData
 var _card_service: RunCardService
 var _exploration: ExplorationCoordinator
 var _on_player_state_changed: Callable
+var _reward_rng: RandomNumberGenerator
+var _reward_resolver := EncounterRewardResolver.new()
 
 
 func configure(
 	board: Board,
 	player_stats: CombatStats,
+	player_data: PlayerData,
 	card_service: RunCardService,
 	exploration: ExplorationCoordinator,
-	on_player_state_changed: Callable
+	on_player_state_changed: Callable,
+	reward_rng: RandomNumberGenerator
 ) -> bool:
-	if board == null or player_stats == null or card_service == null or exploration == null or not on_player_state_changed.is_valid():
+	if (
+		board == null
+		or player_stats == null
+		or player_data == null
+		or card_service == null
+		or exploration == null
+		or not on_player_state_changed.is_valid()
+		or reward_rng == null
+	):
 		return false
 	_board = board
 	_player_stats = player_stats
+	_player_data = player_data
 	_card_service = card_service
 	_exploration = exploration
 	_on_player_state_changed = on_player_state_changed
+	_reward_rng = reward_rng
 	return true
 
 
 func apply(instance: EventInstance, result: CombatResult) -> bool:
-	if instance == null or result == null or _board == null or _player_stats == null:
+	if (
+		instance == null
+		or result == null
+		or _board == null
+		or _player_stats == null
+		or _player_data == null
+		or _card_service == null
+		or _exploration == null
+		or _reward_rng == null
+	):
 		return false
 	match result.outcome:
 		CombatResult.Outcome.VICTORY:
 			_apply_player_combat_state(result.player_stats_after)
 			_apply_monster_combat_state(instance, result.monster_stats_after)
+			_apply_victory_rewards(instance)
 			instance.resolve()
 			if instance.get_event_type() == EventData.EventType.BOSS:
 				_exploration.dismiss_defeated_boss(instance)
@@ -45,7 +70,9 @@ func apply(instance: EventInstance, result: CombatResult) -> bool:
 				_refresh_event_display(instance)
 		CombatResult.Outcome.RETREAT:
 			_apply_player_combat_state(result.player_stats_after)
-			_apply_monster_combat_state(instance, result.monster_stats_after, result.monster_action_index_after)
+			_apply_monster_combat_state(
+				instance, result.monster_stats_after, result.monster_action_index_after
+			)
 			_return_tail_card_to_hand()
 			_strengthen_encounter_monster(instance)
 			_refresh_event_display(instance)
@@ -55,6 +82,7 @@ func apply(instance: EventInstance, result: CombatResult) -> bool:
 			exploration_failed.emit(result)
 		_:
 			return false
+	_on_player_state_changed.call()
 	return true
 
 
@@ -63,7 +91,19 @@ func _apply_player_combat_state(result_stats: CombatStats) -> void:
 		return
 	_player_stats.hp = result_stats.hp
 	_player_stats.defense = 0
-	_on_player_state_changed.call()
+
+
+func _apply_victory_rewards(instance: EventInstance) -> void:
+	if instance == null:
+		return
+	var content := instance.get_content() as EncounterEventContent
+	if content == null:
+		return
+	var rewards := _reward_resolver.resolve(content, _reward_rng)
+	_player_data.gold += rewards.gold
+	for card_data in rewards.cards:
+		if not _card_service.grant_to_hand_temporarily(card_data):
+			push_error("VICTORY failed to grant encounter reward card")
 
 
 func _apply_monster_combat_state(
