@@ -235,7 +235,7 @@ func _on_encounter_exploration_failed(result: CombatResult) -> void:
 	exploration_failed.emit(result)
 
 
-## Creates the exploration facade; fog, event scheduling, and Boss pressure stay inside it.
+## Creates the exploration facade; placement spawning and Boss pressure stay inside it.
 func _configure_exploration() -> void:
 	if event_lib == null or exploration_config == null:
 		push_warning("GameManager is missing level exploration data")
@@ -249,6 +249,7 @@ func _configure_exploration() -> void:
 		board.placement_committed.connect(_on_board_placement_committed)
 	if not _exploration_coordinator.event_interaction_requested.is_connected(_on_board_event_triggered):
 		_exploration_coordinator.event_interaction_requested.connect(_on_board_event_triggered)
+	_exploration_coordinator.initialize_events()
 
 
 func _on_board_placement_committed(result: BoardPlacementResult) -> void:

@@ -6,9 +6,9 @@ const EventScene := preload("res://scenes/game/event.tscn")
 const EventDataScript := preload("res://scripts/game/event/core/event_data.gd")
 const EventEntryScript := preload("res://scripts/game/event/core/event_entry.gd")
 const EventLibScript := preload("res://scripts/game/event/core/event_lib.gd")
+const EventSpawnCandidateScript := preload("res://scripts/game/exploration/event_spawn_candidate.gd")
 const ExplorationConfigScript := preload("res://scripts/game/exploration/exploration_config.gd")
 const ExplorationCoordinatorScript := preload("res://scripts/game/exploration/exploration_coordinator.gd")
-const BossPressureServiceScript := preload("res://scripts/game/exploration/boss_pressure_service.gd")
 
 var _failure_count := 0
 
@@ -18,223 +18,112 @@ func _init() -> void:
 
 
 func _run_tests() -> void:
-	_test_chain_extension_reveals_then_spawns_then_requests_event()
-	_test_guide_reveals_new_cells_without_advancing_boss_pressure()
-	_test_disabled_boss_pursuit_keeps_revealed_boss_stationary()
-	_test_contacted_boss_does_not_move_before_interaction()
-	_test_newly_revealed_boss_does_not_consume_its_first_pressure_count()
-	_test_defeated_intercepting_boss_is_removed_from_event_grid()
+	_test_initial_events_are_visible_after_initialization()
+	_test_root_and_normal_placements_generate_but_guide_does_not()
 	_test_boss_contact_uses_the_same_event_request_path_as_monster()
+	_test_defeated_boss_is_removed_from_event_grid()
 	quit(1 if _failure_count > 0 else 0)
 
 
-func _test_chain_extension_reveals_then_spawns_then_requests_event() -> void:
+func _test_initial_events_are_visible_after_initialization() -> void:
 	var board := _make_board()
+	var event_lib := _make_event_lib()
+	var config := _make_config()
+	config.spawn_config.initial_event_count_min = 2
+	config.spawn_config.initial_event_count_max = 2
+	config.spawn_config.initial_event_pool.append(_candidate(event_lib.entries[0].event_data))
 	var coordinator := ExplorationCoordinatorScript.new()
-	var config := _make_config([1], 99)
-	_expect(coordinator.configure(_make_event_lib([EventData.EventType.MONSTER]), board, config), "coordinator accepts valid exploration dependencies")
-
-	var source_card := _make_card(board, CardData.CardType.NORMAL)
-	var contacted := _make_event_template("contact_echo", EventData.EventType.MONSTER).create_instance()
-	contacted.origin = Vector2i(1, 1)
-	_expect(_attach_event(board, contacted), "contact event attaches before the placement is resolved")
-
-	var signal_order: Array[String] = []
-	coordinator.fog_revealed.connect(func(_cells: Array[Vector2i]) -> void:
-		signal_order.append("fog_revealed")
-	)
-	coordinator.event_spawned.connect(func(_event_node: BoardEvent) -> void:
-		signal_order.append("event_spawned")
-	)
-	coordinator.event_interaction_requested.connect(func(instance: EventInstance) -> void:
-		signal_order.append("event_interaction_requested")
-		_expect(instance == contacted, "the interaction request retains the originally contacted event")
-	)
-
-	var result := _make_result(source_card, [Vector2i(1, 1), Vector2i(4, 4)], contacted)
-	coordinator.resolve_placement(result)
-
-	_expect(signal_order == ["fog_revealed", "event_spawned", "event_interaction_requested"], "exploration resolves in reveal, spawn, then ordinary event request order")
+	_expect(coordinator.configure(event_lib, board, config), "coordinator accepts placement spawn configuration")
+	_expect(coordinator.initialize_events() == 2, "coordinator initializes configured events")
+	_expect(board.events.size() == 2, "initial events are visible immediately")
 	board.queue_free()
 
 
-func _test_guide_reveals_new_cells_without_advancing_boss_pressure() -> void:
+func _test_root_and_normal_placements_generate_but_guide_does_not() -> void:
 	var board := _make_board()
-	var root_card := _place_root(board)
+	var event_lib := _make_event_lib()
+	var config := _make_config()
+	config.spawn_config.placement_spawn_count_weights = {0: 0, 1: 1, 2: 0}
+	config.spawn_config.placement_event_pool.append(_candidate(event_lib.entries[0].event_data))
+	config.spawn_config.boss_spawn_after_placements = 99
 	var coordinator := ExplorationCoordinatorScript.new()
-	_expect(coordinator.configure(_make_event_lib([EventData.EventType.BOSS]), board, _make_config([], 1, true, 1, 1)), "guide pressure setup configures coordinator")
-	coordinator.resolve_placement(_make_result(root_card, board.get_card_cells(root_card.global_position, root_card.rotation_degrees)))
-	_expect(coordinator.get_boss_phase() == BossPressureServiceScript.Phase.ACTIVE, "first reveal registers an active Boss")
-	var revealed_before := coordinator.get_revealed_count()
+	_expect(coordinator.configure(event_lib, board, config), "coordinator configures placement pacing")
+	var root_card := _make_card(board, CardData.CardType.ROOT)
+	coordinator.resolve_placement(_make_result(root_card))
+	_expect(board.events.size() == 1, "ROOT placement spawns one ordinary event")
+	_expect(coordinator.get_exploration_placement_count() == 1, "ROOT increments exploration placement count")
 
 	var guide := _make_card(board, CardData.CardType.GUIDE)
-	coordinator.resolve_placement(_make_result(guide, [Vector2i(6, 4)], null, BoardPlacementResult.Kind.GUIDE_RESOLVED))
-
-	_expect(coordinator.get_revealed_count() > revealed_before, "guide resolution still reveals new fog")
-	_expect(coordinator.get_boss_phase() == BossPressureServiceScript.Phase.ACTIVE, "guide resolution does not advance Boss pressure")
-	board.queue_free()
-
-
-func _test_disabled_boss_pursuit_keeps_revealed_boss_stationary() -> void:
-	var board := _make_board()
-	var root_card := _place_root(board)
-	var coordinator := ExplorationCoordinatorScript.new()
-	_expect(coordinator.configure(_make_event_lib([EventData.EventType.BOSS]), board, _make_config([], 1, false, 1, 1)), "disabled pursuit configures coordinator")
-	coordinator.resolve_placement(_make_result(root_card, board.get_card_cells(root_card.global_position, root_card.rotation_degrees)))
-	var boss := coordinator.get_boss_event()
-	_expect(boss != null, "the Boss is revealed even while pursuit is disabled")
-	if boss != null:
-		var original_origin := boss.event_instance.origin
-		var normal := _make_card(board, CardData.CardType.NORMAL)
-		coordinator.resolve_placement(_make_result(normal, [Vector2i(6, 4)]))
-		_expect(coordinator.get_boss_phase() == BossPressureServiceScript.Phase.ACTIVE, "disabled pursuit keeps the revealed Boss active")
-		_expect(boss.event_instance.origin == original_origin, "disabled pursuit leaves the ordinary Boss event stationary")
-	board.queue_free()
-
-
-func _test_contacted_boss_does_not_move_before_interaction() -> void:
-	var board := _make_board()
-	var root_card := _place_root(board)
-	var coordinator := ExplorationCoordinatorScript.new()
-	_expect(coordinator.configure(_make_event_lib([EventData.EventType.BOSS]), board, _make_config([], 1, true, 1, 1)), "contact setup configures coordinator")
-	coordinator.resolve_placement(_make_result(root_card, board.get_card_cells(root_card.global_position, root_card.rotation_degrees)))
-	var boss := coordinator.get_boss_event()
-	_expect(boss != null, "contact setup reveals Boss")
-	if boss == null:
-		board.queue_free()
-		return
-
-	var normal := _make_card(board, CardData.CardType.NORMAL)
-	coordinator.resolve_placement(_make_result(normal, [Vector2i(6, 4)]))
-	_expect(coordinator.get_boss_phase() == BossPressureServiceScript.Phase.SURROUNDING, "ordinary extension advances Boss into surrounding phase")
-	var contacted_origin := boss.event_instance.origin
-	var requests: Array[EventInstance] = []
-	coordinator.event_interaction_requested.connect(func(instance: EventInstance) -> void:
-		requests.append(instance)
-	)
-	coordinator.resolve_placement(_make_result(normal, [Vector2i(7, 5)], boss.event_instance))
-
-	_expect(boss.event_instance.origin == contacted_origin, "contacted Boss is not moved before its ordinary interaction request")
-	_expect(requests == [boss.event_instance], "contacted Boss uses the coordinator event request")
-	board.queue_free()
-
-
-func _test_newly_revealed_boss_does_not_consume_its_first_pressure_count() -> void:
-	var board := _make_board()
-	var root_card := _place_root(board)
-	var coordinator := ExplorationCoordinatorScript.new()
-	_expect(coordinator.configure(_make_event_lib([EventData.EventType.BOSS]), board, _make_config([], 1, true, 1, 1)), "new Boss pressure setup configures coordinator")
-	coordinator.resolve_placement(_make_result(root_card, board.get_card_cells(root_card.global_position, root_card.rotation_degrees)))
-
-	_expect(coordinator.get_boss_phase() == BossPressureServiceScript.Phase.ACTIVE, "a newly revealed Boss starts active with zero pressure progress")
-	var normal := _make_card(board, CardData.CardType.NORMAL)
-	coordinator.resolve_placement(_make_result(normal, [Vector2i(6, 4)]))
-	_expect(coordinator.get_boss_phase() == BossPressureServiceScript.Phase.SURROUNDING, "only the following ordinary extension advances the newly revealed Boss")
-	board.queue_free()
-
-
-func _test_defeated_intercepting_boss_is_removed_from_event_grid() -> void:
-	var board := _make_board()
-	var root_card := _place_root(board)
-	var coordinator := ExplorationCoordinatorScript.new()
-	_expect(coordinator.configure(_make_event_lib([EventData.EventType.BOSS]), board, _make_config([], 1, true, 1, 1)), "dismissal setup configures coordinator")
-	coordinator.resolve_placement(_make_result(root_card, board.get_card_cells(root_card.global_position, root_card.rotation_degrees)))
-	var boss := coordinator.get_boss_event()
-	_expect(boss != null, "dismissal setup reveals Boss")
-	if boss == null:
-		board.queue_free()
-		return
-	var intercept_cell := board.get_placement_cell(root_card)
-	_expect(board.move_event(boss, intercept_cell), "ordinary Boss event can occupy the chain forward cell")
-	_expect(coordinator.dismiss_defeated_boss(boss.event_instance), "coordinator dismisses a defeated Boss through Board event removal")
-	_expect(boss not in board.events, "dismissed Boss no longer belongs to the Board event collection")
-	_expect(board.get_overlapping_unresolved_event([intercept_cell]) == null, "dismissal releases the Boss event cell")
-	var candidate := _make_card(board, CardData.CardType.NORMAL)
-	candidate.position = board.grid_to_world_center(intercept_cell)
-	candidate.rotation_degrees = 90.0
-	_expect(board.can_place_card(board.get_card_cells(candidate.global_position, candidate.rotation_degrees), candidate), "released intercept cell remains a legal chain placement")
+	coordinator.resolve_placement(_make_result(guide, BoardPlacementResult.Kind.GUIDE_RESOLVED))
+	_expect(board.events.size() == 1, "GUIDE placement does not spawn an ordinary event")
+	_expect(coordinator.get_exploration_placement_count() == 1, "GUIDE placement does not increment exploration placement count")
 	board.queue_free()
 
 
 func _test_boss_contact_uses_the_same_event_request_path_as_monster() -> void:
 	var board := _make_board()
+	var event_lib := _make_event_lib()
+	var config := _make_config()
 	var coordinator := ExplorationCoordinatorScript.new()
-	_expect(coordinator.configure(_make_event_lib([]), board, _make_config([], 99)), "shared interaction-path setup configures coordinator")
-	var monster := _make_event_template("ordinary_echo", EventData.EventType.MONSTER).create_instance()
-	monster.origin = Vector2i(1, 1)
-	var boss := _make_event_template("ordinary_boss", EventData.EventType.BOSS).create_instance()
-	boss.origin = Vector2i(5, 4)
-	_expect(_attach_event(board, monster), "ordinary echo attaches")
-	_expect(_attach_event(board, boss), "ordinary Boss attaches through the same Board API")
-	var source_card := _make_card(board, CardData.CardType.NORMAL)
+	_expect(coordinator.configure(event_lib, board, config), "coordinator configures ordinary event interaction")
 	var requested: Array[EventInstance] = []
 	coordinator.event_interaction_requested.connect(func(instance: EventInstance) -> void:
 		requested.append(instance)
 	)
-
-	coordinator.resolve_placement(_make_result(source_card, [Vector2i(1, 1)], monster))
-	coordinator.resolve_placement(_make_result(source_card, [Vector2i(5, 4)], boss))
-
-	_expect(requested == [monster, boss], "monster and Boss contact both use the single ordinary event request signal")
+	var source_card := _make_card(board, CardData.CardType.NORMAL)
+	var monster := _attach_event(board, event_lib.entries[0].event_data.create_instance(), Vector2i(0, 0))
+	var boss := _attach_event(board, event_lib.entries[1].event_data.create_instance(), Vector2i(5, 4))
+	coordinator.resolve_placement(_make_result(source_card, BoardPlacementResult.Kind.CHAIN_EXTENDED, monster.event_instance))
+	coordinator.resolve_placement(_make_result(source_card, BoardPlacementResult.Kind.CHAIN_EXTENDED, boss.event_instance))
+	_expect(requested == [monster.event_instance, boss.event_instance], "monster and Boss contact use the same ordinary event request signal")
 	board.queue_free()
 
 
-func _make_board() -> Board:
+func _test_defeated_boss_is_removed_from_event_grid() -> void:
+	var board := _make_board()
+	var event_lib := _make_event_lib()
+	var coordinator := ExplorationCoordinatorScript.new()
+	_expect(coordinator.configure(event_lib, board, _make_config()), "coordinator configures Boss removal")
+	var boss := _attach_event(board, event_lib.entries[1].event_data.create_instance(), Vector2i(2, 2))
+	_expect(coordinator.dismiss_defeated_boss(boss.event_instance), "defeated Boss is removed by coordinator")
+	_expect(board.events.is_empty(), "removed Boss no longer occupies the event grid")
+	board.queue_free()
+
+
+func _make_board(width: int = 8, height: int = 6) -> Board:
 	var board := BoardScene.instantiate() as Board
-	board.width = 8
-	board.height = 6
+	board.width = width
+	board.height = height
 	root.add_child(board)
 	return board
 
 
-func _place_root(board: Board) -> CardEntity:
-	var root_card := _make_card(board, CardData.CardType.ROOT)
-	root_card.position = Vector2(280, 280)
-	root_card.rotation_degrees = 0.0
-	_expect(board.add_card(root_card), "root card establishes a real Board chain")
-	return root_card
-
-
-func _make_result(source: CardEntity, cells: Array[Vector2i], overlap: EventInstance = null, kind: BoardPlacementResult.Kind = BoardPlacementResult.Kind.CHAIN_EXTENDED) -> BoardPlacementResult:
-	return BoardPlacementResult.new(
-		kind,
-		source,
-		source,
-		[source],
-		cells,
-		overlap
-	)
-
-
-func _make_config(
-	thresholds: Array[int],
-	boss_threshold: int,
-	pursuit_enabled: bool = true,
-	surround_threshold: int = 2,
-	intercept_threshold: int = 2
-) -> ExplorationConfig:
+func _make_config() -> ExplorationConfig:
 	var config := ExplorationConfigScript.new()
-	config.scheduled_event_reveal_thresholds = thresholds
-	config.boss_reveal_threshold = boss_threshold
-	config.boss_pursuit_enabled = pursuit_enabled
-	config.cards_to_boss_surround = surround_threshold
-	config.cards_to_boss_intercept = intercept_threshold
+	config.spawn_config = ExplorationSpawnConfig.new()
+	config.spawn_config.initial_event_count_min = 0
+	config.spawn_config.initial_event_count_max = 0
+	config.spawn_config.placement_spawn_count_weights = {0: 1, 1: 0, 2: 0}
+	config.spawn_config.boss_spawn_after_placements = 99
+	config.spawn_config.max_unresolved_events = 8
+	config.boss_pursuit_enabled = true
+	config.cards_to_boss_surround = 2
+	config.cards_to_boss_intercept = 2
 	return config
 
 
-func _make_event_lib(event_types: Array[int]) -> EventLib:
+func _make_event_lib() -> EventLib:
 	var event_lib := EventLibScript.new()
 	event_lib.event_scene = EventScene
-	for index in event_types.size():
-		var entry := EventEntryScript.new()
-		entry.event_data = _make_event_template("test_event_%d" % index, event_types[index])
-		entry.min_count = 1
-		entry.max_count = 1
-		event_lib.entries.append(entry)
+	var monster_entry := EventEntryScript.new()
+	monster_entry.event_data = _make_template("monster_echo", EventData.EventType.MONSTER)
+	var boss_entry := EventEntryScript.new()
+	boss_entry.event_data = _make_template("boss_echo", EventData.EventType.BOSS)
+	event_lib.entries = [monster_entry, boss_entry]
 	return event_lib
 
 
-func _make_event_template(event_id: String, event_type: EventData.EventType) -> EventData:
+func _make_template(event_id: String, event_type: EventData.EventType) -> EventData:
 	var template := EventDataScript.new()
 	template.event_id = event_id
 	template.event_type = event_type
@@ -242,10 +131,19 @@ func _make_event_template(event_id: String, event_type: EventData.EventType) -> 
 	return template
 
 
-func _attach_event(board: Board, instance: EventInstance) -> bool:
-	var event_node := EventScene.instantiate() as BoardEvent
-	event_node.setup(instance, board.cell_size)
-	return board.attach_event(event_node)
+func _candidate(template: EventData) -> EventSpawnCandidate:
+	var candidate := EventSpawnCandidateScript.new()
+	candidate.event_data = template
+	candidate.weight = 1
+	return candidate
+
+
+func _make_result(
+	source_card: CardEntity,
+	kind: BoardPlacementResult.Kind = BoardPlacementResult.Kind.CHAIN_EXTENDED,
+	overlapped_event: EventInstance = null
+) -> BoardPlacementResult:
+	return BoardPlacementResult.new(kind, source_card, source_card, [source_card], [], overlapped_event)
 
 
 func _make_card(board: Board, card_type: CardData.CardType) -> CardEntity:
@@ -255,6 +153,14 @@ func _make_card(board: Board, card_type: CardData.CardType) -> CardEntity:
 	data.card_type = card_type
 	card.bind_instance(CardInstance.new(data))
 	return card
+
+
+func _attach_event(board: Board, instance: EventInstance, origin: Vector2i) -> BoardEvent:
+	instance.origin = origin
+	var event_node := EventScene.instantiate() as BoardEvent
+	event_node.setup(instance, board.cell_size)
+	_expect(board.attach_event(event_node), "test event attaches to board")
+	return event_node
 
 
 func _expect(condition: bool, message: String) -> void:
