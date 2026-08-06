@@ -257,8 +257,9 @@ func _configure_encounter_resolution() -> void:
 		player_stats,
 		player_data,
 		_run_card_service,
-		_exploration_coordinator,
+		Callable(_exploration_coordinator, "dismiss_defeated_boss"),
 		Callable(self, "_sync_pilgrim_crest"),
+		Callable(self, "_refresh_event_display"),
 		_encounter_reward_rng
 	):
 		push_error("GameManager could not configure encounter resolution")

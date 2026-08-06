@@ -13,6 +13,7 @@ func _init() -> void:
 
 
 func _run_tests() -> void:
+	await _test_encounter_resolution_uses_callable_ports()
 	await _test_monster_victory_resolves_event_and_unlocks_exploration()
 	await _test_boss_victory_removes_the_intercepting_event()
 	await _test_retreat_preserves_encounter_and_returns_the_real_tail_card()
@@ -20,6 +21,21 @@ func _run_tests() -> void:
 	await _test_shop_event_routes_purchase_and_close()
 	await _test_treasure_event_routes_claim_and_resolves()
 	quit(0 if _failure_count == 0 else 1)
+
+
+func _test_encounter_resolution_uses_callable_ports() -> void:
+	var source := FileAccess.get_file_as_string("res://scripts/game_manager.gd")
+	var expected := """
+		board,
+		player_stats,
+		player_data,
+		_run_card_service,
+		Callable(_exploration_coordinator, "dismiss_defeated_boss"),
+		Callable(self, "_sync_pilgrim_crest"),
+		Callable(self, "_refresh_event_display"),
+		_encounter_reward_rng
+	"""
+	_expect(source.find(expected) >= 0, "GameManager routes encounter resolution through all eight narrow-port arguments")
 
 
 func _test_monster_victory_resolves_event_and_unlocks_exploration() -> void:
