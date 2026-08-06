@@ -7,9 +7,9 @@
 
 继续使用 `CardData.effect_rules: Array[CardRule]`。不新增独立的卡牌效果配置体系。
 
-每次普通卡牌成功加入牌链后，探索协调器取得完整牌链，以**新加入卡牌**为目标，遍历牌链中每个 `CardInstance` 持有的全部 `CardRule`。每个规则自行判断来源卡与新卡的位置关系、标签和有效次数，并只在实际改变目标卡牌时返回成功。
+每次普通卡牌成功加入牌链后，`CardChainCoordinator` 取得完整牌链，以**新加入卡牌**为目标，遍历牌链中每个 `CardInstance` 持有的全部 `CardRule`。每个规则自行判断来源卡与新卡的位置关系、标签和有效次数，并只在实际改变目标卡牌时返回成功。
 
-`CardRule` 负责静态配置与规则计算；`CardChainRuleContext` 负责来源卡、新加入卡和牌链位置关系；`CardChainRuleService` 负责遍历、次数判断与成功次数消耗；`CardInstance` 保存跨遭遇的点数、护甲和规则使用次数。
+`CardRule` 负责静态配置与规则计算；`CardChainRuleContext` 负责来源卡、新加入卡和牌链位置关系；`CardChainRuleService` 负责遍历、次数判断与成功次数消耗；`CardChainCoordinator` 监听棋盘放牌提交并驱动卡牌领域反应；`CardInstance` 保存跨遭遇的点数、护甲和规则使用次数。
 
 ## 位置定义
 
@@ -56,10 +56,11 @@
 ```text
 Board.add_card 成功提交
   → Board.placement_committed(CHAIN_EXTENDED)
-  → ExplorationCoordinator._apply_card_chain_rules
+  → CardChainCoordinator.resolve_placement
   → CardChainRuleService.resolve_card_added
   → 遍历全链 CardRule
   → 规则成功后累计 CardInstance 触发次数
+  → ExplorationCoordinator.resolve_placement
   → 探索事件生成 / Boss 压力 / 事件接触处理
 ```
 

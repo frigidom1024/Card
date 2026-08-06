@@ -9,9 +9,6 @@ const EventLibScript := preload("res://scripts/game/event/core/event_lib.gd")
 const EventSpawnCandidateScript := preload("res://scripts/game/exploration/event_spawn_candidate.gd")
 const ExplorationConfigScript := preload("res://scripts/game/exploration/exploration_config.gd")
 const ExplorationCoordinatorScript := preload("res://scripts/game/exploration/exploration_coordinator.gd")
-const NextCardPointBonusRuleScript := preload(
-	"res://scripts/combatv2/card/rules/next_card_point_bonus_rule.gd"
-)
 
 var _failure_count := 0
 
@@ -23,7 +20,6 @@ func _init() -> void:
 func _run_tests() -> void:
 	_test_initial_events_are_visible_after_initialization()
 	_test_root_and_normal_placements_generate_but_guide_does_not()
-	_test_chain_extension_runs_all_card_rules_against_the_added_card()
 	_test_boss_contact_uses_the_same_event_request_path_as_monster()
 	_test_defeated_boss_is_removed_from_event_grid()
 	quit(1 if _failure_count > 0 else 0)
@@ -61,35 +57,6 @@ func _test_root_and_normal_placements_generate_but_guide_does_not() -> void:
 	coordinator.resolve_placement(_make_result(guide, BoardPlacementResult.Kind.GUIDE_RESOLVED))
 	_expect(board.events.size() == 1, "GUIDE placement does not spawn an ordinary event")
 	_expect(coordinator.get_exploration_placement_count() == 1, "GUIDE placement does not increment exploration placement count")
-	board.queue_free()
-
-
-func _test_chain_extension_runs_all_card_rules_against_the_added_card() -> void:
-	var board := _make_board()
-	var coordinator := ExplorationCoordinatorScript.new()
-	_expect(
-		coordinator.configure(_make_event_lib(), board, _make_config()),
-		"coordinator configures card-chain rules"
-	)
-	var source := _make_card(board, CardData.CardType.NORMAL)
-	var rule := NextCardPointBonusRuleScript.new()
-	rule.bonus_points = 2
-	source.card_instance.card_data.effect_rules.append(rule)
-	var added := _make_card(board, CardData.CardType.NORMAL)
-	added.card_instance.card_data.max_points = 1
-	added.card_instance.reset_points()
-	board.cards.append_array([source, added])
-
-	coordinator.resolve_placement(_make_result(added))
-
-	_expect(
-		added.card_instance.current_points == 3,
-		"chain extension resolves every in-chain CardRule against its newly added card"
-	)
-	_expect(
-		source.card_instance.get_rule_trigger_count(0) == 1,
-		"successful placement rule use is owned by its source card instance"
-	)
 	board.queue_free()
 
 

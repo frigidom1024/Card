@@ -9,11 +9,20 @@ func _init() -> void:
 
 func _run_tests() -> void:
 	var source := FileAccess.get_file_as_string("res://scripts/game_manager.gd")
+	var exploration_source := FileAccess.get_file_as_string(
+		"res://scripts/game/exploration/exploration_coordinator.gd"
+	)
 	_expect(not source.is_empty(), "GameManager source is available for structural regression checks")
+	_expect(not exploration_source.is_empty(), "ExplorationCoordinator source is available for boundary checks")
+	_expect(
+		not exploration_source.contains("CardChainRuleService"),
+		"ExplorationCoordinator does not own card-chain rule execution"
+	)
 	_expect(source.contains("func _configure_exploration() -> void:"), "GameManager names exploration setup as coordinator composition")
 	_expect(not source.contains("func init_events"), "GameManager does not claim responsibility for direct event initialization")
 	_expect(source.contains("var _exploration_coordinator: ExplorationCoordinator"), "GameManager holds exploration through the coordinator facade type")
-	_expect(source.contains("ExplorationCoordinatorScript.new()"), "GameManager constructs only the exploration coordinator facade")
+	_expect(source.contains("ExplorationCoordinatorScript.new()"), "GameManager constructs the exploration coordinator facade")
+	_expect(source.contains("CardChainCoordinatorScript.new()"), "GameManager composes card-chain reactions through CardChainCoordinator")
 	_expect(not source.contains("Fog" + "Service"), "GameManager does not directly construct the removed fog service")
 	_expect(not source.contains("ExplorationEventService.new()"), "GameManager does not directly construct ExplorationEventService")
 	_expect(not source.contains("BossPressureService.new()"), "GameManager does not directly construct BossPressureService")

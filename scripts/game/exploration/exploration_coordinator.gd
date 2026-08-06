@@ -3,7 +3,6 @@ extends RefCounted
 
 const ExplorationEventServiceScript := preload("res://scripts/game/exploration/exploration_event_service.gd")
 const BossPressureServiceScript := preload("res://scripts/game/exploration/boss_pressure_service.gd")
-const CardChainRuleServiceScript := preload("res://scripts/card/card_chain_rule_service.gd")
 
 ## Coordinates committed board transactions. Event interaction remains a single path for
 ## every event type, including a pursuing Boss.
@@ -13,7 +12,6 @@ signal boss_registered(event_node: BoardEvent)
 
 var _event_service := ExplorationEventServiceScript.new()
 var _boss_pressure_service := BossPressureServiceScript.new()
-var _card_chain_rule_service := CardChainRuleServiceScript.new()
 var _board: Board
 
 
@@ -46,25 +44,11 @@ func resolve_placement(result: BoardPlacementResult) -> void:
 	if result == null or _board == null:
 		return
 	var boss_before_placement := _boss_pressure_service.get_registered_boss()
-	_apply_card_chain_rules(result)
 	_event_service.try_spawn_after_placement(result)
 	if boss_before_placement != null and result.overlapped_event != boss_before_placement.event_instance:
 		_boss_pressure_service.record_placement(_board, result)
 	if result.overlapped_event != null and not result.overlapped_event.is_resolved:
 		event_interaction_requested.emit(result.overlapped_event)
-
-
-## Runs every card rule after an ordinary card has committed to the chain. Rules
-## receive the added card as their target and decide whether their position and
-## remaining effective-count allow them to change it.
-func _apply_card_chain_rules(result: BoardPlacementResult) -> int:
-	if result == null or result.kind != BoardPlacementResult.Kind.CHAIN_EXTENDED:
-		return 0
-	if result.source_card == null or result.source_card.card_instance == null:
-		return 0
-	return _card_chain_rule_service.resolve_card_added(
-		_board.get_combat_card_chain(), result.source_card.card_instance
-	)
 
 
 ## Uses the current level EventLib to place one normal residual encounter after a faith consequence.

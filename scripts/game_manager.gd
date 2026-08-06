@@ -3,6 +3,9 @@ extends Node
 const ExplorationCoordinatorScript := preload(
 	"res://scripts/game/exploration/exploration_coordinator.gd"
 )
+const CardChainCoordinatorScript := preload(
+	"res://scripts/card/card_chain_coordinator.gd"
+)
 const EncounterResolutionCoordinatorScript := preload(
 	"res://scripts/game/event/encounter/encounter_resolution_coordinator.gd"
 )
@@ -40,6 +43,7 @@ signal faith_changed(current_faith: int)
 var starting_deck: StartingDeckData
 var player_stats: CombatStats
 var _exploration_coordinator: ExplorationCoordinator
+var _card_chain_coordinator: CardChainCoordinator
 var _event_interaction_controller: EventInteractionController
 var _encounter_resolution: EncounterResolutionCoordinator
 var _market_pricing := MarketPricingServiceScript.new()
@@ -99,6 +103,7 @@ func _ready() -> void:
 	if not board.card_return_requested.is_connected(_on_board_card_return_requested):
 		board.card_return_requested.connect(_on_board_card_return_requested)
 
+	_configure_card_chain()
 	_configure_exploration()
 	_configure_encounter_resolution()
 	_center_layout()
@@ -267,6 +272,14 @@ func _on_encounter_exploration_failed(result: CombatResult) -> void:
 	exploration_failed.emit(result)
 
 
+## Configures card-domain reactions independently from exploration systems.
+func _configure_card_chain() -> void:
+	_card_chain_coordinator = CardChainCoordinatorScript.new()
+	if not _card_chain_coordinator.configure(board):
+		push_error("GameManager could not configure card-chain coordinator")
+		_card_chain_coordinator = null
+
+
 ## Creates the exploration facade; placement spawning and Boss pressure stay inside it.
 func _configure_exploration() -> void:
 	if event_lib == null or exploration_config == null:
@@ -286,14 +299,9 @@ func _configure_exploration() -> void:
 	_exploration_coordinator.initialize_events()
 
 
-func _on_board_placement_committed(result: BoardPlacementResult) -> void:
-	if _is_exploration_failed or _exploration_coordinator == null:
-		return
-	_exploration_coordinator.resolve_placement(result)
-
-
 ## 按固定设计坐标布置玩法内容，再统一缩放和居中玩法画布。
 func _center_layout() -> void:
+	return
 	# 从这里统一调整设计坐标（1920×1080）。
 	var design_size := LayoutConfig.DESIGN_VIEWPORT_SIZE
 	board.position = LayoutConfig.board_origin(
