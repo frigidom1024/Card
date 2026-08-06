@@ -9,7 +9,9 @@ extends RefCounted
 signal initialization_failed(reason: String)
 
 const RunCardServiceScript := preload("res://scripts/game/run/run_card_service.gd")
-const EventInteractionControllerScript := preload("res://scripts/game/event/event_interaction_controller.gd")
+const EventInteractionControllerScript := preload(
+	"res://scripts/game/event/event_interaction_controller.gd"
+)
 const RunContextScript := preload("res://scripts/game/run/run_context.gd")
 const RunRandomServiceScript := preload("res://scripts/game/run/run_random_service.gd")
 
@@ -35,7 +37,13 @@ func configure(
 	hand_area: HandArea,
 	drag_layer: Node2D
 ) -> bool:
-	if source_player == null or deck == null or card_manager == null or hand_area == null or drag_layer == null:
+	if (
+		source_player == null
+		or deck == null
+		or card_manager == null
+		or hand_area == null
+		or drag_layer == null
+	):
 		return false
 	_source_player = source_player
 	_starting_deck = deck
@@ -71,8 +79,12 @@ func initialize() -> bool:
 		return _fail("Run setup could not create configured starter cards", card_service)
 
 	var root_card := _starting_deck.get_root_card()
-	var combat_flow := EncounterCombatFlowCoordinator.new(_create_combat_service_for_root(root_card))
-	var event_interaction_controller: EventInteractionController = EventInteractionControllerScript.new()
+	var combat_flow := EncounterCombatFlowCoordinator.new(
+		_create_combat_service_for_root(root_card)
+	)
+	var event_interaction_controller: EventInteractionController = (
+		EventInteractionControllerScript.new()
+	)
 	event_interaction_controller.configure(combat_flow)
 
 	var random: RunRandomService = RunRandomServiceScript.new()

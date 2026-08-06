@@ -180,11 +180,24 @@ func _attach_retreat_event(board: Board) -> BoardEvent:
 	data.event_type = EventData.EventType.MONSTER
 	data.content = content
 	var instance := data.create_instance()
-	instance.origin = Vector2i(6, 6)
+	var origin := _find_attachable_event_origin(board, instance)
+	_expect(origin.x >= 0, "faith retreat fixture finds an unoccupied event slot")
+	if origin.x < 0:
+		return null
+	instance.origin = origin
 	var event_node := EventScene.instantiate() as BoardEvent
 	event_node.setup(instance, board.cell_size)
 	_expect(board.attach_event(event_node), "faith retreat event attaches to the board")
 	return event_node
+
+
+func _find_attachable_event_origin(board: Board, instance: EventInstance) -> Vector2i:
+	for y in board.height:
+		for x in board.width:
+			instance.origin = Vector2i(x, y)
+			if board.can_attach_event(instance):
+				return instance.origin
+	return Vector2i(-1, -1)
 
 
 func _make_mob(max_hp: int) -> MobData:

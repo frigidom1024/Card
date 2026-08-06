@@ -39,7 +39,17 @@ func configure(
 	combat_view,
 	pricing: Object
 ) -> bool:
-	if controller == null or drag_layer == null or hand_area == null or card_service == null or player == null or shop_view == null or treasure_view == null or combat_view == null or pricing == null:
+	if (
+		controller == null
+		or drag_layer == null
+		or hand_area == null
+		or card_service == null
+		or player == null
+		or shop_view == null
+		or treasure_view == null
+		or combat_view == null
+		or pricing == null
+	):
 		return false
 	_controller = controller
 	_drag_layer = drag_layer
@@ -159,7 +169,9 @@ func _on_shop_purchase_requested(item_index: int) -> void:
 	if _hand_area.is_full():
 		_shop_view.show_message("手牌已满，无法购买。", true)
 		return
-	var result := _shop_resolver.purchase_item(active_event, item_index, _player, true, _create_price_context())
+	var result := _shop_resolver.purchase_item(
+		active_event, item_index, _player, true, _create_price_context()
+	)
 	if not result.success:
 		_shop_view.show_message(_resolution_failure_message(result.failure), true)
 		return
@@ -190,7 +202,9 @@ func _on_treasure_reward_requested(option_index: int) -> void:
 	if option.kind == TreasureRewardOption.Kind.CARD and _hand_area.is_full():
 		_treasure_view.show_message("手牌已满，无法领取这张卡牌。", true)
 		return
-	var result := _treasure_resolver.claim_reward(active_event, option_index, _player, true, _treasure_rng)
+	var result := _treasure_resolver.claim_reward(
+		active_event, option_index, _player, true, _treasure_rng
+	)
 	if not result.success:
 		_treasure_view.show_message(_resolution_failure_message(result.failure), true)
 		return
@@ -257,18 +271,27 @@ func _print_combat_result_detail(result: CombatResult) -> void:
 		if step == null:
 			print("  第 ", index + 1, " 步: (空)")
 			continue
-		print("  >> 第 ", index + 1, " 步 [", CombatStep.Kind.keys()[step.kind], "] ", step.source_name)
+		print(
+			"  >> 第 ", index + 1, " 步 [", CombatStep.Kind.keys()[step.kind], "] ", step.source_name
+		)
 		print("      玩家: ", _stats_desc(step.player_before), " -> ", _stats_desc(step.player_after))
-		print("      怪物: ", _stats_desc(step.monster_before), " -> ", _stats_desc(step.monster_after))
+		print(
+			"      怪物: ", _stats_desc(step.monster_before), " -> ", _stats_desc(step.monster_after)
+		)
 		for effect in step.effects:
 			if effect == null:
 				continue
-			print("      效果: [%s] %s -> %s 数值 %d" % [
-				CombatEffect.SourceType.keys()[effect.source_type],
-				CombatEffect.Type.keys()[effect.type],
-				CombatEffect.Target.keys()[effect.target],
-				effect.value,
-			])
+			print(
+				(
+					"      效果: [%s] %s -> %s 数值 %d"
+					% [
+						CombatEffect.SourceType.keys()[effect.source_type],
+						CombatEffect.Type.keys()[effect.type],
+						CombatEffect.Target.keys()[effect.target],
+						effect.value,
+					]
+				)
+			)
 	print("====================================")
 
 
