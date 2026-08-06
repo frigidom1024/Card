@@ -8,6 +8,7 @@ signal placement_resolved(result: BoardPlacementResult, card_rules_applied: int)
 var _board: Board
 var _card_chain: CardChainCoordinator
 var _exploration: ExplorationCoordinator
+var _placement_guard: Callable
 
 
 func configure(
@@ -19,14 +20,26 @@ func configure(
 		_board.placement_committed.disconnect(_on_placement_committed)
 	if (
 		_exploration != null
-		and _exploration.event_interaction_requested.is_connected(_forward_event_interaction_requested)
+		and _exploration.event_interaction_requested.is_connected(
+			_forward_event_interaction_requested
+		)
 	):
 		_exploration.event_interaction_requested.disconnect(_forward_event_interaction_requested)
 	_board = board
 	_card_chain = card_chain
 	_exploration = exploration
-	if not _exploration.event_interaction_requested.is_connected(_forward_event_interaction_requested):
+	_placement_guard = Callable()
+	if not _exploration.event_interaction_requested.is_connected(
+		_forward_event_interaction_requested
+	):
 		_exploration.event_interaction_requested.connect(_forward_event_interaction_requested)
+	return true
+
+
+func set_placement_guard(guard: Callable) -> bool:
+	if not guard.is_valid():
+		return false
+	_placement_guard = guard
 	return true
 
 
@@ -40,6 +53,8 @@ func connect_board() -> bool:
 
 func resolve_placement(result: BoardPlacementResult) -> void:
 	if result == null or _card_chain == null or _exploration == null:
+		return
+	if _placement_guard.is_valid() and not _placement_guard.call():
 		return
 	var card_rules_applied := _card_chain.resolve_placement(result)
 	_exploration.resolve_placement(result)

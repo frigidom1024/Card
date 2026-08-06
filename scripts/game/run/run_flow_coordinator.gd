@@ -14,6 +14,7 @@ signal combat_started(instance: EventInstance, monster: MobInstance)
 signal combat_resolved(instance: EventInstance, result: CombatResult)
 signal exploration_failed(result: CombatResult)
 signal run_finished
+signal state_changed(state: State)
 signal faith_changed(current_faith: int)
 
 var _context: RunContext
@@ -24,6 +25,9 @@ var _faith: FaithService
 var _board: Board
 var _faith_echo_request: Callable
 var _state := State.UNINITIALIZED
+var _configured := false
+var _settlement_in_progress := false
+var _finished_event: EventInstance
 
 
 func configure(
@@ -46,6 +50,9 @@ func configure(
 	if not context.is_valid():
 		return false
 	_disconnect_signals()
+	_configured = false
+	_settlement_in_progress = false
+	_finished_event = null
 	_context = context
 	_pipeline = pipeline
 	_modal = modal
@@ -54,7 +61,16 @@ func configure(
 	_board = board
 	_faith_echo_request = Callable()
 	_state = State.UNINITIALIZED
+	if not _pipeline.set_placement_guard(Callable(self, "accepts_placement")):
+		_context = null
+		_pipeline = null
+		_modal = null
+		_resolution = null
+		_faith = null
+		_board = null
+		return false
 	_connect_signals()
+	_configured = true
 	return true
 
 
@@ -66,9 +82,9 @@ func set_faith_echo_request(request: Callable) -> bool:
 
 
 func start() -> bool:
-	if _state != State.UNINITIALIZED:
+	if not _configured or _state != State.UNINITIALIZED:
 		return false
-	_state = State.EXPLORING
+	_set_state(State.EXPLORING)
 	return true
 
 
@@ -77,34 +93,52 @@ func get_state() -> State:
 
 
 func accepts_placement() -> bool:
-	return _state == State.EXPLORING
+	return _configured and _state == State.EXPLORING
+
+
+func resolve_placement(result: BoardPlacementResult) -> bool:
+	if not accepts_placement() or result == null:
+		return false
+	_pipeline.resolve_placement(result)
+	return true
 
 
 func handle_combat_settlement_request(instance: EventInstance, result: CombatResult) -> bool:
-	if _state != State.INTERACTING or instance == null or result == null:
-		return false
-	if not _resolution.apply(instance, result):
-		return false
-
-	_modal.complete_combat_settlement()
-	combat_resolved.emit(instance, result)
-
-	if _state == State.FAILED:
-		# EncounterResolutionCoordinator emits failure synchronously during apply().
-		# Completing the controller releases its normal lock, so retain it terminally.
-		_modal.lock_interaction()
-		return true
-	if result.outcome == CombatResult.Outcome.DEFEAT:
-		_enter_failed(result)
-		return true
 	if (
+		not _configured
+		or _state != State.INTERACTING
+		or _settlement_in_progress
+		or instance == null
+		or result == null
+	):
+		return false
+	_settlement_in_progress = true
+	if not _resolution.apply(instance, result):
+		_settlement_in_progress = false
+		return false
+
+	var is_boss_victory := (
 		instance.get_event_type() == EventData.EventType.BOSS
 		and result.outcome == CombatResult.Outcome.VICTORY
-	):
-		_state = State.FINISHED
+	)
+	if _state == State.FAILED or result.outcome == CombatResult.Outcome.DEFEAT:
+		if _state != State.FAILED:
+			_enter_failed(result)
+	else:
+		_set_state(State.FINISHED if is_boss_victory else State.EXPLORING)
+		if is_boss_victory:
+			_finished_event = instance
+
+	# State is terminal/exploring before this synchronous controller signal so
+	# presentation unlock requests cannot race the lifecycle transition.
+	_modal.complete_combat_settlement()
+	if _state == State.FAILED:
+		# Completing the controller releases its normal lock, so retain it terminally.
+		_modal.lock_interaction()
+	combat_resolved.emit(instance, result)
+	if is_boss_victory and _finished_event == instance:
 		run_finished.emit()
-		return true
-	_state = State.EXPLORING
+	_settlement_in_progress = false
 	return true
 
 
@@ -160,7 +194,7 @@ func _disconnect_signals() -> void:
 func _on_event_interaction_requested(instance: EventInstance) -> void:
 	if not accepts_placement() or instance == null or instance.is_resolved:
 		return
-	_state = State.INTERACTING
+	_set_state(State.INTERACTING)
 	_modal.begin(instance, _context.player_stats, _board.get_combat_card_chain())
 
 
@@ -173,9 +207,16 @@ func _on_resolution_exploration_failed(result: CombatResult) -> void:
 func _enter_failed(result: CombatResult) -> void:
 	if _state == State.FAILED or _state == State.FINISHED:
 		return
-	_state = State.FAILED
+	_set_state(State.FAILED)
 	_modal.lock_interaction()
 	exploration_failed.emit(result)
+
+
+func _set_state(next_state: State) -> void:
+	if _state == next_state:
+		return
+	_state = next_state
+	state_changed.emit(_state)
 
 
 func _forward_combat_started(instance: EventInstance, monster: MobInstance) -> void:

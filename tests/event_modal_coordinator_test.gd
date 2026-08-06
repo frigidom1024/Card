@@ -7,16 +7,19 @@ const CardManagerScript = preload("res://scripts/game/card_manager.gd")
 
 var _failure_count := 0
 var _emitted_instance: EventInstance
+var _emitted_count := 0
 
 
-class FakeDragLayer extends RefCounted:
+class FakeDragLayer:
+	extends RefCounted
 	var interaction_locked := false
 
 	func set_interaction_locked(locked: bool) -> void:
 		interaction_locked = locked
 
 
-class FakeShopView extends RefCounted:
+class FakeShopView:
+	extends RefCounted
 	signal purchase_requested(item_index: int)
 	signal close_requested
 
@@ -39,7 +42,8 @@ class FakeShopView extends RefCounted:
 		last_message = message
 
 
-class FakeTreasureView extends RefCounted:
+class FakeTreasureView:
+	extends RefCounted
 	signal reward_requested(option_index: int)
 	signal close_requested
 
@@ -56,7 +60,8 @@ class FakeTreasureView extends RefCounted:
 		last_message = message
 
 
-class FakeCombatView extends RefCounted:
+class FakeCombatView:
+	extends RefCounted
 	signal settlement_confirmed
 
 	var visible := false
@@ -87,22 +92,28 @@ func _test_shop_purchase_uses_active_event_and_grants_card_to_run_service() -> v
 	if coordinator == null:
 		await _free_fixture(fixture)
 		return
-	_expect(coordinator.configure(
-		fixture.controller,
-		fixture.drag_layer,
-		fixture.hand_area,
-		fixture.card_service,
-		fixture.player,
-		fixture.shop_view,
-		fixture.treasure_view,
-		fixture.combat_view,
-		MarketPricingService.new()
-	), "modal coordinator accepts its event dependencies")
+	_expect(
+		coordinator.configure(
+			fixture.controller,
+			fixture.drag_layer,
+			fixture.hand_area,
+			fixture.card_service,
+			fixture.player,
+			fixture.shop_view,
+			fixture.treasure_view,
+			fixture.combat_view,
+			MarketPricingService.new()
+		),
+		"modal coordinator accepts its event dependencies"
+	)
 	var initial_cards: int = fixture.card_service.get_entities().size()
 	coordinator.begin(fixture.shop_instance, fixture.player_stats, _empty_chain())
 	fixture.shop_view.purchase_requested.emit(0)
 
-	_expect(fixture.card_service.get_entities().size() == initial_cards + 1, "shop reward enters runtime hand")
+	_expect(
+		fixture.card_service.get_entities().size() == initial_cards + 1,
+		"shop reward enters runtime hand"
+	)
 	_expect(fixture.shop_view.last_message == "购买成功。", "shop reports completed purchase")
 	await _free_fixture(fixture)
 
@@ -114,22 +125,27 @@ func _test_treasure_card_reward_respects_hand_capacity_without_resolving_event()
 		await _free_fixture(fixture)
 		return
 	fixture.hand_area.max_hand_size = 0
-	_expect(coordinator.configure(
-		fixture.controller,
-		fixture.drag_layer,
-		fixture.hand_area,
-		fixture.card_service,
-		fixture.player,
-		fixture.shop_view,
-		fixture.treasure_view,
-		fixture.combat_view,
-		MarketPricingService.new()
-	), "modal coordinator configures for treasure")
+	_expect(
+		coordinator.configure(
+			fixture.controller,
+			fixture.drag_layer,
+			fixture.hand_area,
+			fixture.card_service,
+			fixture.player,
+			fixture.shop_view,
+			fixture.treasure_view,
+			fixture.combat_view,
+			MarketPricingService.new()
+		),
+		"modal coordinator configures for treasure"
+	)
 	coordinator.begin(fixture.treasure_instance, fixture.player_stats, _empty_chain())
 	fixture.treasure_view.reward_requested.emit(0)
 
 	_expect(not fixture.treasure_instance.is_resolved, "full hand does not consume treasure")
-	_expect(fixture.treasure_view.last_message == "手牌已满，无法领取这张卡牌。", "treasure explains capacity failure")
+	_expect(
+		fixture.treasure_view.last_message == "手牌已满，无法领取这张卡牌。", "treasure explains capacity failure"
+	)
 	await _free_fixture(fixture)
 
 
@@ -139,27 +155,38 @@ func _test_combat_confirmation_emits_pending_result_without_mutating_encounter()
 	if coordinator == null:
 		await _free_fixture(fixture)
 		return
-	_expect(coordinator.configure(
-		fixture.controller,
-		fixture.drag_layer,
-		fixture.hand_area,
-		fixture.card_service,
-		fixture.player,
-		fixture.shop_view,
-		fixture.treasure_view,
-		fixture.combat_view,
-		MarketPricingService.new()
-	), "modal coordinator configures for combat")
+	_expect(
+		coordinator.configure(
+			fixture.controller,
+			fixture.drag_layer,
+			fixture.hand_area,
+			fixture.card_service,
+			fixture.player,
+			fixture.shop_view,
+			fixture.treasure_view,
+			fixture.combat_view,
+			MarketPricingService.new()
+		),
+		"modal coordinator configures for combat"
+	)
 	_emitted_instance = null
+	_emitted_count = 0
 	coordinator.combat_settlement_confirmed.connect(_on_combat_settlement_confirmed)
 	coordinator.begin(fixture.monster_instance, fixture.player_stats, _combat_chain())
 	var monster := (fixture.monster_instance.runtime_state as EncounterRuntimeState).mob_instance
 	var hp_before: int = monster.stats.hp
 	fixture.combat_view.settlement_confirmed.emit()
+	fixture.combat_view.settlement_confirmed.emit()
 
-	_expect(_emitted_instance == fixture.monster_instance, "modal exposes pending encounter for settlement")
+	_expect(_emitted_count == 2, "failed settlement keeps confirmation available for retry")
+	_expect(
+		_emitted_instance == fixture.monster_instance,
+		"modal exposes pending encounter for settlement"
+	)
 	_expect(monster.stats.hp == hp_before, "modal confirmation does not apply combat mutation")
-	_expect(fixture.combat_view.visible, "modal keeps combat result visible until settlement applies")
+	_expect(
+		fixture.combat_view.visible, "modal keeps combat result visible until settlement applies"
+	)
 	_expect(
 		fixture.controller.get_pending_combat_instance() == fixture.monster_instance,
 		"modal keeps the combat tuple pending until settlement completes"
@@ -169,6 +196,7 @@ func _test_combat_confirmation_emits_pending_result_without_mutating_encounter()
 
 func _on_combat_settlement_confirmed(instance: EventInstance, _result: CombatResult) -> void:
 	_emitted_instance = instance
+	_emitted_count += 1
 
 
 func _create_coordinator():
@@ -185,7 +213,10 @@ func _create_fixture() -> Dictionary:
 	var card_manager := CardManagerScript.new()
 	card_manager.card_scene = CardEntityScene
 	var card_service := RunCardService.new()
-	_expect(card_service.configure(card_manager, hand_area, drag_node), "fixture configures runtime card service")
+	_expect(
+		card_service.configure(card_manager, hand_area, drag_node),
+		"fixture configures runtime card service"
+	)
 	var controller := EventInteractionController.new()
 	controller.configure(EncounterCombatFlowCoordinator.new())
 	var player := PlayerData.new()

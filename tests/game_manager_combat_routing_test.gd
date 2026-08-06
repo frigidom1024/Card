@@ -119,6 +119,8 @@ func _test_boss_victory_removes_the_intercepting_event() -> void:
 		board, EventData.EventType.BOSS, Vector2i(3, 0), 2, []
 	)
 	var finished_instances: Array[EventInstance] = []
+	var finished_signals: Array[bool] = []
+	manager.run_finished.connect(func() -> void: finished_signals.append(true))
 	manager._event_interaction_controller.interaction_finished.connect(
 		func(instance: EventInstance) -> void: finished_instances.append(instance)
 	)
@@ -164,6 +166,15 @@ func _test_boss_victory_removes_the_intercepting_event() -> void:
 		finished_instances == [event_node.event_instance],
 		"boss event is removed before its interaction lifecycle finishes"
 	)
+	_expect(finished_signals == [true], "boss victory emits GameManager.run_finished once")
+	_expect(
+		not manager._run_flow.handle_combat_settlement_request(
+			event_node.event_instance,
+			manager._event_interaction_controller.get_pending_combat_result()
+		),
+		"finished flow rejects duplicate boss settlement"
+	)
+	_expect(finished_signals == [true], "duplicate boss settlement does not re-emit run_finished")
 	_cleanup_manager(manager)
 
 

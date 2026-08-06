@@ -13,13 +13,22 @@ func _init() -> void:
 
 
 func _run_tests() -> void:
-	_expect(CardData.CardType.GUIDE != CardData.CardType.NORMAL, "GUIDE must be a distinct CardType")
+	_expect(
+		CardData.CardType.GUIDE != CardData.CardType.NORMAL, "GUIDE must be a distinct CardType"
+	)
 	var guide := _make_card(CardData.CardType.GUIDE)
-	_expect(guide.card_instance.card_data.card_type == CardData.CardType.GUIDE, "guide card keeps GUIDE type")
-	_expect(CardDetailFormat.card_type_name(CardData.CardType.GUIDE) == "GUIDE", "guide cards have a distinct detail label")
+	_expect(
+		guide.card_instance.card_data.card_type == CardData.CardType.GUIDE,
+		"guide card keeps GUIDE type"
+	)
+	_expect(
+		CardDetailFormat.card_type_name(CardData.CardType.GUIDE) == "GUIDE",
+		"guide cards have a distinct detail label"
+	)
 	guide.queue_free()
 
 	_test_guide_card_shifts_chain_and_returns()
+	_test_guide_return_routes_through_run_card_service()
 	_test_guide_result_keeps_chain_order_and_reports_new_cells()
 	quit(1 if _failure_count > 0 else 0)
 
@@ -53,11 +62,26 @@ func _test_guide_card_shifts_chain_and_returns() -> void:
 
 	_expect(_returned_card == guide, "board requests the guide card be returned")
 	_expect(board.cards.size() == 2, "guide card is not added to the board chain")
-	_expect(board.cards[0] == root_card and board.cards[1] == second_card, "board chain order stays unchanged")
-	_expect(root_card.global_position.is_equal_approx(second_position), "card 1 moves to card 2's old position")
-	_expect(second_card.global_position.is_equal_approx(guide.global_position), "card 2 moves to guide card's old position")
-	_expect(is_equal_approx(root_card.rotation_degrees, second_rotation), "card 1 inherits card 2's rotation")
-	_expect(is_equal_approx(second_card.rotation_degrees, guide.rotation_degrees), "card 2 inherits guide card's rotation")
+	_expect(
+		board.cards[0] == root_card and board.cards[1] == second_card,
+		"board chain order stays unchanged"
+	)
+	_expect(
+		root_card.global_position.is_equal_approx(second_position),
+		"card 1 moves to card 2's old position"
+	)
+	_expect(
+		second_card.global_position.is_equal_approx(guide.global_position),
+		"card 2 moves to guide card's old position"
+	)
+	_expect(
+		is_equal_approx(root_card.rotation_degrees, second_rotation),
+		"card 1 inherits card 2's rotation"
+	)
+	_expect(
+		is_equal_approx(second_card.rotation_degrees, guide.rotation_degrees),
+		"card 2 inherits guide card's rotation"
+	)
 	_expect(root_card.card_instance.direction == 1, "card 1 inherits card 2's direction")
 	_expect(second_card.card_instance.direction == 1, "card 2 inherits guide card's direction")
 	_expect(guide.get_parent() == board, "guide card remains available for the return handler")
@@ -68,6 +92,21 @@ func _test_guide_card_shifts_chain_and_returns() -> void:
 
 	board.queue_free()
 	guide.queue_free()
+
+
+func _test_guide_return_routes_through_run_card_service() -> void:
+	var flow_source := FileAccess.get_file_as_string(
+		"res://scripts/game/run/run_flow_coordinator.gd"
+	)
+	_expect(
+		flow_source.contains("return _context.card_service.return_existing_to_hand(card, true)"),
+		"GUIDE card return delegates to RunCardService with overflow"
+	)
+	var manager_source := FileAccess.get_file_as_string("res://scripts/game_manager.gd")
+	_expect(
+		manager_source.contains("_run_flow.handle_card_return_requested(card)"),
+		"GameManager routes GUIDE card returns through RunFlowCoordinator"
+	)
 
 
 func _test_guide_result_keeps_chain_order_and_reports_new_cells() -> void:
@@ -87,9 +126,7 @@ func _test_guide_result_keeps_chain_order_and_reports_new_cells() -> void:
 	_expect(board.add_card(second_card), "second card can be placed for the guide transaction")
 
 	var placement_results: Array = []
-	board.placement_committed.connect(func(result) -> void:
-		placement_results.append(result)
-	)
+	board.placement_committed.connect(func(result) -> void: placement_results.append(result))
 
 	var guide := _make_card(CardData.CardType.GUIDE)
 	guide.position = board.grid_to_world_center(Vector2i(3, 1))
@@ -101,18 +138,33 @@ func _test_guide_result_keeps_chain_order_and_reports_new_cells() -> void:
 	_expect(placement_results.size() == 1, "guide placement publishes exactly one transaction")
 	if placement_results.size() == 1:
 		var result = placement_results[0]
-		_expect(result.kind == BoardPlacementResultScript.Kind.GUIDE_RESOLVED, "guide placement uses GUIDE_RESOLVED")
+		_expect(
+			result.kind == BoardPlacementResultScript.Kind.GUIDE_RESOLVED,
+			"guide placement uses GUIDE_RESOLVED"
+		)
 		_expect(result.source_card == guide, "guide result retains the guide source")
 		_expect(result.chain_tail == second_card, "guide result reports the shifted chain tail")
-		_expect(result.affected_cards == [root_card, second_card], "guide result keeps the original chain order")
-		_expect(result.newly_occupied_cells == guide_cells, "guide result reports the endpoint cells newly occupied by the shifted chain")
-		_expect(result.overlapped_event == null, "guide result has no event when no event is contacted")
+		_expect(
+			result.affected_cards == [root_card, second_card],
+			"guide result keeps the original chain order"
+		)
+		_expect(
+			result.newly_occupied_cells == guide_cells,
+			"guide result reports the endpoint cells newly occupied by the shifted chain"
+		)
+		_expect(
+			result.overlapped_event == null, "guide result has no event when no event is contacted"
+		)
 	_expect(guide not in board.cards, "guide source never enters the chain")
 	_expect(board.cards == [root_card, second_card], "guide keeps existing board chain order")
-	_expect(second_card.global_position.is_equal_approx(guide.global_position), "guide endpoint is occupied by the final chain card")
+	_expect(
+		second_card.global_position.is_equal_approx(guide.global_position),
+		"guide endpoint is occupied by the final chain card"
+	)
 
 	board.queue_free()
 	guide.queue_free()
+
 
 func _make_card(card_type: CardData.CardType) -> CardEntity:
 	var card := CardEntityScene.instantiate() as CardEntity

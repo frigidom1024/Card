@@ -75,6 +75,7 @@ func _init() -> void:
 
 
 func _run_tests() -> void:
+	_test_unconfigured_flow_cannot_start()
 	_test_start_enters_exploring()
 	_test_placement_contact_enters_interacting_and_begins_modal()
 	_test_failed_settlement_keeps_interaction_and_modal_pending()
@@ -83,6 +84,16 @@ func _run_tests() -> void:
 	_test_faith_echo_and_guide_return_delegate_to_runtime_services()
 	_test_explicit_faith_echo_port_overrides_pipeline_internals()
 	quit(1 if _failure_count > 0 else 0)
+
+
+func _test_unconfigured_flow_cannot_start() -> void:
+	var flow_script = ResourceLoader.load(RunFlowCoordinatorPath)
+	_expect(flow_script != null, "run-flow coordinator script exists for unconfigured start")
+	if flow_script == null:
+		return
+	var flow = flow_script.new()
+	_expect(not flow.start(), "unconfigured flow rejects start")
+	_expect(flow.get_state() == STATE_UNINITIALIZED, "unconfigured flow remains uninitialized")
 
 
 func _test_start_enters_exploring() -> void:
@@ -129,6 +140,12 @@ func _test_failed_settlement_keeps_interaction_and_modal_pending() -> void:
 		fixture.modal.completed_settlements == 0,
 		"failed settlement does not complete the pending modal lifecycle"
 	)
+	fixture.resolution.apply_result = true
+	_expect(
+		flow.handle_combat_settlement_request(instance, _result(CombatResult.Outcome.VICTORY)),
+		"a failed settlement can be confirmed again after the resolver recovers"
+	)
+	_expect(flow.get_state() == STATE_EXPLORING, "recovered settlement returns to exploration")
 
 
 func _test_resolution_failure_enters_failed_once() -> void:
@@ -153,6 +170,12 @@ func _test_resolution_failure_enters_failed_once() -> void:
 		fixture.modal.completed_settlements == 1,
 		"applied defeat completes the modal before locking the failed run"
 	)
+	var placement_resolutions := 0
+	fixture.pipeline.placement_resolved.connect(
+		func(_result: BoardPlacementResult, _rules: int) -> void: placement_resolutions += 1
+	)
+	fixture.pipeline.resolve_placement(_placement_result())
+	_expect(placement_resolutions == 0, "FAILED flow rejects new placement pipeline work")
 
 
 func _test_boss_victory_enters_finished() -> void:
@@ -161,7 +184,17 @@ func _test_boss_victory_enters_finished() -> void:
 	if flow == null:
 		return
 	var finish_signals: Array[bool] = []
+	var reentry_state := {"attempts": 0, "result": true}
 	flow.run_finished.connect(func() -> void: finish_signals.append(true))
+	flow.combat_resolved.connect(
+		func(resolved_instance: EventInstance, resolved_result: CombatResult) -> void:
+			if reentry_state.attempts > 0:
+				return
+			reentry_state.attempts += 1
+			reentry_state.result = flow.handle_combat_settlement_request(
+				resolved_instance, resolved_result
+			)
+	)
 	var boss := _event(EventData.EventType.BOSS)
 	fixture.pipeline.event_interaction_requested.emit(boss)
 
@@ -170,8 +203,17 @@ func _test_boss_victory_enters_finished() -> void:
 		"flow applies boss victory"
 	)
 	_expect(flow.get_state() == STATE_FINISHED, "boss victory finishes the run")
+	_expect(
+		not reentry_state.result, "combat-resolved listeners cannot reenter terminal settlement"
+	)
 	_expect(finish_signals == [true], "flow emits one run-finished signal")
 	_expect(not flow.accepts_placement(), "finished flow rejects placements")
+	var placement_resolutions := 0
+	fixture.pipeline.placement_resolved.connect(
+		func(_result: BoardPlacementResult, _rules: int) -> void: placement_resolutions += 1
+	)
+	fixture.pipeline.resolve_placement(_placement_result())
+	_expect(placement_resolutions == 0, "FINISHED flow rejects new placement pipeline work")
 
 
 func _test_faith_echo_and_guide_return_delegate_to_runtime_services() -> void:
@@ -291,6 +333,10 @@ func _event(event_type: EventData.EventType) -> EventInstance:
 	data.event_id = "flow-test-%s" % EventData.EventType.keys()[event_type].to_lower()
 	data.event_type = event_type
 	return data.create_instance()
+
+
+func _placement_result() -> BoardPlacementResult:
+	return BoardPlacementResult.new(BoardPlacementResult.Kind.CHAIN_EXTENDED, null, null, [], [])
 
 
 func _result(outcome: CombatResult.Outcome) -> CombatResult:

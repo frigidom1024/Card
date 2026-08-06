@@ -331,8 +331,10 @@ func _configure_presentation() -> bool:
 
 
 func _configure_card_return_routing() -> bool:
-	if _run_flow == null:
+	if _run_flow == null or board == null:
 		return _fail_run_initialization("GameManager could not configure card return routing")
+	if not board.card_return_requested.is_connected(_run_flow.handle_card_return_requested):
+		return _fail_run_initialization("GameManager could not connect card return routing")
 	return true
 
 
