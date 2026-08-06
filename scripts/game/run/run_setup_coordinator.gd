@@ -46,6 +46,7 @@ func configure(
 
 
 func initialize() -> bool:
+	_clear_runtime_state()
 	_failure_reason = ""
 	if _source_player == null or _source_player.base_stats == null:
 		return _fail("Run setup is missing PlayerData.base_stats")
@@ -54,38 +55,44 @@ func initialize() -> bool:
 	if _card_manager == null or _hand_area == null or _drag_layer == null:
 		return _fail("Run setup is missing card runtime dependencies")
 
-	_runtime_player = _source_player.duplicate(true) as PlayerData
-	if _runtime_player == null or _runtime_player.base_stats == null:
+	var runtime_player := _source_player.duplicate(true) as PlayerData
+	if runtime_player == null or runtime_player.base_stats == null:
 		return _fail("Run setup could not duplicate PlayerData")
-	_runtime_player.faith = PlayerData.INITIAL_FAITH
+	runtime_player.faith = PlayerData.INITIAL_FAITH
 
-	_player_stats = CombatStats.from_data(_runtime_player.base_stats)
-	if _player_stats == null:
+	var player_stats := CombatStats.from_data(runtime_player.base_stats)
+	if player_stats == null:
 		return _fail("Run setup could not create runtime combat stats")
 
-	_card_service = RunCardServiceScript.new()
-	if not _card_service.configure(_card_manager, _hand_area, _drag_layer):
-		return _fail("Run setup could not configure runtime card service")
-	if not _card_service.initialize_starting_deck(_starting_deck):
-		_card_service.clear()
-		return _fail("Run setup could not create configured starter cards")
+	var card_service: RunCardService = RunCardServiceScript.new()
+	if not card_service.configure(_card_manager, _hand_area, _drag_layer):
+		return _fail("Run setup could not configure runtime card service", card_service)
+	if not card_service.initialize_starting_deck(_starting_deck):
+		return _fail("Run setup could not create configured starter cards", card_service)
 
 	var root_card := _starting_deck.get_root_card()
-	_encounter_combat_flow = EncounterCombatFlowCoordinator.new(_create_combat_service_for_root(root_card))
-	_event_interaction_controller = EventInteractionControllerScript.new()
-	_event_interaction_controller.configure(_encounter_combat_flow)
+	var combat_flow := EncounterCombatFlowCoordinator.new(_create_combat_service_for_root(root_card))
+	var event_interaction_controller: EventInteractionController = EventInteractionControllerScript.new()
+	event_interaction_controller.configure(combat_flow)
 
-	var random := RunRandomServiceScript.new()
-	_context = RunContextScript.new()
-	if not _context.configure(
-		_runtime_player,
-		_player_stats,
-		_card_service,
-		_encounter_combat_flow,
-		_event_interaction_controller,
+	var random: RunRandomService = RunRandomServiceScript.new()
+	var context: RunContext = RunContextScript.new()
+	if not context.configure(
+		runtime_player,
+		player_stats,
+		card_service,
+		combat_flow,
+		event_interaction_controller,
 		random
 	):
-		return _fail("Run setup could not configure RunContext")
+		return _fail("Run setup could not configure RunContext", card_service)
+
+	_runtime_player = runtime_player
+	_player_stats = player_stats
+	_card_service = card_service
+	_encounter_combat_flow = combat_flow
+	_event_interaction_controller = event_interaction_controller
+	_context = context
 	return true
 
 
@@ -122,8 +129,21 @@ func _create_combat_service_for_root(_root_card: CardData) -> CombatService2:
 	return CombatService2.new()
 
 
-func _fail(reason: String) -> bool:
+func _clear_runtime_state() -> void:
+	if _card_service != null:
+		_card_service.clear()
+	_runtime_player = null
+	_player_stats = null
+	_card_service = null
+	_encounter_combat_flow = null
+	_event_interaction_controller = null
 	_context = null
+
+
+func _fail(reason: String, partial_card_service: RunCardService = null) -> bool:
+	if partial_card_service != null:
+		partial_card_service.clear()
+	_clear_runtime_state()
 	_failure_reason = reason
 	initialization_failed.emit(reason)
 	return false
