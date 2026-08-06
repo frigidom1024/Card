@@ -193,6 +193,61 @@ on_victory_effects
 
 首版默认不让临时加成永久增加卡牌当前点数。
 
+
+### 7.1 配合边界与计算公式
+
+“卡牌配合”只改变当前卡牌本次战斗的比较点数，不负责修改牌桌结构、卡牌回手、卡牌移除、地图事件、金币、信仰值或残响结果。
+
+当前卡牌结算时使用：
+
+```text
+effective_points = card.current_points + synergy_bonus
+```
+
+其中：
+
+- `card.current_points` 是卡牌持久保留的当前点数；
+- `synergy_bonus` 是本次比较临时产生的配合加成；
+- `effective_points` 是本次与残响生命比较的最终点数。
+
+比较完成后，卡牌剩余点数按本次最终比较点数计算：
+
+```text
+if effective_points < monster.current_hp:
+    monster.current_hp -= effective_points
+    card.current_points = 0
+
+if effective_points == monster.current_hp:
+    monster.current_hp = 0
+    card.current_points = 0
+
+if effective_points > monster.current_hp:
+    card.current_points = effective_points - monster.current_hp
+    monster.current_hp = 0
+```
+
+因此，临时配合加成可能转化为击杀后的剩余点数，但不会单独修改卡牌的最大点数。
+
+由于战斗从牌链末尾向牌根结算，规则中不使用含义模糊的“上一张卡牌”。应使用“后置卡牌”表示原牌链中位于当前卡牌后方、更加接近牌链末尾且已经先结算的卡牌。
+
+第一版允许的配合只读取：
+
+- 当前卡牌类型和标签；
+- 后置卡牌类型和标签；
+- 后置卡牌结算后是否仍有点数；
+- 后置卡牌是否刚好归零；
+- 当前卡牌在牌链中的位置和牌链长度。
+
+第一版配合示例：
+
+```text
+后置卡牌结算后仍保留点数 -> 当前卡牌 synergy_bonus +1
+后置卡牌刚好归零 -> 当前卡牌 synergy_bonus +1
+连续两张同类型卡牌 -> 后一张卡牌 synergy_bonus +1
+牌链达到指定长度 -> 当前卡牌 synergy_bonus +1
+```
+
+配合不能直接触发另一张卡牌的完整效果，不能直接移除未使用卡牌，不能重置普通卡牌，不能修改玩家资源或地图，也不能触发怪物行动。
 ## 8. 第一关平衡方向
 
 | 内容 | 建议数值 |
@@ -229,3 +284,4 @@ on_victory_effects
 - 商店、宝藏、奖励掉落总体流程；
 - Boss 追击服务的事件移动逻辑；
 - 现有惩罚框架的结果传递方式。
+
