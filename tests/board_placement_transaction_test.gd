@@ -27,17 +27,16 @@ func _test_chain_placement_publishes_only_spatial_transaction() -> void:
 	_expect(board.attach_event(echo), "an unresolved echo can occupy the root card cell")
 
 	var committed_results: Array[BoardPlacementResult] = []
-	var direct_event_requests := 0
 	board.placement_committed.connect(func(result: BoardPlacementResult) -> void:
 		committed_results.append(result)
 	)
-	board.event_interaction_requested.connect(func(_instance: EventInstance) -> void:
-		direct_event_requests += 1
+	_expect(
+		not board.has_signal("event_interaction_requested"),
+		"Board only publishes the placement result; exploration requests interaction"
 	)
 
 	_expect(board.add_card(root_card), "root card commits over an unresolved echo")
 	_expect(committed_results.size() == 1, "placement publishes exactly one spatial result")
-	_expect(direct_event_requests == 0, "Board never requests event interaction directly")
 	if committed_results.size() == 1:
 		var committed_result := committed_results[0]
 		_expect(committed_result.source_card == root_card, "result keeps the source card")

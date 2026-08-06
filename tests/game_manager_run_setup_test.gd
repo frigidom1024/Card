@@ -80,10 +80,10 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 			"GameManager receives all ordinary event interactions from the coordinator"
 		)
 	_expect(
-		not manager.board.event_interaction_requested.is_connected(manager._on_board_event_triggered),
-		"GameManager no longer opens events directly from Board mutations"
+		not manager.board.has_signal("event_interaction_requested"),
+		"Board no longer exposes a direct event-interaction signal"
 	)
-	_expect(manager.board.events.is_empty(), "run setup leaves event creation to fog exploration instead of pre-spawning the level")
+	_expect(not manager.board.events.is_empty(), "run setup immediately pre-spawns the configured level events")
 	var returned_guide := _make_guide_card()
 	manager.add_child(returned_guide)
 	manager._on_board_card_return_requested(returned_guide)

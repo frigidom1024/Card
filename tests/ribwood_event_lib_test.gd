@@ -5,6 +5,7 @@ const EventDataScript = preload("res://scripts/game/event/core/event_data.gd")
 const ShopEventContentScript = preload("res://scripts/game/event/shop/shop_event_content.gd")
 const TreasureEventContentScript = preload("res://scripts/game/event/treasure/treasure_event_content.gd")
 const EncounterEventContentScript = preload("res://scripts/game/event/encounter/encounter_event_content.gd")
+const RibwoodSpawnConfig = preload("res://data/levels/ribwood/exploration_spawn_config.tres")
 
 var _failure_count := 0
 
@@ -17,6 +18,7 @@ func _run_tests() -> void:
 	_test_event_library_contains_only_ribwood_events()
 	_test_event_entries_are_singletons()
 	_test_content_is_scoped_to_ribwood()
+	_test_spawn_pools_exclude_boss()
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -73,3 +75,13 @@ func _expect(condition: bool, message: String) -> void:
 	if not condition:
 		_failure_count += 1
 		push_error(message)
+
+
+func _test_spawn_pools_exclude_boss() -> void:
+	_expect(RibwoodSpawnConfig != null, "Ribwood spawn profile loads")
+	if RibwoodSpawnConfig == null:
+		return
+	for candidate in RibwoodSpawnConfig.initial_event_pool:
+		_expect(candidate.event_data.event_type != EventDataScript.EventType.BOSS, "Ribwood initial pool excludes Boss")
+	for candidate in RibwoodSpawnConfig.placement_event_pool:
+		_expect(candidate.event_data.event_type != EventDataScript.EventType.BOSS, "Ribwood placement pool excludes Boss")

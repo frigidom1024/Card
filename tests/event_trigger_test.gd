@@ -75,12 +75,13 @@ func _test_successful_card_placement_reports_exactly_one_event_overlap() -> void
 	_attach_event(board, "treasure", Vector2i(2, 0), Vector2i.ONE)
 	var card := _make_card_at(board, _horizontal_card_center(board, Vector2i(1, 0)), 90.0)
 	var committed: Array[BoardPlacementResult] = []
-	var direct_event_requests := 0
 	board.placement_committed.connect(func(result: BoardPlacementResult) -> void: committed.append(result))
-	board.event_interaction_requested.connect(func(_instance: EventInstance) -> void: direct_event_requests += 1)
+	_expect(
+		not board.has_signal("event_interaction_requested"),
+		"Board reports overlap data but leaves event interaction to exploration"
+	)
 	_expect(board.add_card(card), "card is legally placed")
 	_expect(committed.size() == 1, "successful placement publishes one spatial transaction")
-	_expect(direct_event_requests == 0, "Board does not request interaction for an event overlap")
 	if committed.size() == 1:
 		_expect(
 			committed[0].overlapped_event != null and committed[0].overlapped_event.template.event_id == "treasure",

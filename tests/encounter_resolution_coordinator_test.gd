@@ -135,7 +135,12 @@ func _create_fixture(event_type: EventData.EventType) -> Dictionary:
 	_expect(board.attach_event(event_node), "fixture attaches encounter event to board")
 
 	var exploration := ExplorationCoordinator.new()
-	_expect(exploration.configure(EventLib.new(), board, ExplorationConfig.new()), "fixture configures exploration facade")
+	var exploration_config := ExplorationConfig.new()
+	exploration_config.spawn_config = ExplorationSpawnConfig.new()
+	exploration_config.spawn_config.initial_event_count_min = 0
+	exploration_config.spawn_config.initial_event_count_max = 0
+	exploration_config.spawn_config.placement_spawn_count_weights = {0: 1, 1: 0, 2: 0}
+	_expect(exploration.configure(EventLib.new(), board, exploration_config), "fixture configures exploration facade")
 	return {
 		"board": board,
 		"hand_area": hand_area,

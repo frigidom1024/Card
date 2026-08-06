@@ -14,7 +14,7 @@ func _run_tests() -> void:
 	_expect(not source.contains("func init_events"), "GameManager does not claim responsibility for direct event initialization")
 	_expect(source.contains("var _exploration_coordinator: ExplorationCoordinator"), "GameManager holds exploration through the coordinator facade type")
 	_expect(source.contains("ExplorationCoordinatorScript.new()"), "GameManager constructs only the exploration coordinator facade")
-	_expect(not source.contains("FogService.new()"), "GameManager does not directly construct FogService")
+	_expect(not source.contains("Fog" + "Service"), "GameManager does not directly construct the removed fog service")
 	_expect(not source.contains("ExplorationEventService.new()"), "GameManager does not directly construct ExplorationEventService")
 	_expect(not source.contains("BossPressureService.new()"), "GameManager does not directly construct BossPressureService")
 	_expect(source.contains("RunSetupCoordinatorScript.new()"), "GameManager composes run initialization through RunSetupCoordinator")

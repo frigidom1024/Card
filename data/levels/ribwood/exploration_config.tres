@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="ExplorationConfig" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="ExplorationConfig" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/game/exploration/exploration_config.gd" id="1_exploration_config"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/exploration_spawn_config.tres" id="2_spawn_config"]
 
 [resource]
 script = ExtResource("1_exploration_config")
-scheduled_event_reveal_thresholds = Array[int]([4, 8, 14, 20, 22])
-boss_reveal_threshold = 24
+spawn_config = ExtResource("2_spawn_config")
 boss_pursuit_enabled = true
 cards_to_boss_surround = 2
 cards_to_boss_intercept = 2
