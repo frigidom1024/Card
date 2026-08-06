@@ -1,0 +1,70 @@
+[gd_resource type="Resource" script_class="ExplorationSpawnConfig" load_steps=12 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/exploration/exploration_spawn_config.gd" id="1_config"]
+[ext_resource type="Script" path="res://scripts/game/exploration/event_spawn_candidate.gd" id="2_candidate"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/events/ribwood_marrow_rat_event.tres" id="3_rat"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/events/ribwood_marrow_lamp_treasure_event.tres" id="4_lamp"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/events/ribwood_broken_banner_shop_event.tres" id="5_shop"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/events/ribwood_fallen_rib_wolf_event.tres" id="6_wolf"]
+
+[sub_resource type="Resource" id="EventSpawnCandidate_initial_rat"]
+script = ExtResource("2_candidate")
+event_data = ExtResource("3_rat")
+weight = 45
+allow_duplicate = true
+
+[sub_resource type="Resource" id="EventSpawnCandidate_initial_lamp"]
+script = ExtResource("2_candidate")
+event_data = ExtResource("4_lamp")
+weight = 25
+allow_duplicate = false
+
+[sub_resource type="Resource" id="EventSpawnCandidate_initial_shop"]
+script = ExtResource("2_candidate")
+event_data = ExtResource("5_shop")
+weight = 15
+allow_duplicate = false
+
+[sub_resource type="Resource" id="EventSpawnCandidate_initial_wolf"]
+script = ExtResource("2_candidate")
+event_data = ExtResource("6_wolf")
+weight = 15
+allow_duplicate = true
+
+[sub_resource type="Resource" id="EventSpawnCandidate_dynamic_rat"]
+script = ExtResource("2_candidate")
+event_data = ExtResource("3_rat")
+weight = 50
+allow_duplicate = true
+
+[sub_resource type="Resource" id="EventSpawnCandidate_dynamic_wolf"]
+script = ExtResource("2_candidate")
+event_data = ExtResource("6_wolf")
+weight = 25
+allow_duplicate = true
+
+[sub_resource type="Resource" id="EventSpawnCandidate_dynamic_lamp"]
+script = ExtResource("2_candidate")
+event_data = ExtResource("4_lamp")
+weight = 15
+allow_duplicate = false
+
+[sub_resource type="Resource" id="EventSpawnCandidate_dynamic_shop"]
+script = ExtResource("2_candidate")
+event_data = ExtResource("5_shop")
+weight = 10
+allow_duplicate = false
+
+[resource]
+script = ExtResource("1_config")
+initial_event_count_min = 3
+initial_event_count_max = 5
+initial_event_pool = Array[ExtResource("2_candidate")]([SubResource("EventSpawnCandidate_initial_rat"), SubResource("EventSpawnCandidate_initial_lamp"), SubResource("EventSpawnCandidate_initial_shop"), SubResource("EventSpawnCandidate_initial_wolf")])
+placement_spawn_count_weights = {
+0: 60,
+1: 30,
+2: 10,
+}
+placement_event_pool = Array[ExtResource("2_candidate")]([SubResource("EventSpawnCandidate_dynamic_rat"), SubResource("EventSpawnCandidate_dynamic_wolf"), SubResource("EventSpawnCandidate_dynamic_lamp"), SubResource("EventSpawnCandidate_dynamic_shop")])
+max_unresolved_events = 8
+boss_spawn_after_placements = 8

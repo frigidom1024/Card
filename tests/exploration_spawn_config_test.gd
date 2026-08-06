@@ -5,6 +5,7 @@ const EventEntryScript := preload("res://scripts/game/event/core/event_entry.gd"
 const EventLibScript := preload("res://scripts/game/event/core/event_lib.gd")
 const EventSpawnCandidateScript := preload("res://scripts/game/exploration/event_spawn_candidate.gd")
 const ExplorationSpawnConfigScript := preload("res://scripts/game/exploration/exploration_spawn_config.gd")
+const RibwoodSpawnConfig := preload("res://data/levels/ribwood/exploration_spawn_config.tres")
 
 var _failure_count := 0
 
@@ -18,6 +19,7 @@ func _run_tests() -> void:
 	_test_spawn_count_weights_reject_unsupported_count_and_empty_weight()
 	_test_valid_profile_accepts_seeded_weighted_count()
 	_test_dynamic_pool_rejects_boss_template()
+	_test_ribwood_pool_excludes_boss_template()
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -99,3 +101,13 @@ func _expect(condition: bool, message: String) -> void:
 		_failure_count += 1
 		push_error(message)
 
+
+
+func _test_ribwood_pool_excludes_boss_template() -> void:
+	_expect(RibwoodSpawnConfig != null, "Ribwood spawn config loads")
+	if RibwoodSpawnConfig == null:
+		return
+	for candidate in RibwoodSpawnConfig.initial_event_pool:
+		_expect(candidate.event_data.event_type != EventData.EventType.BOSS, "Ribwood initial pool excludes Boss")
+	for candidate in RibwoodSpawnConfig.placement_event_pool:
+		_expect(candidate.event_data.event_type != EventData.EventType.BOSS, "Ribwood dynamic pool excludes Boss")
