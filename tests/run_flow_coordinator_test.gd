@@ -27,9 +27,11 @@ class RecordingResolution:
 	extends EncounterResolutionCoordinator
 	var apply_result := true
 	var applied_instances: Array[EventInstance] = []
+	var apply_count := 0
 	var emit_failure_on_defeat := false
 
 	func apply(instance: EventInstance, result: CombatResult) -> bool:
+		apply_count += 1
 		if not apply_result:
 			return false
 		applied_instances.append(instance)
@@ -80,6 +82,7 @@ func _run_tests() -> void:
 	_test_placement_contact_enters_interacting_and_begins_modal()
 	_test_failed_settlement_keeps_interaction_and_modal_pending()
 	_test_resolution_failure_enters_failed_once()
+	_test_failed_boss_settlement_keeps_interaction_pending()
 	_test_boss_victory_enters_finished()
 	_test_faith_echo_and_guide_return_delegate_to_runtime_services()
 	_test_explicit_faith_echo_port_overrides_pipeline_internals()
@@ -178,16 +181,50 @@ func _test_resolution_failure_enters_failed_once() -> void:
 	_expect(placement_resolutions == 0, "FAILED flow rejects new placement pipeline work")
 
 
+func _test_failed_boss_settlement_keeps_interaction_pending() -> void:
+	var fixture := _make_started_fixture()
+	var flow = fixture.flow
+	if flow == null:
+		return
+	var boss := _event(EventData.EventType.BOSS)
+	var resolved_signals := 0
+	var finish_signals := 0
+	flow.combat_resolved.connect(func(_instance, _result) -> void: resolved_signals += 1)
+	flow.run_finished.connect(func() -> void: finish_signals += 1)
+	fixture.pipeline.event_interaction_requested.emit(boss)
+	fixture.resolution.apply_result = false
+
+	_expect(
+		not flow.handle_combat_settlement_request(boss, _result(CombatResult.Outcome.VICTORY)),
+		"failed Boss dismissal rejects the settlement at Flow boundary"
+	)
+	_expect(flow.get_state() == STATE_INTERACTING, "failed Boss dismissal keeps Flow interacting")
+	_expect(fixture.modal.completed_settlements == 0, "failed Boss dismissal keeps Modal pending")
+	_expect(resolved_signals == 0, "failed Boss dismissal emits no combat-resolved signal")
+	_expect(finish_signals == 0, "failed Boss dismissal emits no run-finished signal")
+
+
 func _test_boss_victory_enters_finished() -> void:
 	var fixture := _make_started_fixture()
 	var flow = fixture.flow
 	if flow == null:
 		return
 	var finish_signals: Array[bool] = []
+	var signal_order: Array[String] = []
+	var signal_states: Array[bool] = []
 	var reentry_state := {"attempts": 0, "result": true}
-	flow.run_finished.connect(func() -> void: finish_signals.append(true))
+	flow.run_finished.connect(
+		func() -> void:
+			signal_order.append("run_finished")
+			signal_states.append(flow.get_state() == STATE_FINISHED)
+			finish_signals.append(true)
+	)
 	flow.combat_resolved.connect(
 		func(resolved_instance: EventInstance, resolved_result: CombatResult) -> void:
+			signal_order.append("combat_resolved")
+			signal_states.append(
+				flow.get_state() == STATE_FINISHED and fixture.modal.completed_settlements == 1
+			)
 			if reentry_state.attempts > 0:
 				return
 			reentry_state.attempts += 1
@@ -207,6 +244,25 @@ func _test_boss_victory_enters_finished() -> void:
 		not reentry_state.result, "combat-resolved listeners cannot reenter terminal settlement"
 	)
 	_expect(finish_signals == [true], "flow emits one run-finished signal")
+	_expect(
+		signal_order == ["combat_resolved", "run_finished"],
+		"flow emits settlement signals in strict order"
+	)
+	_expect(
+		signal_states == [true, true],
+		"settlement listeners observe terminal state and completed modal"
+	)
+	_expect(
+		fixture.resolution.apply_count == 1, "duplicate Boss settlement invokes resolution once"
+	)
+	_expect(
+		not flow.handle_combat_settlement_request(boss, _result(CombatResult.Outcome.VICTORY)),
+		"flow rejects a duplicate non-empty Boss settlement"
+	)
+	_expect(
+		fixture.resolution.apply_count == 1, "duplicate Boss settlement does not reapply rewards"
+	)
+	_expect(finish_signals == [true], "duplicate Boss settlement does not re-emit run-finished")
 	_expect(not flow.accepts_placement(), "finished flow rejects placements")
 	var placement_resolutions := 0
 	fixture.pipeline.placement_resolved.connect(

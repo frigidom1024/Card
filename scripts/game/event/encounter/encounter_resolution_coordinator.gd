@@ -67,13 +67,14 @@ func apply(instance: EventInstance, result: CombatResult) -> bool:
 		return false
 	match result.outcome:
 		CombatResult.Outcome.VICTORY:
+			if instance.get_event_type() == EventData.EventType.BOSS:
+				if not bool(_on_boss_dismissed.call(instance)):
+					return false
 			_apply_player_combat_state(result.player_stats_after)
 			_apply_monster_combat_state(instance, result.monster_stats_after)
 			_apply_victory_rewards(instance)
 			instance.resolve()
-			if instance.get_event_type() == EventData.EventType.BOSS:
-				_on_boss_dismissed.call(instance)
-			else:
+			if instance.get_event_type() != EventData.EventType.BOSS:
 				_on_event_display_refresh.call(instance)
 		CombatResult.Outcome.RETREAT:
 			_apply_player_combat_state(result.player_stats_after)

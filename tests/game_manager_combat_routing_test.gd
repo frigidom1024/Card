@@ -155,6 +155,15 @@ func _test_boss_victory_removes_the_intercepting_event() -> void:
 		event_node in board.events,
 		"intercepting boss remains attached before settlement confirmation"
 	)
+	var boss_result: CombatResult = (
+		manager._event_interaction_controller.get_pending_combat_result()
+	)
+	var content := event_node.event_instance.get_content() as EncounterEventContent
+	var gold_drop := EncounterDropEntry.new()
+	gold_drop.kind = EncounterDropEntry.Kind.GOLD
+	gold_drop.chance = 1.0
+	gold_drop.gold_amount = 9
+	content.drop_entries.append(gold_drop)
 
 	_confirm_combat_settlement(manager)
 	_expect(event_node.event_instance.is_resolved, "confirmed boss victory resolves the boss event")
@@ -167,12 +176,16 @@ func _test_boss_victory_removes_the_intercepting_event() -> void:
 		"boss event is removed before its interaction lifecycle finishes"
 	)
 	_expect(finished_signals == [true], "boss victory emits GameManager.run_finished once")
+	var gold_after_first_settlement: int = manager.player_data.gold
 	_expect(
 		not manager._run_flow.handle_combat_settlement_request(
-			event_node.event_instance,
-			manager._event_interaction_controller.get_pending_combat_result()
+			event_node.event_instance, boss_result
 		),
 		"finished flow rejects duplicate boss settlement"
+	)
+	_expect(
+		manager.player_data.gold == gold_after_first_settlement,
+		"duplicate boss settlement does not grant rewards twice"
 	)
 	_expect(finished_signals == [true], "duplicate boss settlement does not re-emit run_finished")
 	_cleanup_manager(manager)

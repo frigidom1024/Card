@@ -11,6 +11,7 @@ var _failure_count := 0
 var _player_state_change_count := 0
 var _boss_dismissal_count := 0
 var _event_display_refresh_count := 0
+var _boss_dismissal_succeeded := true
 var _dismissed_instances: Array[EventInstance] = []
 var _refreshed_instances: Array[EventInstance] = []
 var _active_fixture: Dictionary = {}
@@ -25,6 +26,7 @@ func _run_tests() -> void:
 	await _test_retreat_returns_tail_and_grants_no_rewards()
 	await _test_defeat_grants_no_rewards()
 	await _test_boss_victory_reuses_reward_pipeline_before_removal()
+	await _test_boss_dismissal_failure_is_atomic()
 	await _test_resolved_victory_cannot_be_applied_twice()
 	quit(1 if _failure_count > 0 else 0)
 
@@ -180,6 +182,47 @@ func _test_boss_victory_reuses_reward_pipeline_before_removal() -> void:
 		"boss victory does not refresh through the normal event port"
 	)
 	_expect(_player_state_change_count == 1, "boss victory refreshes player state once")
+
+	await _free_fixture(fixture)
+
+
+func _test_boss_dismissal_failure_is_atomic() -> void:
+	var fixture := _create_fixture(EventData.EventType.BOSS)
+	var coordinator = _create_coordinator()
+	if coordinator == null:
+		await _free_fixture(fixture)
+		return
+	_add_guaranteed_gold_and_card_drops(fixture.content)
+	_player_state_change_count = 0
+	if not _configure_coordinator(coordinator, fixture):
+		await _free_fixture(fixture)
+		return
+
+	_boss_dismissal_succeeded = false
+	var result := _result(CombatResult.Outcome.VICTORY, 8, 0)
+	_expect(
+		not coordinator.apply(fixture.instance, result),
+		"failed Boss dismissal rejects victory settlement"
+	)
+	_expect(not fixture.instance.is_resolved, "failed Boss dismissal leaves the Boss unresolved")
+	_expect(
+		fixture.event_node in fixture.board.events, "failed Boss dismissal keeps the event attached"
+	)
+	_expect(
+		fixture.player_stats.hp == 20, "failed Boss dismissal does not write player combat state"
+	)
+	_expect(
+		fixture.monster.stats.hp == 20, "failed Boss dismissal does not write monster combat state"
+	)
+	_expect(fixture.player_data.gold == 30, "failed Boss dismissal grants no victory gold")
+	_expect(
+		fixture.card_service.get_entities().is_empty(),
+		"failed Boss dismissal grants no victory cards"
+	)
+	_expect(_player_state_change_count == 0, "failed Boss dismissal emits no player-state callback")
+	_expect(
+		_event_display_refresh_count == 0, "failed Boss dismissal emits no display refresh callback"
+	)
 
 	await _free_fixture(fixture)
 
@@ -383,21 +426,23 @@ func _horizontal_card_center(board: Board, left_cell: Vector2i) -> Vector2:
 
 func _reset_ports(fixture: Dictionary) -> void:
 	_active_fixture = fixture
+	_boss_dismissal_succeeded = true
 	_boss_dismissal_count = 0
 	_event_display_refresh_count = 0
 	_dismissed_instances.clear()
 	_refreshed_instances.clear()
 
 
-func _on_boss_dismissed(instance: EventInstance) -> void:
+func _on_boss_dismissed(instance: EventInstance) -> bool:
 	_boss_dismissal_count += 1
 	_dismissed_instances.append(instance)
+	if not _boss_dismissal_succeeded:
+		return false
 	if _active_fixture.is_empty():
-		return
+		return false
 	var board: Board = _active_fixture.board
 	var event_node: BoardEvent = _active_fixture.event_node
-	if board != null and event_node != null:
-		board.remove_event(event_node)
+	return board != null and event_node != null and board.remove_event(event_node)
 
 
 func _on_event_display_refresh(instance: EventInstance) -> void:

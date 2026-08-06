@@ -27,6 +27,7 @@ var _faith_echo_request: Callable
 var _state := State.UNINITIALIZED
 var _configured := false
 var _settlement_in_progress := false
+var _settled_instances: Array[EventInstance] = []
 var _finished_event: EventInstance
 
 
@@ -53,6 +54,7 @@ func configure(
 	_configured = false
 	_settlement_in_progress = false
 	_finished_event = null
+	_settled_instances.clear()
 	_context = context
 	_pipeline = pipeline
 	_modal = modal
@@ -110,12 +112,14 @@ func handle_combat_settlement_request(instance: EventInstance, result: CombatRes
 		or _settlement_in_progress
 		or instance == null
 		or result == null
+		or instance in _settled_instances
 	):
 		return false
 	_settlement_in_progress = true
 	if not _resolution.apply(instance, result):
 		_settlement_in_progress = false
 		return false
+	_settled_instances.append(instance)
 
 	var is_boss_victory := (
 		instance.get_event_type() == EventData.EventType.BOSS
