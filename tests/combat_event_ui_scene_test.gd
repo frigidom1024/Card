@@ -13,6 +13,8 @@ func _run_tests() -> void:
 	await _test_steps_render_in_order_and_update_after_snapshots()
 	await _test_result_panel_stays_hidden_until_all_steps_finish_then_formats_retreat()
 	await _test_victory_and_defeat_settlement_copy_and_confirmation_signal()
+	await _test_effect_log_uses_resolved_values_and_stable_target_snapshot()
+	await _test_effect_log_formats_temporary_card_points()
 	quit(0 if _failure_count == 0 else 1)
 
 
@@ -117,6 +119,47 @@ func _test_victory_and_defeat_settlement_copy_and_confirmation_signal() -> void:
 	_expect(confirm_button != null and confirm_button.text == "确认", "defeat settlement names confirmation action")
 	_cleanup_view(view)
 
+
+
+func _test_effect_log_uses_resolved_values_and_stable_target_snapshot() -> void:
+	var view := await _make_view()
+	if view == null:
+		return
+	var effect := CombatEffect.new(
+		CombatEffect.Type.DAMAGE,
+		CombatEffect.Target.CARD,
+		5,
+		CombatEffect.SourceType.MONSTER_EFFECT,
+		"撕甲啃咬"
+	)
+	effect.target_name = "被冲击卡"
+	effect.set_parameter("absorbed", 2)
+	effect.set_parameter("applied", 3)
+	var text := str(view.call("_format_effect", effect))
+	_expect(text.contains("被冲击卡"), "effect log uses the stable target snapshot")
+	_expect(text.contains("3 点伤害"), "effect log shows the resolved damage")
+	_expect(text.contains("声明 5"), "effect log keeps the declared damage for comparison")
+	_expect(text.contains("护甲吸收 2"), "effect log shows absorbed armor damage")
+	_cleanup_view(view)
+
+
+func _test_effect_log_formats_temporary_card_points() -> void:
+	var view := await _make_view()
+	if view == null:
+		return
+	var effect := CombatEffect.new(
+		3,
+		CombatEffect.Target.CARD,
+		2,
+		CombatEffect.SourceType.PLAYER_CARD,
+		"肋骨短刃"
+	)
+	effect.target_name = "肋骨短刃"
+	effect.set_parameter("temporary", true)
+	effect.set_parameter("applied", 2)
+	var text := str(view.call("_format_effect", effect))
+	_expect(text.contains("获得 2 点临时点数"), "temporary card-point effects have a clear combat-log message")
+	_cleanup_view(view)
 
 func _make_view() -> Control:
 	var view := CombatScene.instantiate() as Control

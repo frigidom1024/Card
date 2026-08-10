@@ -3,9 +3,9 @@
 [ext_resource type="Script" uid="uid://p3onjjcmpt8k" path="res://scripts/game/event/encounter/mob_action.gd" id="action"]
 [ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_data"]
 [ext_resource type="Script" uid="uid://b3vemd5otcaea" path="res://scripts/game/event/encounter/mob_data.gd" id="mob"]
-[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_rib_nail.tres" id="reward_attack"]
-[ext_resource type="Resource" uid="uid://bwr3r5066symu" path="res://data/levels/ribwood/cards/ribwood_shield_fragment.tres" id="reward_defense"]
-[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_amber_marrow_bottle.tres" id="reward_heal"]
+[ext_resource type="Resource" uid="uid://pnkorj666kr0" path="res://data/levels/ribwood/cards/ribwood_rib_nail.tres" id="reward_attack"]
+[ext_resource type="Resource" uid="uid://cjmnccv0jhheg" path="res://data/levels/ribwood/cards/ribwood_shield_fragment.tres" id="reward_defense"]
+[ext_resource type="Resource" uid="uid://iumdbbsrxe78" path="res://data/levels/ribwood/cards/ribwood_amber_marrow_bottle.tres" id="reward_heal"]
 [ext_resource type="Script" uid="uid://cweljpn1qxxyh" path="res://scripts/combatv2/combat_stats_data.gd" id="stats"]
 
 [sub_resource type="Resource" id="RatAction_gnaw"]
@@ -19,7 +19,6 @@ attack = 1
 
 [resource]
 script = ExtResource("mob")
-enhancement_hp_bonus = 1
 mob_name = "啮髓鼠群"
 base_stats = SubResource("RatStats")
 actions = Array[ExtResource("action")]([SubResource("RatAction_gnaw")])

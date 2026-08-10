@@ -2,7 +2,8 @@ class_name LastCardDefenseBonusRule
 extends CardRule
 
 
-func execute(context: CardResolutionContext, draft: CardResolutionDraft) -> CardResolutionDraft:
-	if context != null and draft != null and context.is_last_card():
-		draft.defense += 2
-	return draft
+func on_attack(draft) -> bool:
+	if draft == null or not draft.is_current_card_last():
+		return false
+	draft.add_player_defense(2, ["last_card_defense"])
+	return true

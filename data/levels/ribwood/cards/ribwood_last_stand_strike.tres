@@ -1,13 +1,13 @@
-[gd_resource type="Resource" script_class="CardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://watpje6xtlx2"]
 
-[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_ulf6m"]
-[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+[ext_resource type="Script" uid="uid://bvx1h805ben8h" path="res://scripts/combatv2/card/card_rule.gd" id="1_ulf6m"]
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_script"]
 
 [resource]
 script = ExtResource("card_script")
 card_id = 1033
 card_name = "末路重击"
-value = 12
+value = 4
 artwork_path = "res://assert/card/ribwood_last_stand_strike.png"
 max_points = 4
 description = "走投无路时挥出的重击。无额外效果。"

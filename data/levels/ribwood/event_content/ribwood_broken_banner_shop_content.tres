@@ -1,12 +1,13 @@
 [gd_resource type="Resource" script_class="ShopEventContent" format=3 uid="uid://bt2p2edohfwqn"]
 
-[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_grave_beetle.tres" id="beetle"]
-[ext_resource type="Resource" uid="uid://dqrv4ajgxhcih" path="res://data/levels/ribwood/cards/ribwood_ember_blade.tres" id="blade"]
-[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_scar_bottle.tres" id="bottle"]
-[ext_resource type="Resource" uid="uid://c5bnwon15sure" path="res://data/levels/ribwood/cards/ribwood_warmth_charm.tres" id="charm"]
+[ext_resource type="Resource" uid="uid://bcr0k5krj3yop" path="res://data/levels/ribwood/cards/ribwood_grave_beetle.tres" id="beetle"]
+[ext_resource type="Resource" uid="uid://ba0i54arx3hse" path="res://data/levels/ribwood/cards/ribwood_ember_blade.tres" id="blade"]
+[ext_resource type="Resource" uid="uid://c3bu863eqnxac" path="res://data/levels/ribwood/cards/ribwood_scar_bottle.tres" id="bottle"]
+[ext_resource type="Resource" uid="uid://dn5rv3mmyjcq" path="res://data/levels/ribwood/cards/ribwood_warmth_charm.tres" id="charm"]
 [ext_resource type="Script" uid="uid://16lnshifkonp" path="res://scripts/game/event/shop/shop_event_content.gd" id="content"]
 [ext_resource type="Script" uid="uid://dqghli5cxc22q" path="res://scripts/game/event/shop/shop_item_data.gd" id="item"]
-[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_bone_armor_round_shield.tres" id="shield"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_broken_banner_scout.tres" id="scout"]
+[ext_resource type="Resource" uid="uid://cdmmj16i5cdfj" path="res://data/levels/ribwood/cards/ribwood_bone_armor_round_shield.tres" id="shield"]
 
 [sub_resource type="Resource" id="ShopItem_shield"]
 script = ExtResource("item")
@@ -28,6 +29,10 @@ card_data = ExtResource("bottle")
 script = ExtResource("item")
 card_data = ExtResource("beetle")
 
+[sub_resource type="Resource" id="ShopItem_scout"]
+script = ExtResource("item")
+card_data = ExtResource("scout")
+
 [resource]
 script = ExtResource("content")
-items = Array[ExtResource("item")]([SubResource("ShopItem_shield"), SubResource("ShopItem_blade"), SubResource("ShopItem_charm"), SubResource("ShopItem_bottle"), SubResource("ShopItem_beetle")])
+items = Array[ExtResource("item")]([SubResource("ShopItem_shield"), SubResource("ShopItem_blade"), SubResource("ShopItem_charm"), SubResource("ShopItem_bottle"), SubResource("ShopItem_beetle"), SubResource("ShopItem_scout")])

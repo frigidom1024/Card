@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://bkbrmj11q87go"]
 
 [ext_resource type="Script" uid="uid://im3qlti5c287" path="res://scripts/home/main_menu_screen.gd" id="1_main_menu"]
-[ext_resource type="Texture2D" uid="uid://dr8r3tybbugxn" path="res://assert/bg/Home1_2k.jpg" id="2_y7q1d"]
 
 [sub_resource type="Gradient" id="Gradient_top"]
 offsets = PackedFloat32Array(0, 0.46, 1)
@@ -19,38 +18,23 @@ content_margin_left = 32.0
 content_margin_top = 26.0
 content_margin_right = 32.0
 content_margin_bottom = 26.0
-bg_color = Color(0.015, 0.031, 0.071, 0.52)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
+bg_color = Color(0.2248303, 0.28390026, 0.3075287, 1)
 border_color = Color(0.48, 0.33, 0.12, 0.62)
 corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
-shadow_color = Color(0, 0, 0, 0.48)
-shadow_size = 12
-shadow_offset = Vector2(0, 6)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start"]
 content_margin_left = 28.0
 content_margin_top = 14.0
 content_margin_right = 28.0
 content_margin_bottom = 14.0
-bg_color = Color(0.035, 0.075, 0.14, 0.98)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.63, 0.43, 0.15, 0.92)
+bg_color = Color(0, 0.5294118, 0.9607843, 1)
 corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-shadow_color = Color(0, 0, 0, 0.58)
-shadow_size = 10
-shadow_offset = Vector2(0, 5)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_pressed"]
 content_margin_left = 28.0
@@ -67,9 +51,6 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-shadow_color = Color(0, 0, 0, 0.4)
-shadow_size = 3
-shadow_offset = Vector2(0, 2)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_hover"]
 content_margin_left = 28.0
@@ -86,9 +67,6 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-shadow_color = Color(0.65, 0.4, 0.08, 0.24)
-shadow_size = 14
-shadow_offset = Vector2(0, 6)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_disabled"]
 content_margin_left = 28.0
@@ -105,9 +83,6 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-shadow_color = Color(0, 0, 0, 0.32)
-shadow_size = 5
-shadow_offset = Vector2(0, 3)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_start_focus"]
 bg_color = Color(0, 0, 0, 0)
@@ -133,21 +108,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main_menu")
-
-[node name="TextureRect" type="TextureRect" parent="." unique_id=615512586]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -1056.0
-offset_top = -604.0
-offset_right = 1056.0
-offset_bottom = 604.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("2_y7q1d")
 
 [node name="TopGradientOverlay" type="TextureRect" parent="." unique_id=1588112804]
 layout_mode = 1
@@ -215,8 +175,10 @@ anchors_preset = 14
 anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
-offset_top = -75.0
-offset_bottom = 75.0
+offset_left = -1.0
+offset_top = -20.0
+offset_right = -1.0
+offset_bottom = 130.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -233,7 +195,7 @@ alignment = 1
 custom_minimum_size = Vector2(320, 72)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_colors/font_color = Color(0.94, 0.91, 0.8, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_pressed_color = Color(0.98, 0.84, 0.52, 1)
 theme_override_colors/font_hover_color = Color(1, 0.92, 0.66, 1)
 theme_override_colors/font_disabled_color = Color(0.49, 0.52, 0.54, 1)
@@ -244,19 +206,3 @@ theme_override_styles/hover = SubResource("StyleBoxFlat_start_hover")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_start_disabled")
 theme_override_styles/focus = SubResource("StyleBoxFlat_start_focus")
 text = "BEGIN PILGRIMAGE"
-
-[node name="FooterBlock" type="CenterContainer" parent="SafeArea/Layout" unique_id=1759411550]
-layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -42.0
-grow_horizontal = 2
-grow_vertical = 0
-
-[node name="VersionLabel" type="Label" parent="SafeArea/Layout/FooterBlock" unique_id=1459206120]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.42, 0.55, 0.43, 1)
-theme_override_font_sizes/font_size = 14
-text = "v0.1.0"

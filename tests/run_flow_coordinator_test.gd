@@ -29,12 +29,15 @@ class RecordingResolution:
 	var applied_instances: Array[EventInstance] = []
 	var apply_count := 0
 	var emit_failure_on_defeat := false
+	var resolve_victory := false
 
 	func apply(instance: EventInstance, result: CombatResult) -> bool:
 		apply_count += 1
 		if not apply_result:
 			return false
 		applied_instances.append(instance)
+		if resolve_victory and result.outcome == CombatResult.Outcome.VICTORY:
+			instance.resolve()
 		if emit_failure_on_defeat and result.outcome == CombatResult.Outcome.DEFEAT:
 			exploration_failed.emit(result)
 		return true
@@ -43,9 +46,14 @@ class RecordingResolution:
 class RecordingExploration:
 	extends ExplorationCoordinator
 	var faith_echo_requests := 0
+	var dismissed_events: Array[EventInstance] = []
 
 	func request_faith_echo() -> bool:
 		faith_echo_requests += 1
+		return true
+
+	func dismiss_resolved_event(instance: EventInstance) -> bool:
+		dismissed_events.append(instance)
 		return true
 
 
@@ -81,9 +89,11 @@ func _run_tests() -> void:
 	_test_start_enters_exploring()
 	_test_placement_contact_enters_interacting_and_begins_modal()
 	_test_failed_settlement_keeps_interaction_and_modal_pending()
+	_test_retreat_can_retry_same_encounter()
 	_test_resolution_failure_enters_failed_once()
 	_test_failed_boss_settlement_keeps_interaction_pending()
 	_test_boss_victory_enters_finished()
+	_test_resolved_non_boss_event_uses_cleanup_port()
 	_test_faith_echo_and_guide_return_delegate_to_runtime_services()
 	_test_explicit_faith_echo_port_overrides_pipeline_internals()
 	quit(1 if _failure_count > 0 else 0)
@@ -149,6 +159,31 @@ func _test_failed_settlement_keeps_interaction_and_modal_pending() -> void:
 		"a failed settlement can be confirmed again after the resolver recovers"
 	)
 	_expect(flow.get_state() == STATE_EXPLORING, "recovered settlement returns to exploration")
+
+
+func _test_retreat_can_retry_same_encounter() -> void:
+	var fixture := _make_started_fixture()
+	var flow = fixture.flow
+	if flow == null:
+		return
+	var instance := _event(EventData.EventType.MONSTER)
+	var retreat := _result(CombatResult.Outcome.RETREAT)
+	fixture.pipeline.event_interaction_requested.emit(instance)
+
+	_expect(
+		flow.handle_combat_settlement_request(instance, retreat),
+		"first retreat settlement is accepted"
+	)
+	_expect(flow.get_state() == STATE_EXPLORING, "retreat returns the flow to exploration")
+	_expect(fixture.modal.completed_settlements == 1, "first retreat completes the modal lifecycle")
+
+	fixture.pipeline.event_interaction_requested.emit(instance)
+	_expect(flow.get_state() == STATE_INTERACTING, "same encounter can be challenged again after retreat")
+	_expect(
+		flow.handle_combat_settlement_request(instance, retreat),
+		"second retreat settlement is accepted"
+	)
+	_expect(fixture.modal.completed_settlements == 2, "second retreat completes the modal lifecycle")
 
 
 func _test_resolution_failure_enters_failed_once() -> void:
@@ -272,6 +307,24 @@ func _test_boss_victory_enters_finished() -> void:
 	_expect(placement_resolutions == 0, "FINISHED flow rejects new placement pipeline work")
 
 
+func _test_resolved_non_boss_event_uses_cleanup_port() -> void:
+	var fixture := _make_started_fixture()
+	var flow = fixture.flow
+	if flow == null:
+		return
+	var echo := _event(EventData.EventType.MONSTER)
+	fixture.resolution.resolve_victory = true
+	fixture.pipeline.event_interaction_requested.emit(echo)
+	_expect(
+		flow.handle_combat_settlement_request(echo, _result(CombatResult.Outcome.VICTORY)),
+		"resolved residual echo settlement is accepted"
+	)
+	_expect(
+		fixture.exploration.dismissed_events == [echo],
+		"resolved residual echo is dismissed through Flow's explicit cleanup port"
+	)
+
+
 func _test_faith_echo_and_guide_return_delegate_to_runtime_services() -> void:
 	var fixture := _make_started_fixture()
 	var flow = fixture.flow
@@ -372,6 +425,10 @@ func _make_fixture() -> Dictionary:
 			flow.call("set_faith_echo_request", Callable(exploration, "request_faith_echo")),
 			"fixture configures the explicit faith-echo port"
 		)
+	_expect(
+		flow.set_resolved_event_dismissal_request(Callable(exploration, "dismiss_resolved_event")),
+		"fixture configures the explicit resolved-event cleanup port"
+	)
 	return {
 		"board": board,
 		"card_service": card_service,

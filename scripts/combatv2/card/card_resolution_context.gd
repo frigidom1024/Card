@@ -114,6 +114,11 @@ func is_last_card() -> bool:
 	return _total_card_count > 0 and _current_index == _total_card_count - 1
 
 
+## The card immediately behind the head occupies the final index minus one.
+func is_directly_behind_head() -> bool:
+	return _total_card_count >= 2 and _current_index == _total_card_count - 2
+
+
 static func _copy_cards(cards: Array[CardInstance]) -> Array[CardInstance]:
 	var copies: Array[CardInstance] = []
 	for card in cards:

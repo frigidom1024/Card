@@ -1,7 +1,7 @@
 class_name CombatStep
 extends RefCounted
 
-enum Kind { ROOT_CARD, PLAYER_CARD, MONSTER_ACTION }
+enum Kind { ROOT_CARD, PLAYER_CARD, MONSTER_ACTION, COMBAT_START, COMBAT_END, PRE_COMBAT_CARD }
 
 var kind: Kind
 var source_name: String

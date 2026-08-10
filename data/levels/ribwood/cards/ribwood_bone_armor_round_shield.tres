@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="CardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://cdmmj16i5cdfj"]
 
-[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="card_rule"]
-[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
-[ext_resource type="Script" path="res://scripts/combatv2/card/rules/next_card_armor_bonus_rule.gd" id="rule_script"]
+[ext_resource type="Script" uid="uid://bvx1h805ben8h" path="res://scripts/combatv2/card/card_rule.gd" id="card_rule"]
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_script"]
+[ext_resource type="Script" uid="uid://mlic1t80y18s" path="res://scripts/combatv2/card/rules/next_card_armor_bonus_rule.gd" id="rule_script"]
 
 [sub_resource type="Resource" id="Resource_wvcui"]
 script = ExtResource("rule_script")
@@ -13,7 +13,7 @@ effective_count = 2
 script = ExtResource("card_script")
 card_id = 1021
 card_name = "骨甲圆盾"
-value = 8
+value = 2
 artwork_path = "res://assert/card/ribwood_bone_armor_round_shield.png"
 armor = 2
 effect_rules = Array[ExtResource("card_rule")]([SubResource("Resource_wvcui")])

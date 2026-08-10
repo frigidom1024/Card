@@ -62,6 +62,19 @@ func request_faith_echo() -> bool:
 	return _event_service.request_faith_echo()
 
 
+## Removes an event only after its reward/combat lifecycle has resolved it.
+## Bosses retain their existing pressure cleanup before their board event is removed.
+func dismiss_resolved_event(instance: EventInstance) -> bool:
+	if instance == null or _board == null:
+		return false
+	if not instance.is_resolved:
+		return false
+	if instance.get_event_type() == EventData.EventType.BOSS:
+		return dismiss_defeated_boss(instance)
+	var event_node := _find_event_node(instance)
+	return event_node != null and _board.remove_event(event_node)
+
+
 func dismiss_defeated_boss(instance: EventInstance) -> bool:
 	if instance == null or instance.get_event_type() != EventData.EventType.BOSS or _board == null:
 		return false

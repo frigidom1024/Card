@@ -2,10 +2,11 @@
 
 [ext_resource type="Script" uid="uid://p3onjjcmpt8k" path="res://scripts/game/event/encounter/mob_action.gd" id="action"]
 [ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_data"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/mob_effects/ribwood_hart_rear_shock.tres" id="effect_rear_shock"]
 [ext_resource type="Script" uid="uid://b3vemd5otcaea" path="res://scripts/game/event/encounter/mob_data.gd" id="mob"]
-[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_white_horn_relic.tres" id="reward_balanced"]
-[ext_resource type="Resource" uid="uid://dqqsd5b2kiqcy" path="res://data/levels/ribwood/cards/ribwood_sternum_plate.tres" id="reward_defense"]
-[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_guardian_ember.tres" id="reward_heal"]
+[ext_resource type="Resource" uid="uid://cwj5nahctcysh" path="res://data/levels/ribwood/cards/ribwood_white_horn_relic.tres" id="reward_balanced"]
+[ext_resource type="Resource" uid="uid://r8ddej76ujbx" path="res://data/levels/ribwood/cards/ribwood_sternum_plate.tres" id="reward_defense"]
+[ext_resource type="Resource" uid="uid://dxoxicmevyxhb" path="res://data/levels/ribwood/cards/ribwood_guardian_ember.tres" id="reward_heal"]
 [ext_resource type="Script" uid="uid://cweljpn1qxxyh" path="res://scripts/combatv2/combat_stats_data.gd" id="stats"]
 
 [sub_resource type="Resource" id="HartAction_charge"]
@@ -31,9 +32,10 @@ attack = 3
 
 [resource]
 script = ExtResource("mob")
-enhancement_hp_bonus = 2
 mob_name = "抱肋者·白角守墓鹿"
 base_stats = SubResource("HartStats")
 actions = Array[ExtResource("action")]([SubResource("HartAction_charge"), SubResource("HartAction_crouch"), SubResource("HartAction_wail")])
+effects = Array[Resource]([ExtResource("effect_rear_shock")])
 gold_reward = 20
 card_rewards = Array[ExtResource("card_data")]([ExtResource("reward_balanced"), ExtResource("reward_defense"), ExtResource("reward_heal")])
+enhancement_hp_bonus = 2

@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cbmxoqgv7eaxp"]
 
 [ext_resource type="Script" uid="uid://cjrpdllvimwe3" path="res://scripts/main.gd" id="1_main"]
-[ext_resource type="Resource" path="res://data/starting_decks/revival_starting_deck.tres" id="2_revival_deck"]
+[ext_resource type="Resource" uid="uid://q7132nkf1blb" path="res://data/starting_decks/revival_starting_deck.tres" id="2_revival_deck"]
 [ext_resource type="Script" uid="uid://dmgx1jri00vgt" path="res://scripts/run/starting_deck_data.gd" id="3_starting_deck"]
 
 [node name="Main" type="Node2D" unique_id=1722639909]
@@ -20,7 +20,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.035, 0.075, 0.055, 1)
+color = Color(0.10980392, 0.15294118, 0.11764706, 1)
 
 [node name="ScreenLayer" type="CanvasLayer" parent="." unique_id=771937444]
 layer = 0

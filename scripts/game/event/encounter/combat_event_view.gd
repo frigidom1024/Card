@@ -180,6 +180,16 @@ func _format_step(step: CombatStep) -> String:
 	var card_name := _source_name(step.source_name, "卡牌")
 	if step.kind == CombatStep.Kind.MONSTER_ACTION:
 		return "%s 行动" % card_name
+	if step.kind == CombatStep.Kind.COMBAT_START:
+		return _format_lifecycle_step(step, "%s：战斗开始，点数 %d → %d" % [
+			card_name, step.card_points_before, step.card_points_after
+		])
+	if step.kind == CombatStep.Kind.COMBAT_END:
+		return _format_lifecycle_step(step, "%s：战斗结束，点数 %d → %d" % [
+			card_name, step.card_points_before, step.card_points_after
+		])
+	if step.kind == CombatStep.Kind.PRE_COMBAT_CARD:
+		return _format_lifecycle_step(step, "%s：战斗开始前突袭" % card_name)
 	var headline := "%s：点数 %d → %d" % [
 		card_name, step.card_points_before, step.card_points_after
 	]
@@ -189,18 +199,63 @@ func _format_step(step: CombatStep) -> String:
 		headline += "；%s 生命 %d → %d" % [
 			_monster_name(), step.monster_before.hp, step.monster_after.hp
 		]
-	return headline
+	var effect_lines: Array[String] = []
+	for effect in step.effects:
+		if effect != null:
+			effect_lines.append("  · " + _format_effect(effect))
+	return headline if effect_lines.is_empty() else headline + "\n" + "\n".join(effect_lines)
+
+
+func _format_lifecycle_step(step: CombatStep, headline: String) -> String:
+	var effect_lines: Array[String] = []
+	for effect in step.effects:
+		if effect != null:
+			effect_lines.append("  · " + _format_effect(effect))
+	return headline if effect_lines.is_empty() else headline + "\n" + "\n".join(effect_lines)
 
 
 func _format_effect(effect: CombatEffect) -> String:
+	if effect.cancelled:
+		return "%s 的效果被取消" % _source_name(effect.source_name, "效果")
+	var source := _source_name(effect.source_name, "效果")
+	var target := _effect_target_name(effect)
 	match effect.type:
 		CombatEffect.Type.DAMAGE:
-			return "造成 %d 点伤害" % effect.value
+			var absorbed := int(effect.get_parameter("absorbed", 0))
+			var applied := int(effect.get_parameter("applied", effect.value))
+			var text := "%s 对%s造成 %d 点伤害" % [source, target, applied]
+			if applied != effect.value:
+				text += "（声明 %d）" % effect.value
+			if absorbed > 0:
+				text += "（护甲吸收 %d）" % absorbed
+			return text
 		CombatEffect.Type.ADD_DEFENSE:
-			return "获得 %d 点护甲" % effect.value
+			return "%s 使%s获得 %d 点护甲" % [source, target, int(effect.get_parameter("applied", effect.value))]
 		CombatEffect.Type.HEAL:
-			return "恢复 %d 点生命" % effect.value
-	return "产生效果"
+			return "%s 为%s恢复 %d 点生命" % [source, target, int(effect.get_parameter("applied", effect.value))]
+		CombatEffect.Type.MODIFY_CARD_POINTS:
+			var applied := int(effect.get_parameter("applied", abs(effect.value)))
+			if effect.value >= 0:
+				var label := "临时点数" if bool(effect.get_parameter("temporary", false)) else "点数"
+				return "%s 使%s获得 %d 点%s" % [source, target, applied, label]
+			var label := "临时点数" if bool(effect.get_parameter("temporary_cleanup", false)) else "点数"
+			return "%s 移除%s的 %d 点%s" % [source, target, applied, label]
+	return "%s 对%s产生效果" % [source, target]
+
+
+func _effect_target_name(effect: CombatEffect) -> String:
+	if effect != null and not effect.target_name.is_empty():
+		return effect.target_name
+	match effect.target:
+		CombatEffect.Target.PLAYER:
+			return "玩家"
+		CombatEffect.Target.MONSTER:
+			return _monster_name()
+		CombatEffect.Target.CARD:
+			if effect.target_card != null and effect.target_card.card_data != null:
+				return effect.target_card.card_data.card_name
+			return "卡牌"
+	return "目标"
 
 
 func _populate_penalties() -> void:

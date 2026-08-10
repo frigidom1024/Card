@@ -313,6 +313,10 @@ func _configure_run_flow() -> bool:
 		board
 	):
 		return _fail_run_initialization("GameManager could not configure run flow")
+	if not _run_flow.set_resolved_event_dismissal_request(
+		Callable(_exploration_coordinator, "dismiss_resolved_event")
+	):
+		return _fail_run_initialization("GameManager could not configure resolved event cleanup")
 	if not _run_flow.combat_started.is_connected(_forward_combat_started):
 		_run_flow.combat_started.connect(_forward_combat_started)
 	if not _run_flow.combat_resolved.is_connected(_forward_combat_resolved):

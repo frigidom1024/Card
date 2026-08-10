@@ -44,6 +44,8 @@ func begin(instance: EventInstance, player_stats: CombatStats, chain: Array[Card
 func close_shop() -> void:
 	if _active_event == null or _active_event.get_event_type() != EventData.EventType.SHOP:
 		return
+	# Leaving a shop consumes this one-time map encounter, even if nothing was purchased.
+	_active_event.resolve()
 	_finish_active_interaction()
 
 

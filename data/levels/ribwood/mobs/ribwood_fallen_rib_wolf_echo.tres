@@ -2,9 +2,10 @@
 
 [ext_resource type="Script" uid="uid://p3onjjcmpt8k" path="res://scripts/game/event/encounter/mob_action.gd" id="action"]
 [ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_data"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/mob_effects/ribwood_wolf_shield_break.tres" id="effect_shield_break"]
 [ext_resource type="Script" uid="uid://b3vemd5otcaea" path="res://scripts/game/event/encounter/mob_data.gd" id="mob"]
-[ext_resource type="Resource" uid="uid://dqrv4ajgxhcih" path="res://data/levels/ribwood/cards/ribwood_ember_blade.tres" id="reward_attack"]
-[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_bone_armor_round_shield.tres" id="reward_defense"]
+[ext_resource type="Resource" uid="uid://ba0i54arx3hse" path="res://data/levels/ribwood/cards/ribwood_ember_blade.tres" id="reward_attack"]
+[ext_resource type="Resource" uid="uid://cdmmj16i5cdfj" path="res://data/levels/ribwood/cards/ribwood_bone_armor_round_shield.tres" id="reward_defense"]
 [ext_resource type="Script" uid="uid://cweljpn1qxxyh" path="res://scripts/combatv2/combat_stats_data.gd" id="stats"]
 
 [sub_resource type="Resource" id="WolfAction_bite"]
@@ -25,9 +26,9 @@ attack = 2
 
 [resource]
 script = ExtResource("mob")
-enhancement_hp_bonus = 1
 mob_name = "腐肋幼狼"
 base_stats = SubResource("WolfStats")
 actions = Array[ExtResource("action")]([SubResource("WolfAction_bite"), SubResource("WolfAction_guard")])
+effects = Array[Resource]([ExtResource("effect_shield_break")])
 gold_reward = 12
 card_rewards = Array[ExtResource("card_data")]([ExtResource("reward_attack"), ExtResource("reward_defense")])

@@ -96,6 +96,7 @@ func _test_monster_victory_resolves_event_and_unlocks_exploration() -> void:
 
 	_confirm_combat_settlement(manager)
 	_expect(event_node.event_instance.is_resolved, "confirmed victory resolves the encounter event")
+	_expect(not _board_contains_event_instance(board, event_node.event_instance), "confirmed victory removes the completed residual echo")
 	_expect(outcomes.size() == 1, "confirmed victory emits one combat result")
 	_expect(
 		outcomes.size() == 1 and outcomes[0].outcome == CombatResult.Outcome.VICTORY,
@@ -152,7 +153,7 @@ func _test_boss_victory_removes_the_intercepting_event() -> void:
 		"boss victory setup places a card that contacts the boss"
 	)
 	_expect(
-		event_node in board.events,
+		_board_contains_event_instance(board, event_node.event_instance),
 		"intercepting boss remains attached before settlement confirmation"
 	)
 	var boss_result: CombatResult = (
@@ -168,7 +169,7 @@ func _test_boss_victory_removes_the_intercepting_event() -> void:
 	_confirm_combat_settlement(manager)
 	_expect(event_node.event_instance.is_resolved, "confirmed boss victory resolves the boss event")
 	_expect(
-		event_node not in board.events,
+		not _board_contains_event_instance(board, event_node.event_instance),
 		"confirmed boss victory removes the boss event from the board"
 	)
 	_expect(
@@ -319,6 +320,7 @@ func _test_nonlethal_point_clash_retreats_without_player_defeat() -> void:
 
 	_confirm_combat_settlement(manager)
 	_expect(not event_node.event_instance.is_resolved, "confirmed RETREAT does not resolve the encounter event")
+	_expect(_board_contains_event_instance(board, event_node.event_instance), "confirmed RETREAT keeps the residual echo on the board")
 	_expect(failures.is_empty(), "basic point clashes do not emit exploration failure")
 	_expect(
 		outcomes.size() == 1 and outcomes[0].outcome == CombatResult.Outcome.RETREAT,
@@ -338,6 +340,7 @@ func _test_shop_event_routes_purchase_and_close() -> void:
 	var event_node := _attach_event(
 		manager.board, EventData.EventType.SHOP, Vector2i(1, 0), shop_content
 	)
+	var event_instance := event_node.event_instance
 	var hand_before: int = manager.hand_area.cards.size()
 
 	_expect(
@@ -407,7 +410,8 @@ func _test_shop_event_routes_purchase_and_close() -> void:
 	if close_button != null:
 		close_button.pressed.emit()
 		await process_frame
-	_expect(not event_node.event_instance.is_resolved, "closing shop does not resolve its event")
+	_expect(event_instance.is_resolved, "closing shop resolves its event")
+	_expect(not _board_contains_event_instance(manager.board, event_instance), "closing shop removes the completed event")
 	_expect(not shop_view.visible, "closing shop hides the modal")
 	_expect(not manager.drag_layer.is_interaction_locked(), "closing shop unlocks exploration")
 	_cleanup_manager(manager)
@@ -422,6 +426,7 @@ func _test_treasure_event_routes_claim_and_resolves() -> void:
 	var event_node := _attach_event(
 		manager.board, EventData.EventType.TREASURE, Vector2i(1, 0), treasure_content
 	)
+	var event_instance := event_node.event_instance
 	var hand_before: int = manager.hand_area.cards.size()
 
 	_expect(
@@ -448,7 +453,7 @@ func _test_treasure_event_routes_claim_and_resolves() -> void:
 	_expect(treasure_view.visible, "treasure overlap opens the treasure modal")
 	_expect(manager.drag_layer.is_interaction_locked(), "treasure modal locks exploration")
 	_expect(
-		(event_node.event_instance.runtime_state as TreasureRuntimeState).options.size() == 3,
+		(event_instance.runtime_state as TreasureRuntimeState).options.size() == 3,
 		"treasure creates two card rewards and one gold reward"
 	)
 
@@ -459,7 +464,7 @@ func _test_treasure_event_routes_claim_and_resolves() -> void:
 		await process_frame
 	_expect(treasure_view.visible, "closing treasure keeps the reward selection open")
 	_expect(
-		not event_node.event_instance.is_resolved,
+		not event_instance.is_resolved,
 		"closing treasure does not discard the unresolved reward"
 	)
 	_expect(
@@ -475,7 +480,8 @@ func _test_treasure_event_routes_claim_and_resolves() -> void:
 	if claim_button != null:
 		claim_button.pressed.emit()
 		await process_frame
-	_expect(event_node.event_instance.is_resolved, "claiming a treasure reward resolves the event")
+	_expect(event_instance.is_resolved, "claiming a treasure reward resolves the event")
+	_expect(not _board_contains_event_instance(manager.board, event_instance), "claiming treasure removes the completed event")
 	_expect(
 		manager.cards_inst.size() == cards_before + 1,
 		"treasure card reward grants a persistent card instance"
@@ -644,6 +650,15 @@ func _action(type: MobAction.Type, value: int) -> MobAction:
 	action.type = type
 	action.value = value
 	return action
+
+
+func _board_contains_event_instance(board: Board, instance: EventInstance) -> bool:
+	if board == null or instance == null:
+		return false
+	for candidate in board.events:
+		if candidate != null and candidate.event_instance == instance:
+			return true
+	return false
 
 
 func _cleanup_manager(manager: Node) -> void:

@@ -24,6 +24,7 @@ var _resolution: EncounterResolutionCoordinator
 var _faith: FaithService
 var _board: Board
 var _faith_echo_request: Callable
+var _resolved_event_dismissal_request: Callable
 var _state := State.UNINITIALIZED
 var _configured := false
 var _settlement_in_progress := false
@@ -61,6 +62,7 @@ func configure(
 	_faith = faith
 	_board = board
 	_faith_echo_request = Callable()
+	_resolved_event_dismissal_request = Callable()
 	_state = State.UNINITIALIZED
 	if not _pipeline.set_placement_guard(Callable(self, "accepts_placement")):
 		_context = null
@@ -79,6 +81,14 @@ func set_faith_echo_request(request: Callable) -> bool:
 	if not request.is_valid():
 		return false
 	_faith_echo_request = request
+	return true
+
+
+## Injects exploration-side removal without coupling flow to BoardEvent ownership.
+func set_resolved_event_dismissal_request(request: Callable) -> bool:
+	if not request.is_valid():
+		return false
+	_resolved_event_dismissal_request = request
 	return true
 
 
@@ -118,7 +128,12 @@ func handle_combat_settlement_request(instance: EventInstance, result: CombatRes
 	if not _resolution.apply(instance, result):
 		_settlement_in_progress = false
 		return false
-	_settled_instances.append(instance)
+	# RETREAT only ends the current card-chain attempt. The same encounter
+	# remains active and may be challenged again after the player rebuilds the chain.
+	if result.outcome != CombatResult.Outcome.RETREAT:
+		_settled_instances.append(instance)
+	if result.outcome == CombatResult.Outcome.VICTORY and instance.is_resolved:
+		_dismiss_resolved_event(instance)
 
 	var is_boss_victory := (
 		instance.get_event_type() == EventData.EventType.BOSS
@@ -209,10 +224,22 @@ func _on_event_interaction_requested(instance: EventInstance) -> void:
 
 
 ## Shop and treasure dialogs finish synchronously without combat settlement.
-func _on_non_combat_interaction_finished(_instance: EventInstance) -> void:
+func _on_non_combat_interaction_finished(instance: EventInstance) -> void:
 	if not _configured or _state != State.INTERACTING:
 		return
+	if instance != null and instance.is_resolved:
+		_dismiss_resolved_event(instance)
 	_set_state(State.EXPLORING)
+
+
+func _dismiss_resolved_event(instance: EventInstance) -> void:
+	if instance == null or not instance.is_resolved or not _resolved_event_dismissal_request.is_valid():
+		return
+	if instance.get_event_type() == EventData.EventType.BOSS:
+		# EncounterResolutionCoordinator already removes bosses through its pressure-aware port.
+		return
+	if not bool(_resolved_event_dismissal_request.call(instance)):
+		push_error("RunFlowCoordinator could not remove resolved event from exploration")
 
 
 func _on_resolution_exploration_failed(result: CombatResult) -> void:

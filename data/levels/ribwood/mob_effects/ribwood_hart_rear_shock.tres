@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="MobEffectRearShock" format=3]
+
+[ext_resource type="Script" path="res://scripts/combatv2/mob_effects/mob_effect_rear_shock.gd" id="1_rear_shock"]
+
+[resource]
+script = ExtResource("1_rear_shock")
+effect_name = "空腔回响"
+description = "首次交锋时，对头部后方第一张卡牌造成 1 点伤害。"
+effective_count = 1
+damage = 1
+card_count = 1

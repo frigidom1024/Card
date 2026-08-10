@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="CardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://dn5rv3mmyjcq"]
 
-[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_crsks"]
-[ext_resource type="Script" path="res://scripts/combatv2/card/rules/chain_length_head_armor_bonus_rule.gd" id="2_crsks"]
-[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+[ext_resource type="Script" uid="uid://bvx1h805ben8h" path="res://scripts/combatv2/card/card_rule.gd" id="1_crsks"]
+[ext_resource type="Script" uid="uid://cpag57uqjo65g" path="res://scripts/combatv2/card/rules/chain_length_head_armor_bonus_rule.gd" id="2_crsks"]
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_script"]
 
 [sub_resource type="Resource" id="Resource_gnn4x"]
 script = ExtResource("2_crsks")
@@ -13,7 +13,7 @@ effective_count = 1
 script = ExtResource("card_script")
 card_id = 1023
 card_name = "余温护符"
-value = 10
+value = 4
 artwork_path = "res://assert/card/ribwood_warmth_charm.png"
 max_points = 2
 armor = 1

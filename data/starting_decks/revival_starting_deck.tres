@@ -1,11 +1,11 @@
 [gd_resource type="Resource" script_class="StartingDeckData" format=3 uid="uid://q7132nkf1blb"]
 
 [ext_resource type="Script" uid="uid://dmgx1jri00vgt" path="res://scripts/run/starting_deck_data.gd" id="1_starting_deck"]
-[ext_resource type="Resource" uid="uid://jd5etmfils42" path="res://data/levels/ribwood/cards/ribwood_guardian_root.tres" id="2_root"]
-[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_rib_blade.tres" id="3_blade"]
-[ext_resource type="Resource" uid="uid://c743ld02n57c0" path="res://data/levels/ribwood/cards/ribwood_folded_rib_shield.tres" id="4_barrier"]
-[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_warm_marrow_flask.tres" id="5_vial"]
-[ext_resource type="Resource" uid="uid://8jnyfwlm1v8a" path="res://data/levels/ribwood/cards/ribwood_old_tinder.tres" id="6_revival"]
+[ext_resource type="Resource" uid="uid://1ye18e5p1rbg" path="res://data/levels/ribwood/cards/ribwood_guardian_root.tres" id="2_root"]
+[ext_resource type="Resource" uid="uid://0tp0ee7j4phn" path="res://data/levels/ribwood/cards/ribwood_rib_blade.tres" id="3_blade"]
+[ext_resource type="Resource" uid="uid://cumkomo5jd1tn" path="res://data/levels/ribwood/cards/ribwood_folded_rib_shield.tres" id="4_barrier"]
+[ext_resource type="Resource" uid="uid://76kphigbsx28" path="res://data/levels/ribwood/cards/ribwood_warm_marrow_flask.tres" id="5_vial"]
+[ext_resource type="Resource" uid="uid://c6gui3870o4j" path="res://data/levels/ribwood/cards/ribwood_old_tinder.tres" id="6_revival"]
 [ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="7_card_data"]
 [ext_resource type="Script" uid="uid://bvx1h805ben8h" path="res://scripts/combatv2/card/card_rule.gd" id="8_m25en"]
 
@@ -22,5 +22,4 @@ script = ExtResource("1_starting_deck")
 deck_id = "revival"
 display_name = "RIBWOOD ROOT"
 description = "以守护之根站稳牌链，再用短刃、火绒、肋盾与水囊穿过肋骨林地。"
-playstyle_tags = PackedStringArray("HEALING", "ENDURANCE", "WEAPON CHAIN")
 starter_cards = Array[ExtResource("7_card_data")]([ExtResource("2_root"), ExtResource("3_blade"), ExtResource("4_barrier"), ExtResource("5_vial"), ExtResource("6_revival"), SubResource("Resource_wabmu")])

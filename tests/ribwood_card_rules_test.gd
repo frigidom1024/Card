@@ -21,7 +21,7 @@ func _init() -> void:
 
 
 func _run_tests() -> void:
-	_test_rib_blade_supports_its_next_card()
+	_test_rib_blade_does_not_trigger_on_card_placement()
 	_test_folded_rib_shield_protects_its_next_card()
 	_test_bone_stitch_needle_requires_an_armored_next_card()
 	_test_ember_blade_rewards_only_the_qualifying_long_chain_head()
@@ -30,7 +30,7 @@ func _run_tests() -> void:
 	quit(1 if _failure_count > 0 else 0)
 
 
-func _test_rib_blade_supports_its_next_card() -> void:
+func _test_rib_blade_does_not_trigger_on_card_placement() -> void:
 	var root := CardInstanceScript.new(Root)
 	var blade := CardInstanceScript.new(Blade)
 	var tinder := CardInstanceScript.new(Tinder)
@@ -38,9 +38,9 @@ func _test_rib_blade_supports_its_next_card() -> void:
 
 	var applied := CardChainRuleServiceScript.new().resolve_card_added(chain, tinder)
 
-	_expect(applied == 1, "placing Old Tinder triggers Rib Blade once")
-	_expect(tinder.current_points == 2, "Rib Blade grants its next card one point")
-	_expect(blade.get_rule_trigger_count(0) == 1, "Rib Blade records its successful use")
+	_expect(applied == 0, "Rib Blade no longer triggers during card placement")
+	_expect(tinder.current_points == 1, "placing a card does not change its points")
+	_expect(blade.get_rule_trigger_count(0) == 0, "Rib Blade keeps its combat-start rule unused")
 
 
 func _test_folded_rib_shield_protects_its_next_card() -> void:

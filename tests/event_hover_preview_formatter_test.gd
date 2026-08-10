@@ -77,7 +77,7 @@ func _test_boss_preview_uses_boss_label_and_defense() -> void:
 
 func _test_shop_preview_filters_sold_items_and_formats_price() -> void:
 	var content := ShopEventContentScript.new()
-	content.items = [_shop_item(_card("已售出的短刃", 9, 3, 0)), _shop_item(_card("余温护符", 10, 2, 1))]
+	content.items = [_shop_item(_card("已售出的短刃", 2, 3, 0)), _shop_item(_card("余温护符", 4, 2, 1))]
 	var instance := _make_event("pilgrim_camp", EventDataScript.EventType.SHOP, content)
 	var state := instance.runtime_state as ShopRuntimeStateScript
 	state.sold_flags = [true, false]
@@ -90,7 +90,7 @@ func _test_shop_preview_filters_sold_items_and_formats_price() -> void:
 	_expect(not _contains_line(model.reward_lines, "已售出的短刃"), "shop preview filters sold card")
 	_expect(_contains_line(model.reward_lines, "点数 2"), "shop preview shows card points")
 	_expect(_contains_line(model.reward_lines, "护甲 1"), "shop preview shows card armor")
-	_expect(_contains_line(model.reward_lines, "10 金币"), "shop preview uses market price")
+	_expect(_contains_line(model.reward_lines, "4 金币"), "shop preview uses rarity market price")
 
 
 func _test_treasure_preview_hides_unrolled_results_and_shows_cached_options() -> void:
@@ -182,6 +182,7 @@ func _card(name: String, price: int, points: int, armor: int) -> CardData:
 	var card := CardDataScript.new()
 	card.card_name = name
 	card.value = price
+	card.rarity = CardData.Rarity.RARE if price == 4 else CardData.Rarity.COMMON
 	card.max_points = points
 	card.armor = armor
 	return card

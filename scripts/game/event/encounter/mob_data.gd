@@ -4,6 +4,8 @@ extends Resource
 @export var mob_name: String = ""
 @export var base_stats: CombatStatsData
 @export var actions: Array[MobAction] = []
+## Echo effects are hooks that only edit the shared CombatEffect draft.
+@export var effects: Array[Resource] = []
 @export var gold_reward: int = 0
 @export var card_rewards: Array[CardData] = []
 ## Each failed encounter restores this many HP and raises the echo's maximum HP

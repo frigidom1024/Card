@@ -1,8 +1,8 @@
-[gd_resource type="Resource" script_class="CardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://bqqrtk75itp0b"]
 
-[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_3v4lb"]
-[ext_resource type="Script" path="res://scripts/combatv2/card/rules/armored_next_card_point_bonus_rule.gd" id="2_3v4lb"]
-[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+[ext_resource type="Script" uid="uid://bvx1h805ben8h" path="res://scripts/combatv2/card/card_rule.gd" id="1_3v4lb"]
+[ext_resource type="Script" uid="uid://dn6twayxxih5a" path="res://scripts/combatv2/card/rules/armored_next_card_point_bonus_rule.gd" id="2_3v4lb"]
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_script"]
 
 [sub_resource type="Resource" id="Resource_26quw"]
 script = ExtResource("2_3v4lb")
@@ -13,7 +13,7 @@ effective_count = 2
 script = ExtResource("card_script")
 card_id = 1031
 card_name = "缝骨针"
-value = 12
+value = 4
 artwork_path = "res://assert/card/ribwood_bone_stitch_needle.png"
 max_points = 2
 effect_rules = Array[ExtResource("1_3v4lb")]([SubResource("Resource_26quw")])

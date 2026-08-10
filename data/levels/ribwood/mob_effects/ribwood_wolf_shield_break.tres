@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="MobEffectShieldBreak" format=3]
+
+[ext_resource type="Script" path="res://scripts/combatv2/mob_effects/mob_effect_shield_break.gd" id="1_shield_break"]
+
+[resource]
+script = ExtResource("1_shield_break")
+effect_name = "撕甲啃咬"
+description = "本次交锋中，腐肋幼狼对卡牌护甲造成双倍损耗。"
+armor_multiplier = 2.0

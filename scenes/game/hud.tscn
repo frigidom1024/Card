@@ -1,0 +1,51 @@
+[gd_scene format=3 uid="uid://p6343o8pk8kq"]
+
+[node name="Hud" type="Control" unique_id=1402589845]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="board" type="Panel" parent="." unique_id=1259663414]
+layout_mode = 0
+offset_left = 515.0
+offset_top = 37.0
+offset_right = 1663.0
+offset_bottom = 816.0
+
+[node name="GameTitle" type="Panel" parent="." unique_id=1315036674]
+layout_mode = 0
+offset_left = 48.0
+offset_top = 27.0
+offset_right = 448.0
+offset_bottom = 207.0
+
+[node name="GameInfo" type="Panel" parent="." unique_id=1630847909]
+layout_mode = 0
+offset_left = 50.0
+offset_top = 241.0
+offset_right = 450.0
+offset_bottom = 441.0
+
+[node name="WayStock" type="Panel" parent="." unique_id=1155404773]
+layout_mode = 0
+offset_left = 53.0
+offset_top = 490.0
+offset_right = 455.0
+offset_bottom = 801.0
+
+[node name="Reclaim" type="Panel" parent="." unique_id=632369457]
+layout_mode = 0
+offset_left = 54.0
+offset_top = 824.0
+offset_right = 454.0
+offset_bottom = 1043.0
+
+[node name="Hand" type="Panel" parent="." unique_id=1756632293]
+layout_mode = 0
+offset_left = 468.0
+offset_top = 828.0
+offset_right = 1694.0
+offset_bottom = 1046.0

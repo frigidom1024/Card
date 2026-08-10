@@ -21,6 +21,7 @@ func _run_tests() -> void:
 	_test_initial_events_are_visible_after_initialization()
 	_test_root_and_normal_placements_generate_but_guide_does_not()
 	_test_defeated_boss_is_removed_from_event_grid()
+	_test_only_resolved_non_boss_events_are_removed()
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -69,6 +70,25 @@ func _test_defeated_boss_is_removed_from_event_grid() -> void:
 	var boss := _attach_event(board, event_lib.entries[1].event_data.create_instance(), Vector2i(2, 2))
 	_expect(coordinator.dismiss_defeated_boss(boss.event_instance), "defeated Boss is removed by coordinator")
 	_expect(board.events.is_empty(), "removed Boss no longer occupies the event grid")
+	board.queue_free()
+
+
+func _test_only_resolved_non_boss_events_are_removed() -> void:
+	var board := _make_board()
+	var event_lib := _make_event_lib()
+	var coordinator := ExplorationCoordinatorScript.new()
+	_expect(coordinator.configure(event_lib, board, _make_config()), "coordinator configures resolved event cleanup")
+	var echo := _attach_event(board, event_lib.entries[0].event_data.create_instance(), Vector2i(2, 2))
+	_expect(
+		not coordinator.dismiss_resolved_event(echo.event_instance),
+		"unresolved residual echo remains on the board"
+	)
+	echo.event_instance.resolve()
+	_expect(
+		coordinator.dismiss_resolved_event(echo.event_instance),
+		"resolved residual echo is removed through the generic cleanup port"
+	)
+	_expect(board.events.is_empty(), "removed residual echo frees its event cells")
 	board.queue_free()
 
 

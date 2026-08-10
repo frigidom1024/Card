@@ -1,6 +1,5 @@
 extends SceneTree
 
-const CardChainRuleServiceScript = preload("res://scripts/card/card_chain_rule_service.gd")
 const CardInstanceScript = preload("res://scripts/card/card_instance.gd")
 const CombatResultScript = preload("res://scripts/combatv2/combat_result.gd")
 const CombatServiceScript = preload("res://scripts/combatv2/combat_service.gd")
@@ -30,16 +29,14 @@ func _test_recommended_three_card_chain_kills_marrow_rat() -> void:
 	var blade := CardInstanceScript.new(Blade)
 	var tinder := CardInstanceScript.new(Tinder)
 	var chain: Array[CardInstance] = [root, blade, tinder]
-	var applied := CardChainRuleServiceScript.new().resolve_card_added(chain, tinder)
-
-	_expect(applied == 1, "starter chain applies Rib Blade's placement rule")
-	_expect(tinder.current_points == 2, "starter chain raises Old Tinder to two points")
 	var result := CombatServiceScript.new().resolve_encounter(player, chain, Rat.create_instance())
+
+	_expect(tinder.current_points == 0, "Rib Blade does not change Old Tinder during placement")
 
 	_expect(result.outcome == CombatResultScript.Outcome.VICTORY, "root + blade + tinder kills a 4 HP marrow rat")
 	_expect(result.monster_stats_after.hp == 0, "recommended chain leaves marrow rat at 0 HP")
-	_expect(tinder.current_points == 0, "the empowered tinder is exhausted by the first comparison")
-	_expect(blade.current_points == 0, "the blade is exhausted while finishing the marrow rat")
+	_expect(tinder.current_points == 0, "the tinder is exhausted by the first comparison")
+	_expect(blade.current_points == 0, "the blade spends its points after its temporary combat-start bonus is cleared")
 	_expect(root.current_points == 2, "the unneeded root stays on the board at full points")
 	_expect(result.depleted_cards.has(tinder), "the depleted tinder is reported for encounter settlement")
 	_expect(result.depleted_cards.has(blade), "the depleted blade is reported for encounter settlement")

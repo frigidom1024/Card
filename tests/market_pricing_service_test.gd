@@ -11,21 +11,35 @@ func _init() -> void:
 
 
 func _run_tests() -> void:
-	_test_prices_use_card_value_and_never_return_zero()
+	_test_prices_follow_card_rarity_and_reclaim_half()
 	quit(1 if _failure_count > 0 else 0)
 
 
-func _test_prices_use_card_value_and_never_return_zero() -> void:
-	var card := CardData.new()
-	card.value = 7
+func _test_prices_follow_card_rarity_and_reclaim_half() -> void:
 	var service: Object = MarketPricingServiceScript.new()
 	var context: Object = MarketPriceContextScript.new()
-	_expect(service.call("get_purchase_price", card, context) == 7, "purchase uses card value")
-	_expect(service.call("get_reclaim_price", card, context) == 3, "reclaim floors half value")
+	var expected_prices := {
+		CardData.Rarity.COMMON: 2,
+		CardData.Rarity.RARE: 4,
+		CardData.Rarity.EPIC: 8,
+		CardData.Rarity.LEGENDARY: 16,
+	}
+	for rarity in expected_prices:
+		var card := CardData.new()
+		card.rarity = rarity
+		card.value = 999
+		var expected_price: int = expected_prices[rarity]
+		_expect(
+			service.call("get_purchase_price", card, context) == expected_price,
+			"rarity %d purchase price is %d" % [rarity, expected_price]
+		)
+		_expect(
+			service.call("get_reclaim_price", card, context) == expected_price / 2,
+			"rarity %d reclaim price is half the purchase price" % rarity
+		)
+	_expect(service.call("get_purchase_price", null, context) == 1, "null card price remains safe")
+	_expect(service.call("get_reclaim_price", null, context) == 1, "null card reclaim price remains safe")
 	_expect(service.call("get_refresh_cost", context) == 1, "refresh costs one gold")
-	card.value = 0
-	_expect(service.call("get_purchase_price", card, context) == 1, "purchase price clamps to one")
-	_expect(service.call("get_reclaim_price", card, context) == 1, "reclaim price clamps to one")
 
 
 func _expect(condition: bool, message: String) -> void:

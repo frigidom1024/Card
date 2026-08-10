@@ -2,6 +2,9 @@ class_name PersistentMarket
 extends Control
 
 
+const MarketPricingServiceScript = preload("res://scripts/game/market/market_pricing_service.gd")
+
+
 signal purchase_requested(slot_index: int)
 signal reclaim_requested(card: CardEntity)
 signal refresh_requested
@@ -99,7 +102,8 @@ func _refresh() -> void:
 		set_offer_card(slot_index, card_data)
 		var price_label := slot.get_node_or_null("PriceLabel") as Label if slot != null else null
 		if price_label != null:
-			var purchase_price: int = _pricing.get_purchase_price(card_data, _build_context()) if _pricing != null else card_data.value
+			var pricing := _pricing if _pricing != null else MarketPricingServiceScript.new()
+			var purchase_price: int = int(pricing.get_purchase_price(card_data, _build_context()))
 			price_label.text = "%d GOLD" % purchase_price
 
 

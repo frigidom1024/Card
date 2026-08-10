@@ -1,13 +1,13 @@
-[gd_resource type="Resource" script_class="CardData" format=3]
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://pnkorj666kr0"]
 
-[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_fguk4"]
-[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+[ext_resource type="Script" uid="uid://bvx1h805ben8h" path="res://scripts/combatv2/card/card_rule.gd" id="1_fguk4"]
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_script"]
 
 [resource]
 script = ExtResource("card_script")
 card_id = 1011
 card_name = "肋骨穿钉"
-value = 8
+value = 2
 artwork_path = "res://assert/card/ribwood_rib_nail.png"
 max_points = 3
 description = "从肋骨边缘拔下的长钉，沉重却可靠。无额外效果。"

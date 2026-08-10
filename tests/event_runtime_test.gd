@@ -207,10 +207,10 @@ func _test_resolve_marks_event_revealed_and_resolved() -> void:
 func _test_shop_purchase_changes_only_successful_state() -> void:
 	var player := PlayerDataScript.new()
 	player.gold = 10
-	var instance = _make_shop_instance([_offer("Twig Blade", 6)])
+	var instance = _make_shop_instance([_offer("Twig Blade", 2)])
 	var result = shop_resolver.purchase_item(instance, 0, player, true)
 	_expect(result.success, "shop purchase succeeds")
-	_expect(player.gold == 4, "deducts exact price")
+	_expect(player.gold == 8, "deducts the common rarity price")
 	_expect(result.granted_card.card_name == "Twig Blade", "returns purchased card")
 	var state := instance.runtime_state as ShopRuntimeStateScript
 	_expect(state != null, "shop instance creates shop runtime state")
@@ -221,8 +221,8 @@ func _test_shop_purchase_changes_only_successful_state() -> void:
 
 func _test_shop_failures_do_not_mutate_runtime_state() -> void:
 	var insufficient_gold_player := PlayerDataScript.new()
-	insufficient_gold_player.gold = 5
-	var insufficient_gold_instance = _make_shop_instance([_offer("Twig Blade", 6)])
+	insufficient_gold_player.gold = 1
+	var insufficient_gold_instance = _make_shop_instance([_offer("Twig Blade", 2)])
 	var insufficient_gold_before := _snapshot_runtime_state(insufficient_gold_player, insufficient_gold_instance)
 	var insufficient_gold_result = shop_resolver.purchase_item(
 		insufficient_gold_instance, 0, insufficient_gold_player, true
@@ -238,7 +238,7 @@ func _test_shop_failures_do_not_mutate_runtime_state() -> void:
 
 	var full_hand_player := PlayerDataScript.new()
 	full_hand_player.gold = 10
-	var full_hand_instance = _make_shop_instance([_offer("Twig Blade", 6)])
+	var full_hand_instance = _make_shop_instance([_offer("Twig Blade", 2)])
 	var full_hand_before := _snapshot_runtime_state(full_hand_player, full_hand_instance)
 	var full_hand_result = shop_resolver.purchase_item(full_hand_instance, 0, full_hand_player, false)
 	_expect_failure_preserves_runtime_state(
@@ -252,7 +252,7 @@ func _test_shop_failures_do_not_mutate_runtime_state() -> void:
 
 	var invalid_index_player := PlayerDataScript.new()
 	invalid_index_player.gold = 10
-	var invalid_index_instance = _make_shop_instance([_offer("Twig Blade", 6)])
+	var invalid_index_instance = _make_shop_instance([_offer("Twig Blade", 2)])
 	var invalid_index_before := _snapshot_runtime_state(invalid_index_player, invalid_index_instance)
 	var invalid_index_result = shop_resolver.purchase_item(invalid_index_instance, 1, invalid_index_player, true)
 	_expect_failure_preserves_runtime_state(
@@ -266,7 +266,7 @@ func _test_shop_failures_do_not_mutate_runtime_state() -> void:
 
 	var sold_out_player := PlayerDataScript.new()
 	sold_out_player.gold = 10
-	var sold_out_instance = _make_shop_instance([_offer("Twig Blade", 6)])
+	var sold_out_instance = _make_shop_instance([_offer("Twig Blade", 2)])
 	var sold_out_state := sold_out_instance.runtime_state as ShopRuntimeStateScript
 	if sold_out_state != null:
 		sold_out_state.sold_flags.append(true)
@@ -283,7 +283,7 @@ func _test_shop_failures_do_not_mutate_runtime_state() -> void:
 
 	var resolved_player := PlayerDataScript.new()
 	resolved_player.gold = 10
-	var resolved_instance = _make_shop_instance([_offer("Twig Blade", 6)])
+	var resolved_instance = _make_shop_instance([_offer("Twig Blade", 2)])
 	resolved_instance.resolve()
 	var resolved_before := _snapshot_runtime_state(resolved_player, resolved_instance)
 	var resolved_result = shop_resolver.purchase_item(resolved_instance, 0, resolved_player, true)
@@ -300,7 +300,7 @@ func _test_shop_failures_do_not_mutate_runtime_state() -> void:
 func _test_shop_rejects_mismatched_event_type_without_state_writes() -> void:
 	var player := PlayerDataScript.new()
 	player.gold = 10
-	var instance := _make_shop_instance([_offer("Twig Blade", 6)])
+	var instance := _make_shop_instance([_offer("Twig Blade", 2)])
 	instance.template.event_type = EventDataScript.EventType.TREASURE
 	var state := instance.runtime_state as ShopRuntimeStateScript
 	var before := _snapshot_runtime_state(player, instance)
@@ -319,7 +319,7 @@ func _test_shop_rejects_mismatched_event_type_without_state_writes() -> void:
 func _test_shop_rejects_mismatched_runtime_state() -> void:
 	var player := PlayerDataScript.new()
 	player.gold = 10
-	var instance = _make_shop_instance([_offer("Twig Blade", 6)])
+	var instance = _make_shop_instance([_offer("Twig Blade", 2)])
 	instance.runtime_state = EventRuntimeStateScript.new()
 	var result = shop_resolver.purchase_item(instance, 0, player, true)
 	_expect(
@@ -352,7 +352,7 @@ func _test_shop_rejects_null_card_data_without_state_writes() -> void:
 func _test_shop_validation_order_preserves_state() -> void:
 	var invalid_index_player := PlayerDataScript.new()
 	invalid_index_player.gold = 10
-	var invalid_index_instance = _make_shop_instance([_offer("Twig Blade", 6)])
+	var invalid_index_instance = _make_shop_instance([_offer("Twig Blade", 2)])
 	invalid_index_instance.resolve()
 	var invalid_index_before := _snapshot_runtime_state(invalid_index_player, invalid_index_instance)
 	var invalid_index_result = shop_resolver.purchase_item(invalid_index_instance, 1, invalid_index_player, true)
@@ -367,7 +367,7 @@ func _test_shop_validation_order_preserves_state() -> void:
 
 	var resolved_player := PlayerDataScript.new()
 	resolved_player.gold = 10
-	var resolved_instance = _make_shop_instance([_offer("Twig Blade", 6)])
+	var resolved_instance = _make_shop_instance([_offer("Twig Blade", 2)])
 	var resolved_state := resolved_instance.runtime_state as ShopRuntimeStateScript
 	if resolved_state != null:
 		resolved_state.sold_flags.append(true)
@@ -385,7 +385,7 @@ func _test_shop_validation_order_preserves_state() -> void:
 
 	var sold_player := PlayerDataScript.new()
 	sold_player.gold = 10
-	var sold_instance = _make_shop_instance([_offer("Twig Blade", 6)])
+	var sold_instance = _make_shop_instance([_offer("Twig Blade", 2)])
 	var sold_state := sold_instance.runtime_state as ShopRuntimeStateScript
 	if sold_state != null:
 		sold_state.sold_flags.append(true)

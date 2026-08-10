@@ -8,6 +8,7 @@ const CombatStepScript = preload("res://scripts/combatv2/combat_step.gd")
 const CardDataScript = preload("res://scripts/card/card_data.gd")
 const CardInstanceScript = preload("res://scripts/card/card_instance.gd")
 const MobDataScript = preload("res://scripts/game/event/encounter/mob_data.gd")
+const RibBlade = preload("res://data/levels/ribwood/cards/ribwood_rib_blade.tres")
 
 var _failure_count := 0
 
@@ -18,14 +19,17 @@ func _init() -> void:
 
 func _run_tests() -> void:
 	_test_head_card_resolves_before_older_cards()
+	_test_card_behind_head_pre_triggers_once_before_head()
 	_test_smaller_card_is_depleted_and_leaves_remaining_echo_hp()
 	_test_equal_points_defeat_echo_and_deplete_card()
 	_test_larger_card_keeps_remaining_points_after_victory()
 	_test_armor_keeps_a_surviving_card_in_the_clash()
 	_test_depleted_root_is_reported_for_settlement()
 	_test_regular_echo_actions_do_not_damage_player_or_create_steps()
-	_test_point_clash_trace_only_reports_damage_to_echo()
+	_test_point_clash_trace_reports_attack_and_retaliation()
 	_test_retreat_enhancement_increases_echo_health_and_caps()
+	_test_rib_blade_gets_temporary_points_at_combat_start()
+	_test_rib_blade_temporary_points_do_not_stack_between_encounters()
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -45,6 +49,45 @@ func _test_head_card_resolves_before_older_cards() -> void:
 	_expect(root.current_points == 2, "unresolved root keeps its points")
 	_expect(head.current_points == 0, "equal head point comparison depletes the head")
 
+
+func _test_card_behind_head_pre_triggers_once_before_head() -> void:
+	var rule_script := load("res://scripts/combatv2/card/rules/behind_head_pre_trigger_rule.gd") as Script
+	_expect(rule_script != null, "behind-head pre-trigger rule exists")
+	if rule_script == null:
+		return
+
+	var root := _make_card("Root", CardData.CardType.ROOT, 1)
+	var trigger_card := _make_card("Scout", CardData.CardType.NORMAL, 2, 1)
+	trigger_card.card_data.effect_rules.append(rule_script.new())
+	var head := _make_card("Head", CardData.CardType.NORMAL, 1)
+
+	var result := _resolve([root, trigger_card, head], _make_monster("Echo", 4))
+
+	_expect(result.outcome == CombatResultScript.Outcome.VICTORY, "pre-trigger chain defeats the echo")
+	_expect(result.steps.size() == 3, "pre-combat scout, defeated head, and normal scout clash all produce steps")
+	if result.steps.size() >= 3:
+		_expect(result.steps[0].kind == CombatStepScript.Kind.keys().find("PRE_COMBAT_CARD"), "scout uses a pre-combat step")
+		_expect(result.steps[0].source_name == "Scout", "behind-head card resolves before head")
+		_expect(result.steps[1].source_name == "Head", "head resolves after pre-trigger")
+		_expect(result.steps[2].kind == CombatStepScript.Kind.PLAYER_CARD, "scout later resolves as an ordinary player card")
+		_expect(result.steps[2].source_name == "Scout", "scout remains available after its pre-combat strike")
+	var scout_steps := result.steps.filter(func(step: CombatStep) -> bool: return step.source_name == "Scout")
+	_expect(scout_steps.size() == 2, "behind-head card has both its pre-combat strike and normal clash")
+	if scout_steps.size() == 2:
+		var pre_combat_step: CombatStep = scout_steps[0]
+		var normal_step: CombatStep = scout_steps[1]
+		var pre_combat_card_damage := pre_combat_step.effects.filter(func(effect: CombatEffect) -> bool:
+			return effect != null and effect.type == CombatEffect.Type.DAMAGE and effect.target == CombatEffect.Target.CARD
+		)
+		var normal_card_damage := normal_step.effects.filter(func(effect: CombatEffect) -> bool:
+			return effect != null and effect.type == CombatEffect.Type.DAMAGE and effect.target == CombatEffect.Target.CARD
+		)
+		_expect(pre_combat_card_damage.is_empty(), "scout does not receive retaliation during its pre-combat strike")
+		_expect(normal_card_damage.size() == 1, "scout receives ordinary retaliation when later reached by the chain")
+	_expect(head.current_points == 0, "head is defeated before the chain reaches scout")
+	_expect(trigger_card.current_points == 2, "scout keeps its points after armor absorbs its normal-clash retaliation")
+	_expect(trigger_card.current_armor == 0, "scout spends armor only during its later ordinary clash")
+	_expect(root.current_points == 1, "root is not reached after scout's normal clash wins")
 
 func _test_smaller_card_is_depleted_and_leaves_remaining_echo_hp() -> void:
 	var root := _make_card("Root", CardData.CardType.ROOT, 1)
@@ -129,17 +172,20 @@ func _test_regular_echo_actions_do_not_damage_player_or_create_steps() -> void:
 		_expect(step.kind != CombatStepScript.Kind.MONSTER_ACTION, "ordinary point clashes do not create monster-action steps")
 
 
-func _test_point_clash_trace_only_reports_damage_to_echo() -> void:
+func _test_point_clash_trace_reports_attack_and_retaliation() -> void:
 	var root := _make_card("Root", CardData.CardType.ROOT, 1)
 	var head := _make_card("Head", CardData.CardType.NORMAL, 2, 1)
 
 	var result := _resolve([root, head], _make_monster("Echo", 3))
 
-	_expect(result.steps[0].effects.size() == 1, "one point clash logs one echo-damage effect")
-	if not result.steps[0].effects.is_empty():
-		var effect := result.steps[0].effects[0]
-		_expect(effect.target == CombatEffect.Target.MONSTER, "point clash log targets the echo")
-		_expect(effect.value == 2, "point clash log uses the card's pre-clash points")
+	_expect(result.steps[0].effects.size() == 2, "one point clash logs attack and retaliation effects")
+	if result.steps[0].effects.size() >= 2:
+		var attack_effect := result.steps[0].effects[0]
+		var retaliation_effect := result.steps[0].effects[1]
+		_expect(attack_effect.target == CombatEffect.Target.MONSTER, "first clash effect targets the echo")
+		_expect(attack_effect.value == 2, "attack effect uses the card's pre-clash points")
+		_expect(retaliation_effect.target == CombatEffect.Target.CARD, "retaliation is represented as a card-targeted effect")
+		_expect(retaliation_effect.target_card == head, "retaliation identifies the affected card")
 
 
 func _test_retreat_enhancement_increases_echo_health_and_caps() -> void:
@@ -154,6 +200,40 @@ func _test_retreat_enhancement_increases_echo_health_and_caps() -> void:
 	_expect(monster.stats.max_hp == 9 and monster.stats.hp == 7, "second enhancement adds health again")
 	_expect(not monster.gain_enhancement(), "enhancement stops at its stack cap")
 	_expect(monster.stats.max_hp == 9 and monster.stats.hp == 7, "capped enhancement does not change health")
+
+
+func _test_rib_blade_gets_temporary_points_at_combat_start() -> void:
+	var root := _make_card("Root", CardData.CardType.ROOT, 1)
+	var blade := CardInstanceScript.new(RibBlade)
+	var result := _resolve([root, blade], _make_monster("Echo", 1))
+
+	_expect(result.outcome == CombatResultScript.Outcome.VICTORY, "Rib Blade can use its combat-start bonus to win")
+	_expect(blade.current_points == 1, "Rib Blade retains only its persistent points after temporary bonus cleanup")
+	var start_effects := []
+	var cleanup_effects := []
+	for step in result.steps:
+		for effect in step.effects:
+			if effect != null and effect.get_parameter("temporary", false):
+				start_effects.append(effect)
+			if effect != null and effect.get_parameter("temporary_cleanup", false):
+				cleanup_effects.append(effect)
+	_expect(start_effects.size() == 1, "Rib Blade emits one temporary combat-start point effect")
+	if start_effects.size() == 1:
+		_expect(start_effects[0].value == 2, "Rib Blade combat-start effect grants two points")
+	_expect(cleanup_effects.size() == 1, "temporary combat-start points emit a cleanup effect")
+
+
+func _test_rib_blade_temporary_points_do_not_stack_between_encounters() -> void:
+	var root := _make_card("Root", CardData.CardType.ROOT, 1)
+	var blade := CardInstanceScript.new(RibBlade)
+	var service := CombatServiceScript.new()
+	var first := service.resolve_encounter(_make_player_stats(20, 20), [root, blade], _make_monster("Echo", 1))
+	var second := service.resolve_encounter(_make_player_stats(20, 20), [root, blade], _make_monster("Echo", 1))
+
+	_expect(first.outcome == CombatResultScript.Outcome.VICTORY, "first Rib Blade encounter succeeds")
+	_expect(second.outcome == CombatResultScript.Outcome.VICTORY, "second Rib Blade encounter can be resolved independently")
+	_expect(blade.current_points == 0, "temporary points do not remain or stack across encounters")
+
 
 
 func _resolve(chain: Array[CardInstance], monster: MobInstance) -> CombatResult:
