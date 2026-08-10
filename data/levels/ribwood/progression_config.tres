@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="RunProgressionConfig" format=3]
+
+[ext_resource type="Script" path="res://scripts/game/run/run_progression_config.gd" id="1_progression"]
+
+[resource]
+script = ExtResource("1_progression")
+stage_action_thresholds = Array[int]([0, 4, 8, 12])
+rarity_weights_by_stage = Array[Dictionary]([
+{
+0: 100,
+1: 0,
+2: 0,
+3: 0
+},
+{
+0: 80,
+1: 20,
+2: 0,
+3: 0
+},
+{
+0: 60,
+1: 30,
+2: 10,
+3: 0
+},
+{
+0: 45,
+1: 35,
+2: 15,
+3: 5
+}
+])

@@ -11,18 +11,25 @@ signal boss_registered(event_node: BoardEvent)
 
 var _event_service := ExplorationEventServiceScript.new()
 var _boss_pressure_service := BossPressureServiceScript.new()
+var _progression: RunProgressionService
 var _board: Board
 
 
-func configure(event_lib: EventLib, board: Board, config: ExplorationConfig) -> bool:
+func configure(
+	event_lib: EventLib,
+	board: Board,
+	config: ExplorationConfig,
+	progression: RunProgressionService = null
+) -> bool:
 	if event_lib == null or board == null or config == null:
 		return false
 	var validation_error := config.validate(event_lib)
 	if not validation_error.is_empty():
 		push_error("Invalid ExplorationConfig: %s" % validation_error)
 		return false
-	if not _event_service.configure(event_lib, board, config.spawn_config):
+	if not _event_service.configure(event_lib, board, config.spawn_config, null, progression):
 		return false
+	_progression = progression
 	_board = board
 	_boss_pressure_service.configure(
 		config.boss_pursuit_enabled,
@@ -43,12 +50,14 @@ func resolve_placement(result: BoardPlacementResult) -> void:
 	if result == null or _board == null:
 		return
 	var boss_before_placement := _boss_pressure_service.get_registered_boss()
+	if _progression != null:
+		_progression.record_player_action(result)
 	_event_service.try_spawn_after_placement(result)
 	if boss_before_placement != null and result.overlapped_event != boss_before_placement.event_instance:
 		_boss_pressure_service.record_placement(_board, result)
 
 
-## Uses the current level EventLib to place one normal residual encounter after a faith consequence.
+## Legacy hook retained for compatibility while faith consequences are disabled.
 func request_faith_echo() -> bool:
 	return _event_service.request_faith_echo()
 

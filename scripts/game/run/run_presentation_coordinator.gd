@@ -32,7 +32,7 @@ func configure(
 	drag_layer: DragLayer,
 	player_data: PlayerData,
 	player_stats: CombatStats,
-	faith: FaithService
+	faith: FaithService = null
 ) -> bool:
 	if _configured:
 		return false
@@ -43,7 +43,6 @@ func configure(
 		or drag_layer == null
 		or player_data == null
 		or player_stats == null
-		or faith == null
 	):
 		return false
 	_hand_area = hand_area
@@ -80,7 +79,8 @@ func sync_all() -> void:
 		return
 	_sync_hand_tray(_hand_area.get_card_count(), _hand_area.max_hand_size)
 	_crest.set_vitality(_player_stats.hp, _player_stats.max_hp)
-	_crest.set_faith(_faith.get_faith())
+	if _faith != null:
+		_crest.set_faith(_faith.get_faith())
 	_crest.set_gold(_player_data.gold)
 
 
@@ -108,7 +108,7 @@ func apply_flow_state(state: RunFlowCoordinator.State) -> void:
 func _connect_presentation_signals() -> void:
 	if not _hand_area.hand_count_changed.is_connected(_on_hand_count_changed):
 		_hand_area.hand_count_changed.connect(_on_hand_count_changed)
-	if not _faith.faith_changed.is_connected(_on_faith_changed):
+	if _faith != null and not _faith.faith_changed.is_connected(_on_faith_changed):
 		_faith.faith_changed.connect(_on_faith_changed)
 
 

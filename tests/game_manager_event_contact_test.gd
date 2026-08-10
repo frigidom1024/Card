@@ -25,6 +25,7 @@ func _run_test() -> void:
 	await _assert_real_event_contact_opens_its_modal(
 		MarrowLampTreasureEvent, EventData.EventType.TREASURE, "treasure"
 	)
+	await _assert_closing_shop_restores_event_contact_flow()
 	await _assert_guide_contact_opens_combat_modal()
 	await _assert_monster_contact_for_all_directions()
 	quit(0 if _failure_count == 0 else 1)
@@ -59,6 +60,48 @@ func _assert_real_event_contact_opens_its_modal(
 			_expect(manager.treasure_event_view.visible, "%s contact opens treasure UI" % modal_name)
 	manager.free()
 	await process_frame
+
+func _assert_closing_shop_restores_event_contact_flow() -> void:
+	var manager := await _make_manager()
+	var board: Board = manager.board
+	var shop_event := _attach_event(board, BrokenBannerShopEvent, Vector2i(3, 0))
+	_expect(shop_event != null, "shop-close fixture attaches the Ribwood shop event")
+	var monster_event := _attach_event(board, MarrowRatEvent, Vector2i(5, 0))
+	_expect(monster_event != null, "shop-close fixture attaches the following monster event")
+	_expect(_place_root(board), "shop-close fixture places the root card")
+
+	var shop_card := _make_hand_card(manager, 3)
+	_expect(
+		_drop_card(manager, shop_card, _horizontal_global_center(board, Vector2i(2, 0))),
+		"shop-close fixture reaches the shop event"
+	)
+	_expect(manager.shop_event_view.visible, "shop-close fixture opens shop UI")
+	_expect(
+		manager.get_run_flow().get_state() == RunFlowCoordinator.State.INTERACTING,
+		"shop-close fixture enters interaction state"
+	)
+
+	manager.shop_event_view.close_requested.emit()
+	await process_frame
+	_expect(not manager.shop_event_view.visible, "closing the shop hides its UI")
+	_expect(
+		manager.get_run_flow().get_state() == RunFlowCoordinator.State.EXPLORING,
+		"closing the shop restores exploration state"
+	)
+
+	var monster_card := _make_hand_card(manager, 3)
+	_expect(
+		_drop_card(manager, monster_card, _horizontal_global_center(board, Vector2i(4, 0))),
+		"shop-close fixture reaches the following monster event"
+	)
+	_expect(
+		manager.get_run_flow().get_state() == RunFlowCoordinator.State.INTERACTING,
+		"event contact after closing shop re-enters interaction state"
+	)
+	_expect(manager.combat_event_view.visible, "event contact after closing shop opens combat UI")
+	manager.free()
+	await process_frame
+
 
 func _assert_monster_contact_for_all_directions() -> void:
 	for direction in range(4):

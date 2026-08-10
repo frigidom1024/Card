@@ -14,12 +14,15 @@ const EventInteractionControllerScript := preload(
 )
 const RunContextScript := preload("res://scripts/game/run/run_context.gd")
 const RunRandomServiceScript := preload("res://scripts/game/run/run_random_service.gd")
+const RunProgressionConfigScript := preload("res://scripts/game/run/run_progression_config.gd")
+const RunProgressionServiceScript := preload("res://scripts/game/run/run_progression_service.gd")
 
 var _source_player: PlayerData
 var _starting_deck: StartingDeckData
 var _card_manager: Node2D
 var _hand_area: HandArea
 var _drag_layer: Node2D
+var _progression_config: RunProgressionConfig
 
 var _runtime_player: PlayerData
 var _player_stats: CombatStats
@@ -35,7 +38,8 @@ func configure(
 	deck: StartingDeckData,
 	card_manager: Node2D,
 	hand_area: HandArea,
-	drag_layer: Node2D
+	drag_layer: Node2D,
+	progression_config: RunProgressionConfig = null
 ) -> bool:
 	if (
 		source_player == null
@@ -50,6 +54,7 @@ func configure(
 	_card_manager = card_manager
 	_hand_area = hand_area
 	_drag_layer = drag_layer
+	_progression_config = progression_config
 	return true
 
 
@@ -67,6 +72,13 @@ func initialize() -> bool:
 	if runtime_player == null or runtime_player.base_stats == null:
 		return _fail("Run setup could not duplicate PlayerData")
 	runtime_player.faith = PlayerData.INITIAL_FAITH
+
+	var progression_config: RunProgressionConfig = _progression_config
+	if progression_config == null:
+		progression_config = RunProgressionConfigScript.new()
+	var progression: RunProgressionService = RunProgressionServiceScript.new()
+	if not progression.configure(progression_config):
+		return _fail("Run setup could not configure progression service")
 
 	var player_stats := CombatStats.from_data(runtime_player.base_stats)
 	if player_stats == null:
@@ -95,7 +107,8 @@ func initialize() -> bool:
 		card_service,
 		combat_flow,
 		event_interaction_controller,
-		random
+		random,
+		progression
 	):
 		return _fail("Run setup could not configure RunContext", card_service)
 
@@ -130,6 +143,10 @@ func get_encounter_combat_flow() -> EncounterCombatFlowCoordinator:
 
 func get_event_interaction_controller() -> EventInteractionController:
 	return _event_interaction_controller
+
+
+func get_progression() -> RunProgressionService:
+	return _context.progression if _context != null else null
 
 
 func get_failure_reason() -> String:

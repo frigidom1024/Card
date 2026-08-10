@@ -4,11 +4,13 @@ extends RefCounted
 ## Resolves one encounter as a sequence of point clashes.
 ##
 ## The chain resolves from its head (the final placed card) back toward the
-## root. Each eligible card compares its current points with the echo's current
-## HP once: it first spends points against the echo, then armor absorbs the
-## echo's pre-clash HP before any remaining retaliation consumes card points.
-## Normal echo actions and player HP are intentionally outside this baseline
-## loop; specialised outcome effects remain available through CombatResult.
+## root. Each eligible card repeatedly compares its remaining points with the
+## echo's current HP: it first spends points against the echo, then armor
+## absorbs the echo's pre-clash HP before any remaining retaliation consumes
+## card points. A card stays in the clash while it retains points, so armor has
+## immediate combat value by preserving further attacks. Normal echo actions
+## and player HP are intentionally outside this baseline loop; specialised
+## outcome effects remain available through CombatResult.
 
 
 func resolve_encounter(
@@ -26,8 +28,17 @@ func resolve_encounter(
 		return _build_result(context, CombatResult.Outcome.RETREAT)
 
 	for card_index in range(context.cards.size() - 1, -1, -1):
-		if _resolve_card_clash(context, context.cards[card_index]):
-			return _build_result(context, CombatResult.Outcome.VICTORY)
+		var card := context.cards[card_index]
+		if card == null or card.card_data == null or card.is_depleted():
+			continue
+
+		# A card is counted once even if armor lets it clash repeatedly.
+		context.resolved_cards.append(card)
+		while not card.is_depleted() and not _is_monster_defeated(context):
+			if _resolve_card_clash(context, card):
+				context.remaining_cards.erase(card)
+				return _build_result(context, CombatResult.Outcome.VICTORY)
+		context.remaining_cards.erase(card)
 
 	return _build_result(context, CombatResult.Outcome.RETREAT)
 
@@ -71,8 +82,6 @@ func _resolve_card_clash(context: CombatContext, card: CardInstance) -> bool:
 		armor_before,
 		card.current_armor if card != null else 0
 	)
-	context.resolved_cards.append(card)
-	context.remaining_cards.erase(card)
 	if card_was_used and card.is_depleted() and card not in context.depleted_cards:
 		context.depleted_cards.append(card)
 	return _is_monster_defeated(context)

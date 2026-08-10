@@ -10,6 +10,8 @@ const MarketPriceContextScript := preload("res://scripts/game/market/market_pric
 
 signal combat_started(instance: EventInstance, monster: MobInstance)
 signal combat_settlement_confirmed(instance: EventInstance, result: CombatResult)
+## Emitted only after a shop or treasure interaction has fully closed.
+signal non_combat_interaction_finished(instance: EventInstance)
 signal interaction_lock_changed(locked: bool)
 signal unsupported_event(instance: EventInstance)
 signal event_display_refresh_requested(instance: EventInstance)
@@ -37,7 +39,8 @@ func configure(
 	shop_view,
 	treasure_view,
 	combat_view,
-	pricing: Object
+	pricing: Object,
+	progression: RunProgressionService = null
 ) -> bool:
 	if (
 		controller == null
@@ -60,11 +63,13 @@ func configure(
 	_treasure_view = treasure_view
 	_combat_view = combat_view
 	_pricing = pricing
-	_shop_resolver = ShopEventResolver.new(_pricing)
+	_shop_resolver = ShopEventResolver.new(_pricing, progression)
 	_treasure_rng.randomize()
 	_connect_signals()
 	if _shop_view.has_method("set_pricing_service"):
 		_shop_view.set_pricing_service(_pricing)
+	if _shop_view.has_method("set_progression_service"):
+		_shop_view.set_progression_service(progression)
 	return true
 
 
@@ -133,8 +138,12 @@ func _on_interaction_started(instance: EventInstance) -> void:
 			unsupported_event.emit(instance)
 
 
-func _on_interaction_finished(_instance: EventInstance) -> void:
+func _on_interaction_finished(instance: EventInstance) -> void:
 	_set_interaction_lock(false)
+	if instance == null:
+		return
+	if instance.get_event_type() in [EventData.EventType.SHOP, EventData.EventType.TREASURE]:
+		non_combat_interaction_finished.emit(instance)
 
 
 func _on_combat_result_ready(instance: EventInstance, result: CombatResult) -> void:
@@ -242,6 +251,8 @@ func _resolution_failure_message(failure: EventResolutionResult.Failure) -> Stri
 			return "无效的选项。"
 		EventResolutionResult.Failure.ALREADY_RESOLVED:
 			return "该事件已经结束。"
+		EventResolutionResult.Failure.CARD_LOCKED:
+			return "该卡牌尚未解锁。"
 		_:
 			return "事件结算失败。"
 

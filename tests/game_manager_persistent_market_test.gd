@@ -17,7 +17,25 @@ func _run_tests() -> void:
 	await _test_market_purchase_restores_offer_when_hand_is_full()
 	await _test_market_reclaim_via_drag_removes_card_and_pays_half_value()
 	await _test_refresh_button_charges_gold_and_repopulates_offers()
+	await _test_market_uses_ribwood_card_library()
 	quit(1 if _failure_count > 0 else 0)
+
+
+func _test_market_uses_ribwood_card_library() -> void:
+	var manager = await _create_manager()
+	if manager == null:
+		return
+
+	_expect(
+		manager.card_manager.card_lib.resource_path == "res://data/levels/ribwood/card_lib.tres",
+		"persistent market uses the Ribwood card library"
+	)
+	for card_data in manager._persistent_market_coordinator.get_state().offers:
+		_expect(
+			card_data != null and card_data.resource_path.begins_with("res://data/levels/ribwood/cards/"),
+			"persistent market offer comes from the Ribwood card set"
+		)
+	await _free_manager(manager)
 
 
 func _test_market_purchase_via_drag_adds_card_and_charges_value() -> void:

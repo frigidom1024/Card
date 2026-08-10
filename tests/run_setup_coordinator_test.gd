@@ -18,6 +18,7 @@ func _run_tests() -> void:
 	await _test_initialize_failure_clears_partial_runtime_state()
 	await _test_initialize_creates_isolated_runtime_state()
 	await _test_initialize_exposes_runtime_card_and_interaction_services()
+	await _test_initialize_exposes_progression_service()
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -144,6 +145,29 @@ func _test_initialize_exposes_runtime_card_and_interaction_services() -> void:
 
 	await _free_fixture(fixture, coordinator)
 
+
+
+func _test_initialize_exposes_progression_service() -> void:
+	var fixture := _create_fixture()
+	var coordinator = _create_coordinator()
+	if coordinator == null:
+		await _free_fixture(fixture, null)
+		return
+	_expect(
+		coordinator.configure(
+			fixture.source_player,
+			RevivalDeck,
+			fixture.card_manager,
+			fixture.hand_area,
+			fixture.drag_layer
+		),
+		"run setup accepts dependencies for progression wiring"
+	)
+	_expect(coordinator.initialize(), "run setup initializes progression wiring")
+	var context = coordinator.get_context()
+	_expect(context != null and context.progression != null, "run context exposes the run progression service")
+	_expect(context != null and context.progression.get_action_count() == 0, "run progression starts at zero actions")
+	await _free_fixture(fixture, coordinator)
 
 func _create_coordinator():
 	var coordinator_script = ResourceLoader.load(RunSetupCoordinatorPath)

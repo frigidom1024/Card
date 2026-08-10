@@ -8,6 +8,7 @@ const EncounterResolutionCoordinatorScript := preload(
 	"res://scripts/game/event/encounter/encounter_resolution_coordinator.gd"
 )
 const FaithServiceScript := preload("res://scripts/player/faith_service.gd")
+const CardRetractionCostServiceScript := preload("res://scripts/game/run/card_retraction_cost_service.gd")
 const MarketPricingServiceScript := preload("res://scripts/game/market/market_pricing_service.gd")
 const RunSetupCoordinatorScript := preload("res://scripts/game/run/run_setup_coordinator.gd")
 const PersistentMarketCoordinatorScript := preload(
@@ -60,7 +61,9 @@ var _market_pricing := MarketPricingServiceScript.new()
 var _persistent_market_coordinator: PersistentMarketCoordinator
 var _event_modal_coordinator: EventModalCoordinator
 var _event_hover_preview_coordinator: EventHoverPreviewCoordinator
+## Legacy faith service remains declared for scene/API compatibility but is disabled for runs.
 var _faith_service: FaithService
+var _retraction_cost_service: CardRetractionCostService
 var _run_card_service: RunCardService
 var _run_setup: RunSetupCoordinator
 var _placement_pipeline: PlacementPipelineCoordinator
@@ -137,7 +140,8 @@ func _initialize_run_state() -> bool:
 		return _fail_run_initialization("GameManager is missing PlayerData.base_stats")
 
 	_run_setup = RunSetupCoordinatorScript.new()
-	if not _run_setup.configure(player_data, starting_deck, card_manager, hand_area, drag_layer):
+	var progression_config: RunProgressionConfig = exploration_config.progression_config if exploration_config != null else null
+	if not _run_setup.configure(player_data, starting_deck, card_manager, hand_area, drag_layer, progression_config):
 		return _fail_run_initialization("GameManager could not configure run setup")
 	if not _run_setup.initialize():
 		return _fail_run_initialization(_run_setup.get_failure_reason())
@@ -151,8 +155,10 @@ func _initialize_run_state() -> bool:
 	_event_interaction_controller = _run_context.event_interaction_controller
 	cards_inst = _run_card_service.get_instances()
 	card_entities = _run_card_service.get_entities()
-	_faith_service = FaithServiceScript.new()
-	_faith_service.configure(_run_context.player_data)
+	_faith_service = null # Faith progression is paused; keep the legacy field for compatibility.
+	_retraction_cost_service = CardRetractionCostServiceScript.new()
+	if not _retraction_cost_service.configure(_run_context.player_data):
+		return _fail_run_initialization("GameManager could not configure card retraction cost")
 	drag_layer.board = board
 	drag_layer.hand_area = hand_area
 	return true
@@ -177,6 +183,7 @@ func _clear_runtime_references() -> void:
 	_event_interaction_controller = null
 	player_stats = null
 	_faith_service = null
+	_retraction_cost_service = null
 	_exploration_coordinator = null
 	_card_chain_coordinator = null
 	_encounter_resolution = null
@@ -210,7 +217,8 @@ func _configure_persistent_market() -> bool:
 		hand_area,
 		_run_context.card_service,
 		_market_pricing,
-		_run_context.random.market_rng()
+		_run_context.random.market_rng(),
+		_run_context.progression
 	):
 		return _fail_run_initialization("GameManager could not configure persistent market")
 	_persistent_market_coordinator.connect_drag_layer(drag_layer, hand_tray)
@@ -230,7 +238,8 @@ func _configure_event_modal() -> bool:
 		shop_event_view,
 		treasure_event_view,
 		combat_event_view,
-		_market_pricing
+		_market_pricing,
+		_run_context.progression
 	):
 		return _fail_run_initialization("GameManager could not configure event modal coordinator")
 	if not _event_modal_coordinator.event_display_refresh_requested.is_connected(
@@ -262,7 +271,7 @@ func _configure_exploration() -> bool:
 	if event_lib == null or exploration_config == null:
 		return _fail_run_initialization("GameManager is missing level exploration data")
 	_exploration_coordinator = ExplorationCoordinatorScript.new()
-	if not _exploration_coordinator.configure(event_lib, board, exploration_config):
+	if not _exploration_coordinator.configure(event_lib, board, exploration_config, _run_context.progression):
 		return _fail_run_initialization("GameManager could not configure exploration coordinator")
 	_exploration_coordinator.initialize_events()
 	return true
@@ -304,10 +313,6 @@ func _configure_run_flow() -> bool:
 		board
 	):
 		return _fail_run_initialization("GameManager could not configure run flow")
-	if not _run_flow.set_faith_echo_request(
-		Callable(_exploration_coordinator, "request_faith_echo")
-	):
-		return _fail_run_initialization("GameManager could not configure Faith echo routing")
 	if not _run_flow.combat_started.is_connected(_forward_combat_started):
 		_run_flow.combat_started.connect(_forward_combat_started)
 	if not _run_flow.combat_resolved.is_connected(_forward_combat_resolved):
@@ -316,13 +321,11 @@ func _configure_run_flow() -> bool:
 		_run_flow.exploration_failed.connect(_forward_exploration_failed)
 	if not _run_flow.run_finished.is_connected(_forward_run_finished):
 		_run_flow.run_finished.connect(_forward_run_finished)
-	if not _run_flow.faith_changed.is_connected(_forward_faith_changed):
-		_run_flow.faith_changed.connect(_forward_faith_changed)
-	if not drag_layer.chain_retraction_confirmed.is_connected(
-		_faith_service.resolve_confirmed_chain_retraction
+	if _retraction_cost_service != null and not drag_layer.chain_retraction_confirmed.is_connected(
+		_retraction_cost_service.resolve_confirmed_chain_retraction
 	):
 		drag_layer.chain_retraction_confirmed.connect(
-			_faith_service.resolve_confirmed_chain_retraction
+			_retraction_cost_service.resolve_confirmed_chain_retraction
 		)
 	if not _run_flow.start():
 		return _fail_run_initialization("GameManager could not start run flow")

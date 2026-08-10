@@ -6,10 +6,12 @@ const MarketPricingServiceScript = preload("res://scripts/game/market/market_pri
 
 
 var _pricing: Object
+var _progression: RunProgressionService
 
 
-func _init(pricing: Object = null) -> void:
+func _init(pricing: Object = null, progression: RunProgressionService = null) -> void:
 	_pricing = pricing if pricing != null else MarketPricingServiceScript.new()
+	_progression = progression
 
 
 func purchase_item(
@@ -40,6 +42,8 @@ func purchase_item(
 	var item = content.items[item_index]
 	if item == null or item.card_data == null:
 		return EventResolutionResult.rejected(EventResolutionResult.Failure.INVALID_EVENT)
+	if _progression != null and not _progression.is_card_available(item.card_data):
+		return EventResolutionResult.rejected(EventResolutionResult.Failure.CARD_LOCKED)
 	var price := int(_pricing.call("get_purchase_price", item.card_data, context))
 	if player.gold < price:
 		return EventResolutionResult.rejected(EventResolutionResult.Failure.INSUFFICIENT_GOLD)

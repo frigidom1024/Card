@@ -36,15 +36,14 @@ func configure(
 	pipeline: PlacementPipelineCoordinator,
 	modal: EventModalCoordinator,
 	resolution: EncounterResolutionCoordinator,
-	faith: FaithService,
-	board: Board
+	faith: FaithService = null,
+	board: Board = null
 ) -> bool:
 	if (
 		context == null
 		or pipeline == null
 		or modal == null
 		or resolution == null
-		or faith == null
 		or board == null
 	):
 		return false
@@ -157,13 +156,15 @@ func _connect_signals() -> void:
 		_pipeline.event_interaction_requested.connect(_on_event_interaction_requested)
 	if not _modal.combat_settlement_confirmed.is_connected(handle_combat_settlement_request):
 		_modal.combat_settlement_confirmed.connect(handle_combat_settlement_request)
+	if not _modal.non_combat_interaction_finished.is_connected(_on_non_combat_interaction_finished):
+		_modal.non_combat_interaction_finished.connect(_on_non_combat_interaction_finished)
 	if not _modal.combat_started.is_connected(_forward_combat_started):
 		_modal.combat_started.connect(_forward_combat_started)
 	if not _resolution.exploration_failed.is_connected(_on_resolution_exploration_failed):
 		_resolution.exploration_failed.connect(_on_resolution_exploration_failed)
-	if not _faith.faith_changed.is_connected(_forward_faith_changed):
+	if _faith != null and not _faith.faith_changed.is_connected(_forward_faith_changed):
 		_faith.faith_changed.connect(_forward_faith_changed)
-	if not _faith.echo_spawn_requested.is_connected(_on_faith_echo_spawn_requested):
+	if _faith != null and not _faith.echo_spawn_requested.is_connected(_on_faith_echo_spawn_requested):
 		_faith.echo_spawn_requested.connect(_on_faith_echo_spawn_requested)
 	if not _board.card_return_requested.is_connected(handle_card_return_requested):
 		_board.card_return_requested.connect(handle_card_return_requested)
@@ -180,6 +181,11 @@ func _disconnect_signals() -> void:
 		and _modal.combat_settlement_confirmed.is_connected(handle_combat_settlement_request)
 	):
 		_modal.combat_settlement_confirmed.disconnect(handle_combat_settlement_request)
+	if (
+		_modal != null
+		and _modal.non_combat_interaction_finished.is_connected(_on_non_combat_interaction_finished)
+	):
+		_modal.non_combat_interaction_finished.disconnect(_on_non_combat_interaction_finished)
 	if _modal != null and _modal.combat_started.is_connected(_forward_combat_started):
 		_modal.combat_started.disconnect(_forward_combat_started)
 	if (
@@ -200,6 +206,13 @@ func _on_event_interaction_requested(instance: EventInstance) -> void:
 		return
 	_set_state(State.INTERACTING)
 	_modal.begin(instance, _context.player_stats, _board.get_combat_card_chain())
+
+
+## Shop and treasure dialogs finish synchronously without combat settlement.
+func _on_non_combat_interaction_finished(_instance: EventInstance) -> void:
+	if not _configured or _state != State.INTERACTING:
+		return
+	_set_state(State.EXPLORING)
 
 
 func _on_resolution_exploration_failed(result: CombatResult) -> void:

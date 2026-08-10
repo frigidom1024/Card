@@ -13,6 +13,7 @@ var _card_service: RunCardService
 var _combat_flow: EncounterCombatFlowCoordinator
 var _event_interaction_controller: EventInteractionController
 var _random: RunRandomService
+var _progression: RunProgressionService
 
 var player_data: PlayerData:
 	get:
@@ -38,6 +39,10 @@ var random: RunRandomService:
 	get:
 		return _random
 
+var progression: RunProgressionService:
+	get:
+		return _progression
+
 
 func configure(
 	player_data_value: PlayerData,
@@ -45,7 +50,8 @@ func configure(
 	card_service_value: RunCardService,
 	combat_flow_value: EncounterCombatFlowCoordinator,
 	event_interaction_controller_value: EventInteractionController,
-	random_value: RunRandomService
+	random_value: RunRandomService,
+	progression_value: RunProgressionService = null
 ) -> bool:
 	if is_valid():
 		return false
@@ -64,6 +70,7 @@ func configure(
 	_combat_flow = combat_flow_value
 	_event_interaction_controller = event_interaction_controller_value
 	_random = random_value
+	_progression = progression_value
 	return true
 
 

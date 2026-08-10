@@ -2,7 +2,7 @@ class_name EventResolutionResult
 extends RefCounted
 
 
-enum Failure { NONE, INVALID_EVENT, INVALID_INDEX, SOLD_OUT, INSUFFICIENT_GOLD, HAND_FULL, ALREADY_RESOLVED }
+enum Failure { NONE, INVALID_EVENT, INVALID_INDEX, SOLD_OUT, INSUFFICIENT_GOLD, HAND_FULL, ALREADY_RESOLVED, CARD_LOCKED }
 
 var success := false
 var failure: Failure = Failure.NONE

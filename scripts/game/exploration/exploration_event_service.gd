@@ -8,6 +8,7 @@ signal event_spawned(event_node: BoardEvent)
 var _event_lib: EventLib
 var _board: Board
 var _spawn_config: ExplorationSpawnConfig
+var _progression: RunProgressionService
 var _placement_service := EventPlacementService.new()
 var _rng := RandomNumberGenerator.new()
 var _exploration_placement_count := 0
@@ -19,11 +20,13 @@ func configure(
 	event_lib: EventLib,
 	board: Board,
 	spawn_config: ExplorationSpawnConfig,
-	rng: RandomNumberGenerator = null
+	rng: RandomNumberGenerator = null,
+	progression: RunProgressionService = null
 ) -> bool:
 	_event_lib = event_lib
 	_board = board
 	_spawn_config = spawn_config
+	_progression = progression
 	_exploration_placement_count = 0
 	_boss_spawned = false
 	_boss_pending = false
@@ -61,7 +64,8 @@ func try_spawn_after_placement(result: BoardPlacementResult) -> int:
 	return spawned_count
 
 
-## Faith consequences remain independent from pacing caps and normal spawn pools.
+## Legacy faith consequence hook. Faith is currently disabled at run composition,
+## but this remains available for future level modifiers without influencing pacing.
 func request_faith_echo() -> bool:
 	if _event_lib == null or _board == null:
 		return false
@@ -130,19 +134,23 @@ func _choose_candidate(
 ) -> EventSpawnCandidate:
 	var eligible: Array[EventSpawnCandidate] = []
 	var total_weight := 0
+	var action_count: int = _progression.get_action_count() if _progression != null else _exploration_placement_count
 	for candidate in pool:
 		if candidate == null or candidate.event_data == null:
 			continue
 		if not candidate.allow_duplicate and candidate.event_data in used_templates:
 			continue
+		var effective_weight: int = candidate.get_effective_weight(action_count)
+		if effective_weight <= 0:
+			continue
 		eligible.append(candidate)
-		total_weight += candidate.weight
+		total_weight += effective_weight
 	if eligible.is_empty() or total_weight <= 0:
 		return null
 	var roll := _rng.randi_range(1, total_weight)
 	var cumulative := 0
 	for candidate in eligible:
-		cumulative += candidate.weight
+		cumulative += candidate.get_effective_weight(action_count)
 		if roll <= cumulative:
 			return candidate
 	return eligible.back()

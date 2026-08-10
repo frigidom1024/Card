@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="CardLibrary" format=3]
+
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="1_card_data"]
+[ext_resource type="Script" path="res://scripts/card/card_lib.gd" id="2_card_lib"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_amber_marrow_bottle.tres" id="3_amber_marrow_bottle"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_bone_armor_round_shield.tres" id="4_bone_armor_round_shield"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_bone_stitch_needle.tres" id="5_bone_stitch_needle"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_ember_blade.tres" id="6_ember_blade"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_folded_rib_shield.tres" id="7_folded_rib_shield"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_grave_beetle.tres" id="8_grave_beetle"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_guardian_ember.tres" id="9_guardian_ember"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_last_stand_strike.tres" id="10_last_stand_strike"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_old_chest_cloak.tres" id="11_old_chest_cloak"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_old_tinder.tres" id="12_old_tinder"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_rib_blade.tres" id="13_rib_blade"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_rib_nail.tres" id="14_rib_nail"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_scar_bottle.tres" id="15_scar_bottle"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_shield_fragment.tres" id="16_shield_fragment"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_sternum_plate.tres" id="17_sternum_plate"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_warm_marrow_flask.tres" id="18_warm_marrow_flask"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_warmth_charm.tres" id="19_warmth_charm"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_white_horn_relic.tres" id="20_white_horn_relic"]
+
+[resource]
+script = ExtResource("2_card_lib")
+cards = Array[ExtResource("1_card_data")]([ExtResource("3_amber_marrow_bottle"), ExtResource("4_bone_armor_round_shield"), ExtResource("5_bone_stitch_needle"), ExtResource("6_ember_blade"), ExtResource("7_folded_rib_shield"), ExtResource("8_grave_beetle"), ExtResource("9_guardian_ember"), ExtResource("10_last_stand_strike"), ExtResource("11_old_chest_cloak"), ExtResource("12_old_tinder"), ExtResource("13_rib_blade"), ExtResource("14_rib_nail"), ExtResource("15_scar_bottle"), ExtResource("16_shield_fragment"), ExtResource("17_sternum_plate"), ExtResource("18_warm_marrow_flask"), ExtResource("19_warmth_charm"), ExtResource("20_white_horn_relic")])
+metadata/_custom_type_script = "uid://dvynuonkrlj4l"
+

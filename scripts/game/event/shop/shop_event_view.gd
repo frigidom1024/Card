@@ -10,6 +10,7 @@ signal close_requested()
 var _instance: EventInstance
 var _player: PlayerData
 var _pricing: Object
+var _progression: RunProgressionService
 
 
 func _ready() -> void:
@@ -27,6 +28,11 @@ func _ready() -> void:
 
 func set_pricing_service(pricing: Object) -> void:
 	_pricing = pricing
+	_refresh()
+
+
+func set_progression_service(progression: RunProgressionService) -> void:
+	_progression = progression
 	_refresh()
 
 
@@ -81,8 +87,9 @@ func _refresh() -> void:
 		var button := slot.find_child("ActionButton", true, false) as Button
 		if button != null:
 			var sold := state != null and item_index < state.sold_flags.size() and state.sold_flags[item_index]
-			button.disabled = sold
-			button.text = "SOLD OUT" if sold else "BUY"
+			var locked := _progression != null and not _progression.is_card_available(item.card_data)
+			button.disabled = sold or locked
+			button.text = "SOLD OUT" if sold else ("LOCKED" if locked else "BUY")
 
 	show_message("Choose one supply for the road ahead.", false)
 

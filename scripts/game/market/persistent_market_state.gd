@@ -7,10 +7,16 @@ const OFFER_SLOT_COUNT := 3
 var offers: Array[CardData] = []
 var _eligible_cards: Array[CardData] = []
 var _rng: RandomNumberGenerator
+var _progression: RunProgressionService
 
 
-func initialize(card_library: CardLibrary, source_rng: RandomNumberGenerator) -> void:
+func initialize(
+	card_library: CardLibrary,
+	source_rng: RandomNumberGenerator,
+	progression: RunProgressionService = null
+) -> void:
 	_rng = source_rng
+	_progression = progression
 	_eligible_cards.clear()
 	if card_library != null:
 		for card_data in card_library.cards:
@@ -53,11 +59,31 @@ func _draw_offer(excluded: Array[CardData]) -> CardData:
 		return null
 	var candidates: Array[CardData] = []
 	for card_data in _eligible_cards:
-		if card_data not in excluded:
+		if card_data not in excluded and _get_card_weight(card_data) > 0:
 			candidates.append(card_data)
 	if candidates.is_empty():
-		candidates = _eligible_cards.duplicate()
+		for card_data in _eligible_cards:
+			if _get_card_weight(card_data) > 0:
+				candidates.append(card_data)
+	if candidates.is_empty():
+		return null
 	if _rng == null:
 		_rng = RandomNumberGenerator.new()
 		_rng.randomize()
-	return candidates[_rng.randi_range(0, candidates.size() - 1)]
+
+	var total_weight := 0
+	for card_data in candidates:
+		total_weight += _get_card_weight(card_data)
+	var roll := _rng.randi_range(1, total_weight)
+	var cumulative := 0
+	for card_data in candidates:
+		cumulative += _get_card_weight(card_data)
+		if roll <= cumulative:
+			return card_data
+	return candidates.back()
+
+
+func _get_card_weight(card_data: CardData) -> int:
+	if card_data == null:
+		return 0
+	return _progression.get_card_rarity_weight(card_data) if _progression != null else 1

@@ -10,7 +10,7 @@
 [sub_resource type="Resource" id="EventSpawnCandidate_initial_rat"]
 script = ExtResource("2_candidate")
 event_data = ExtResource("3_rat")
-weight = 45
+weight = 60
 
 [sub_resource type="Resource" id="EventSpawnCandidate_initial_lamp"]
 script = ExtResource("2_candidate")
@@ -24,20 +24,17 @@ event_data = ExtResource("5_shop")
 weight = 15
 allow_duplicate = false
 
-[sub_resource type="Resource" id="EventSpawnCandidate_initial_wolf"]
-script = ExtResource("2_candidate")
-event_data = ExtResource("6_wolf")
-weight = 15
-
 [sub_resource type="Resource" id="EventSpawnCandidate_dynamic_rat"]
 script = ExtResource("2_candidate")
 event_data = ExtResource("3_rat")
-weight = 50
+weight = 60
 
 [sub_resource type="Resource" id="EventSpawnCandidate_dynamic_wolf"]
 script = ExtResource("2_candidate")
 event_data = ExtResource("6_wolf")
-weight = 25
+weight = 10
+unlock_action_count = 4
+weight_per_action = 3
 
 [sub_resource type="Resource" id="EventSpawnCandidate_dynamic_lamp"]
 script = ExtResource("2_candidate")
@@ -53,5 +50,5 @@ allow_duplicate = false
 
 [resource]
 script = ExtResource("1_config")
-initial_event_pool = Array[ExtResource("2_candidate")]([SubResource("EventSpawnCandidate_initial_rat"), SubResource("EventSpawnCandidate_initial_lamp"), SubResource("EventSpawnCandidate_initial_shop"), SubResource("EventSpawnCandidate_initial_wolf")])
+initial_event_pool = Array[ExtResource("2_candidate")]([SubResource("EventSpawnCandidate_initial_rat"), SubResource("EventSpawnCandidate_initial_lamp"), SubResource("EventSpawnCandidate_initial_shop")])
 placement_event_pool = Array[ExtResource("2_candidate")]([SubResource("EventSpawnCandidate_dynamic_rat"), SubResource("EventSpawnCandidate_dynamic_wolf"), SubResource("EventSpawnCandidate_dynamic_lamp"), SubResource("EventSpawnCandidate_dynamic_shop")])

@@ -21,7 +21,7 @@ func _run_tests() -> void:
 	_test_smaller_card_is_depleted_and_leaves_remaining_echo_hp()
 	_test_equal_points_defeat_echo_and_deplete_card()
 	_test_larger_card_keeps_remaining_points_after_victory()
-	_test_armor_absorbs_echo_power_before_card_points()
+	_test_armor_keeps_a_surviving_card_in_the_clash()
 	_test_depleted_root_is_reported_for_settlement()
 	_test_regular_echo_actions_do_not_damage_player_or_create_steps()
 	_test_point_clash_trace_only_reports_damage_to_echo()
@@ -84,17 +84,24 @@ func _test_larger_card_keeps_remaining_points_after_victory() -> void:
 	_expect(not result.depleted_cards.has(head), "surviving card is not reported as depleted")
 
 
-func _test_armor_absorbs_echo_power_before_card_points() -> void:
+func _test_armor_keeps_a_surviving_card_in_the_clash() -> void:
 	var root := _make_card("Root", CardData.CardType.ROOT, 1)
 	var head := _make_card("Shielded Head", CardData.CardType.NORMAL, 3, 3)
 
 	var result := _resolve([root, head], _make_monster("Echo", 5))
 
-	_expect(result.outcome == CombatResultScript.Outcome.RETREAT, "nonlethal armored clash retreats")
-	_expect(result.monster_stats_after.hp == 1, "root contributes after the armored head clash")
+	_expect(result.outcome == CombatResultScript.Outcome.VICTORY, "armor-supported follow-up can finish the echo")
+	_expect(result.monster_stats_after.hp == 0, "the retained point is spent in a second clash before root resolves")
+	_expect(result.processed_card_count == 2, "repeated clashes still count one participating head card")
+	_expect(result.steps.size() == 3, "surviving head contributes a second clash before the root")
+	if result.steps.size() >= 3:
+		_expect(result.steps[0].source_name == "Shielded Head", "head opens the encounter")
+		_expect(result.steps[0].card_points_after == 1, "armor preserves one head point after the first clash")
+		_expect(result.steps[1].source_name == "Shielded Head", "surviving head resolves again")
+		_expect(result.steps[2].source_name == "Root", "older cards resolve only after head is depleted")
 	_expect(head.current_armor == 0, "armor is consumed before points")
-	_expect(head.current_points == 1, "only unabsorbed echo power reduces points")
-	_expect(not result.depleted_cards.has(head), "card survives when armor leaves positive points")
+	_expect(head.current_points == 0, "head depletes only after its preserved point is used")
+	_expect(result.depleted_cards.has(head), "head is reported once after its final clash")
 
 
 func _test_depleted_root_is_reported_for_settlement() -> void:

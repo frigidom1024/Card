@@ -32,7 +32,8 @@ func configure(
 	hand_area: HandArea,
 	card_service: RunCardService,
 	pricing: Object,
-	rng: RandomNumberGenerator
+	rng: RandomNumberGenerator,
+	progression: RunProgressionService = null
 ) -> bool:
 	if market == null or card_library == null or player == null or hand_area == null or card_service == null or pricing == null or rng == null:
 		_set_ready(false)
@@ -43,7 +44,7 @@ func configure(
 	_card_service = card_service
 	_pricing = pricing
 	_state = PersistentMarketStateScript.new()
-	_state.initialize(card_library, rng)
+	_state.initialize(card_library, rng, progression)
 	_resolver = PersistentMarketResolverScript.new(_pricing)
 	_market.configure(_state, _player, _pricing)
 	_set_ready(true)

@@ -4,7 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://ciyw0gfmhhgap" path="res://scenes/game/hand.tscn" id="2_jdad8"]
 [ext_resource type="PackedScene" uid="uid://yddvotpojs2x" path="res://scenes/game/card_manager.tscn" id="3_k4jhu"]
 [ext_resource type="PackedScene" uid="uid://c6j6lgcbmdqrv" path="res://scenes/card_view/card_entity.tscn" id="4_frtjd"]
-[ext_resource type="Resource" uid="uid://o345kvd04ypm" path="res://data/card_lib.tres" id="5_0rse5"]
+[ext_resource type="Resource" path="res://data/levels/ribwood/card_lib.tres" id="5_0rse5"]
 [ext_resource type="Script" uid="uid://d4g532r3gevbr" path="res://scripts/game/drag_layer.gd" id="6_aonbx"]
 [ext_resource type="PackedScene" uid="uid://bf2h2gqo4hyjl" path="res://scenes/game/board.tscn" id="7_lcbjr"]
 [ext_resource type="Resource" uid="uid://b5ybu7vxrcp4j" path="res://data/player/player_data.tres" id="8_player"]
