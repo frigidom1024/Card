@@ -8,6 +8,8 @@ signal card_return_requested(card: CardEntity)
 # Temporary compatibility notifications. Exploration will consume placement_committed in task 4.
 signal event_triggered(instance: EventInstance)
 signal card_placed(card: CardEntity)
+signal event_attached(event_node: BoardEvent)
+signal event_removed(event_node: BoardEvent)
 
 @export var cell_size: int = LayoutConfig.CELL_SIZE
 @export var width: int = 10
@@ -331,6 +333,7 @@ func attach_event(event_node: BoardEvent) -> bool:
 	for cell in cells:
 		_event_grid_owner[cell] = event_node
 	events.append(event_node)
+	event_attached.emit(event_node)
 	return true
 
 
@@ -342,6 +345,7 @@ func remove_event(event_node: BoardEvent) -> bool:
 		if _event_grid_owner.get(cell) == event_node:
 			_event_grid_owner.erase(cell)
 	events.erase(event_node)
+	event_removed.emit(event_node)
 	event_node.queue_free()
 	return true
 

@@ -1,6 +1,9 @@
 class_name BoardEvent
 extends Control
 
+signal hover_started(event_node: BoardEvent)
+signal hover_ended(event_node: BoardEvent)
+
 @export_category("Scene Preview")
 ## 编辑此资源的 size 可调整预览事件占用的棋盘格数。
 @export var preview_event: EventData = preload("res://data/event/events/forest_wolf_event.tres")
@@ -27,6 +30,10 @@ func setup(instance: EventInstance, cell_size: int) -> void:
 		_refresh()
 
 func _ready() -> void:
+	if not mouse_entered.is_connected(_on_mouse_entered):
+		mouse_entered.connect(_on_mouse_entered)
+	if not mouse_exited.is_connected(_on_mouse_exited):
+		mouse_exited.connect(_on_mouse_exited)
 	if event_instance == null and preview_event:
 		var preview_instance := preview_event.create_instance()
 		preview_instance.origin = preview_origin
@@ -59,7 +66,21 @@ func _refresh() -> void:
 	type_label.text = type_marker
 	name_label.text = _get_display_name(data)
 	resolved_overlay.visible = is_resolved
-	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	# Hover 只用于只读预览；事件接触和弹窗仍由牌链放置流程处理。
+	mouse_filter = Control.MOUSE_FILTER_IGNORE if is_resolved else Control.MOUSE_FILTER_PASS
+
+
+func _on_mouse_entered() -> void:
+	if event_instance == null or event_instance.is_resolved:
+		return
+	hover_started.emit(self)
+
+
+func _on_mouse_exited() -> void:
+	if event_instance == null:
+		return
+	hover_ended.emit(self)
+
 
 func _get_type_color(event_type: EventData.EventType) -> Color:
 	match event_type:
