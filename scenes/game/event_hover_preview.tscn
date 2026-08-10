@@ -1,0 +1,145 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/event/hover/event_hover_preview.gd" id="1_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.0470588, 0.0745098, 0.109804, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.596078, 0.454902, 0.211765, 1)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+shadow_color = Color(0, 0, 0, 0.42)
+shadow_size = 6
+shadow_offset = Vector2(1, 2)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_type"]
+content_margin_left = 7.0
+content_margin_top = 2.0
+content_margin_right = 7.0
+content_margin_bottom = 2.0
+bg_color = Color(0.207843, 0.12549, 0.0705882, 0.95)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.709804, 0.552941, 0.278431, 0.8)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[node name="EventHoverPreview" type="PanelContainer"]
+custom_minimum_size = Vector2(292, 0)
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+script = ExtResource("1_script")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="Content" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 7
+
+[node name="Header" type="HBoxContainer" parent="MarginContainer/Content"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/Content/Header"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.945098, 0.909804, 0.811765, 1)
+theme_override_font_sizes/font_size = 18
+text = "事件"
+autowrap_mode = 3
+max_lines_visible = 2
+
+[node name="TypeLabel" type="Label" parent="MarginContainer/Content/Header"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.94902, 0.792157, 0.435294, 1)
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxFlat_type")
+text = "事件"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Rule" type="ColorRect" parent="MarginContainer/Content"]
+custom_minimum_size = Vector2(0, 1)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.556863, 0.403922, 0.2, 0.75)
+
+[node name="StatsSection" type="VBoxContainer" parent="MarginContainer/Content"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Heading" type="Label" parent="MarginContainer/Content/StatsSection"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.686275, 0.733333, 0.768627, 1)
+theme_override_font_sizes/font_size = 11
+text = "属性"
+
+[node name="Lines" type="Label" parent="MarginContainer/Content/StatsSection"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.87451, 0.847059, 0.776471, 1)
+theme_override_font_sizes/font_size = 13
+text = "生命：-"
+autowrap_mode = 3
+
+[node name="RewardsSection" type="VBoxContainer" parent="MarginContainer/Content"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Heading" type="Label" parent="MarginContainer/Content/RewardsSection"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.686275, 0.733333, 0.768627, 1)
+theme_override_font_sizes/font_size = 11
+text = "奖励 / 商品"
+
+[node name="Lines" type="Label" parent="MarginContainer/Content/RewardsSection"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.87451, 0.847059, 0.776471, 1)
+theme_override_font_sizes/font_size = 13
+text = "无奖励"
+autowrap_mode = 3
+
+[node name="AbilitiesSection" type="VBoxContainer" parent="MarginContainer/Content"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Heading" type="Label" parent="MarginContainer/Content/AbilitiesSection"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.686275, 0.733333, 0.768627, 1)
+theme_override_font_sizes/font_size = 11
+text = "能力"
+
+[node name="Lines" type="Label" parent="MarginContainer/Content/AbilitiesSection"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.87451, 0.847059, 0.776471, 1)
+theme_override_font_sizes/font_size = 13
+text = "无额外效果。"
+autowrap_mode = 3
+max_lines_visible = 4
