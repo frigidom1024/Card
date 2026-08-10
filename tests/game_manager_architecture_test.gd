@@ -15,6 +15,7 @@ func _run_tests() -> void:
 	var flow_source := FileAccess.get_file_as_string(
 		"res://scripts/game/run/run_flow_coordinator.gd"
 	)
+	var scene_source := FileAccess.get_file_as_string("res://scenes/game/game_manager.tscn")
 	_expect(
 		not source.is_empty(), "GameManager source is available for structural regression checks"
 	)
@@ -25,6 +26,66 @@ func _run_tests() -> void:
 	_expect(
 		not flow_source.is_empty(),
 		"RunFlowCoordinator source is available for routing boundary checks"
+	)
+	_expect(
+		not scene_source.is_empty(),
+		"GameManager scene is available for hover-preview composition checks"
+	)
+	_expect(
+		source.contains("EventHoverPreviewCoordinatorScript := preload("),
+		"GameManager preloads the board-event hover preview coordinator"
+	)
+	_expect(
+		source.contains("@onready var event_hover_preview: EventHoverPreview = $EventHoverPreviewLayer/EventHoverPreview"),
+		"GameManager receives the hover preview through a scene dependency"
+	)
+	_expect(
+		source.contains("var _event_hover_preview_coordinator: EventHoverPreviewCoordinator"),
+		"GameManager retains a typed hover-preview composition dependency"
+	)
+	_expect(
+		source.contains("func _configure_event_hover_preview() -> bool:"),
+		"GameManager configures board-event hover previews in a dedicated composition step"
+	)
+	_expect(
+		source.contains("if not _configure_event_hover_preview():"),
+		"GameManager initializes hover previews as part of run setup"
+	)
+	_expect(
+		not source.contains("EventHoverPreviewFormatter"),
+		"GameManager does not format board-event preview content"
+	)
+	_expect(
+		not source.contains("EncounterEventContent"),
+		"GameManager does not inspect encounter content for hover previews"
+	)
+	_expect(
+		not source.contains("ShopEventContent"),
+		"GameManager does not inspect shop content for hover previews"
+	)
+	_expect(
+		not source.contains("TreasureEventContent"),
+		"GameManager does not inspect treasure content for hover previews"
+	)
+	_expect(
+		scene_source.contains('path="res://scenes/game/event_hover_preview.tscn"'),
+		"GameManager scene instantiates the shared hover preview panel"
+	)
+	_expect(
+		scene_source.contains('[node name="EventHoverPreviewLayer" type="CanvasLayer" parent="."]'),
+		"GameManager scene provides a dedicated hover-preview canvas layer"
+	)
+	_expect(
+		scene_source.contains('[node name="EventHoverPreview" parent="EventHoverPreviewLayer"'),
+		"GameManager scene places the shared preview panel in its overlay layer"
+	)
+	_expect(
+		scene_source.contains("layer = 5"),
+		"Hover-preview layer renders above board events"
+	)
+	_expect(
+		scene_source.contains("layer = 10"),
+		"Event modal layer renders above the hover-preview layer"
 	)
 	_expect(
 		not exploration_source.contains("CardChainRuleService"),

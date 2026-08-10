@@ -21,6 +21,9 @@ const RunFlowCoordinatorScript := preload("res://scripts/game/run/run_flow_coord
 const RunPresentationCoordinatorScript := preload(
 	"res://scripts/game/run/run_presentation_coordinator.gd"
 )
+const EventHoverPreviewCoordinatorScript := preload(
+	"res://scripts/game/event/hover/event_hover_preview_coordinator.gd"
+)
 
 signal combat_started(instance: EventInstance, monster: MobInstance)
 signal combat_resolved(instance: EventInstance, result: CombatResult)
@@ -40,6 +43,7 @@ signal faith_changed(current_faith: int)
 @onready var shop_event_view = $EventModalLayer/ShopEventView
 @onready var treasure_event_view = $EventModalLayer/TreasureEventView
 @onready var combat_event_view: CombatEventView = $EventModalLayer/CombatEventView
+@onready var event_hover_preview: EventHoverPreview = $EventHoverPreviewLayer/EventHoverPreview
 
 ## Static base data supplied by the scene. It is duplicated before a run starts.
 @export var player_data: PlayerData
@@ -55,6 +59,7 @@ var _encounter_resolution: EncounterResolutionCoordinator
 var _market_pricing := MarketPricingServiceScript.new()
 var _persistent_market_coordinator: PersistentMarketCoordinator
 var _event_modal_coordinator: EventModalCoordinator
+var _event_hover_preview_coordinator: EventHoverPreviewCoordinator
 var _faith_service: FaithService
 var _run_card_service: RunCardService
 var _run_setup: RunSetupCoordinator
@@ -104,6 +109,8 @@ func _ready() -> void:
 	if not _configure_persistent_market():
 		return
 	if not _configure_event_modal():
+		return
+	if not _configure_event_hover_preview():
 		return
 	if not _configure_card_chain():
 		return
@@ -175,6 +182,7 @@ func _clear_runtime_references() -> void:
 	_encounter_resolution = null
 	_persistent_market_coordinator = null
 	_event_modal_coordinator = null
+	_event_hover_preview_coordinator = null
 	_placement_pipeline = null
 	_run_flow = null
 	_presentation = null
@@ -231,6 +239,15 @@ func _configure_event_modal() -> bool:
 		_event_modal_coordinator.event_display_refresh_requested.connect(_refresh_event_display)
 	if not _event_modal_coordinator.unsupported_event.is_connected(_on_unsupported_modal_event):
 		_event_modal_coordinator.unsupported_event.connect(_on_unsupported_modal_event)
+	return true
+
+
+func _configure_event_hover_preview() -> bool:
+	if board == null or event_hover_preview == null:
+		return _fail_run_initialization("GameManager could not configure event hover preview")
+	_event_hover_preview_coordinator = EventHoverPreviewCoordinatorScript.new()
+	if not _event_hover_preview_coordinator.configure(board, event_hover_preview, get_viewport()):
+		return _fail_run_initialization("GameManager could not bind event hover preview")
 	return true
 
 

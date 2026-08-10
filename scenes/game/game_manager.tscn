@@ -17,6 +17,7 @@
 [ext_resource type="PackedScene" path="res://scenes/game/hand_tray.tscn" id="15_hand_tray"]
 [ext_resource type="PackedScene" path="res://scenes/game/pilgrim_crest_hud.tscn" id="16_pilgrim_crest"]
 [ext_resource type="PackedScene" path="res://scenes/game/persistent_market.tscn" id="17_persistent_market"]
+[ext_resource type="PackedScene" path="res://scenes/game/event_hover_preview.tscn" id="18_event_hover_preview"]
 
 [node name="GameManager" type="Node" unique_id=2111395174]
 script = ExtResource("1_q8mjp")
@@ -65,7 +66,14 @@ script = ExtResource("6_aonbx")
 [node name="Board" parent="GameplayCanvas" unique_id=969095891 instance=ExtResource("7_lcbjr")]
 position = Vector2(146, 3)
 
+[node name="EventHoverPreviewLayer" type="CanvasLayer" parent="."]
+layer = 5
+
+[node name="EventHoverPreview" parent="EventHoverPreviewLayer" instance=ExtResource("18_event_hover_preview")]
+visible = false
+
 [node name="EventModalLayer" type="CanvasLayer" parent="." unique_id=1098015688]
+layer = 10
 
 [node name="ShopEventView" parent="EventModalLayer" unique_id=953188384 instance=ExtResource("10_shop_event")]
 visible = false
