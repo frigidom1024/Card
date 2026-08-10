@@ -25,7 +25,7 @@ func _test_main_menu_structure_and_single_start_request() -> void:
 	var project_config := ConfigFile.new()
 	_expect(project_config.load(PROJECT_CONFIG_PATH) == OK, "project config loads")
 	_expect(
-		project_config.get_value("application/config", "name", "") == "STACK//STRIKE",
+		project_config.get_value("application", "config/name", "") == "STACK//STRIKE",
 		"project name is STACK//STRIKE"
 	)
 
