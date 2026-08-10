@@ -2,6 +2,7 @@ extends SceneTree
 
 const MAIN_MENU_SCENE_PATH := "res://scenes/home/main_menu_screen.tscn"
 const ROOT_SELECTION_SCENE_PATH := "res://scenes/home/root_selection_screen.tscn"
+const PROJECT_CONFIG_PATH := "res://project.godot"
 const RevivalDeck = preload("res://data/starting_decks/revival_starting_deck.tres")
 const MainScene = preload("res://scenes/main.tscn")
 
@@ -21,6 +22,13 @@ func _run_tests() -> void:
 
 
 func _test_main_menu_structure_and_single_start_request() -> void:
+	var project_config := ConfigFile.new()
+	_expect(project_config.load(PROJECT_CONFIG_PATH) == OK, "project config loads")
+	_expect(
+		project_config.get_value("application/config", "name", "") == "STACK//STRIKE",
+		"project name is STACK//STRIKE"
+	)
+
 	var packed_scene := load(MAIN_MENU_SCENE_PATH) as PackedScene
 	_expect(packed_scene != null, "main menu scene loads")
 	if packed_scene == null:
@@ -47,8 +55,8 @@ func _test_main_menu_structure_and_single_start_request() -> void:
 	) as Button
 	var version := menu.get_node_or_null("SafeArea/Layout/FooterBlock/VersionLabel") as Label
 	var top_gradient := menu.get_node_or_null("TopGradientOverlay") as TextureRect
-	_expect(logo != null and logo.text == "PILGRIM'S CHAIN", "menu exposes the Pilgrim's Chain title")
-	_expect(subtitle != null and subtitle.text == "A CARD-CHAIN PILGRIMAGE", "menu exposes the card-chain subtitle")
+	_expect(logo != null and logo.text == "STACK//STRIKE", "menu exposes the STACK//STRIKE title")
+	_expect(subtitle != null and subtitle.text == "BUILD A DECK. BREAK THE BOARD.", "menu exposes the STACK//STRIKE subtitle")
 	_expect(
 		logo != null and logo.get_theme_color("font_color").is_equal_approx(Color(0.95, 0.69, 0.17, 1)),
 		"menu title uses bright antique gold"
