@@ -1,15 +1,16 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_p03ye"]
 [ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_guardian_ember.png"
 card_id = 1043
 card_name = "守护余烬"
-value = 6
-card_type = 1
-damage = 1
-heal = 4
-description = "白角留下的余烬，微弱，却足以陪旅人走过下一片黑暗。"
+value = 16
+artwork_path = "res://assert/card/ribwood_guardian_ember.png"
+max_points = 2
+armor = 3
+description = "守护余烬藏在灯罩里，光不强，却足以护住下一步。无额外效果。"
 tags = Array[int]([2, 6])
-rarity = 0
+rarity = 2

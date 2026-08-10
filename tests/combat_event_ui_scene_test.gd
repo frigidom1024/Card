@@ -21,8 +21,8 @@ func _test_steps_render_in_order_and_update_after_snapshots() -> void:
 	if view == null:
 		return
 	var steps: Array[CombatStep] = [
-		_step(CombatStep.Kind.ROOT_CARD, "火种", 10, 10),
-		_step(CombatStep.Kind.PLAYER_CARD, "短剑", 8, 3),
+		_step(CombatStep.Kind.ROOT_CARD, "火种", 10, 10, 2, 0),
+		_step(CombatStep.Kind.PLAYER_CARD, "短剑", 8, 3, 3, 1, 1, 0),
 	]
 	view.call("show_combat", null, _make_mob("森林狼"), _result(CombatResult.Outcome.VICTORY, steps))
 
@@ -41,11 +41,11 @@ func _test_steps_render_in_order_and_update_after_snapshots() -> void:
 		combat_log.gui_input.emit(click)
 
 	var log_text := combat_log.get_parsed_text() if combat_log != null else ""
-	_expect(log_text.find("根牌效果：火种") >= 0, "combat log renders root-card step")
-	_expect(log_text.find("玩家结算：短剑") >= 0, "combat log renders player-card step")
+	_expect(log_text.find("火种：点数 2 → 0") >= 0, "combat log renders the root point clash")
+	_expect(log_text.find("短剑：点数 3 → 1，护甲 1 → 0") >= 0, "combat log renders card points and armor")
 	_expect(
-		log_text.find("根牌效果：火种") < log_text.find("玩家结算：短剑"),
-		"combat log keeps CombatResult step order"
+		log_text.find("火种：点数 2 → 0") < log_text.find("短剑：点数 3 → 1"),
+		"combat log keeps CombatResult point-clash order"
 	)
 	_expect(player_stats != null and player_stats.text.contains("8"), "player stats use the final step after snapshot")
 	_expect(monster_stats != null and monster_stats.text.contains("3"), "monster stats use the final step after snapshot")
@@ -61,7 +61,7 @@ func _test_result_panel_stays_hidden_until_all_steps_finish_then_formats_retreat
 		"show_combat",
 		null,
 		_make_mob("森林狼"),
-		_result(CombatResult.Outcome.RETREAT, [_step(CombatStep.Kind.PLAYER_CARD, "短剑", 8, 6)], penalties)
+		_result(CombatResult.Outcome.RETREAT, [_step(CombatStep.Kind.PLAYER_CARD, "短剑", 8, 6, 2, 0)], penalties)
 	)
 
 	var progress_button := view.find_child("ProgressButton", true, false) as Button
@@ -78,8 +78,8 @@ func _test_result_panel_stays_hidden_until_all_steps_finish_then_formats_retreat
 	if progress_button != null:
 		progress_button.pressed.emit()
 	_expect(result_panel != null and result_panel.visible, "explicit settlement action reveals result panel")
-	_expect(result_title != null and result_title.text == "牌链耗尽", "retreat settlement uses a player-facing title")
-	_expect(result_body != null and result_body.text.contains("最后一张牌返回手牌"), "retreat settlement explains the returned tail card")
+	_expect(result_title != null and result_title.text == "牌链未能击杀", "retreat settlement uses a player-facing title")
+	_expect(result_body != null and result_body.text.contains("已耗尽的卡牌离场"), "retreat settlement explains the exhausted-card result")
 	_expect(penalty_list != null and penalty_list.get_child_count() == 0, "retreat settlement supports an empty penalty list")
 	_expect(
 		confirm_button != null and confirm_button.text == "重整牌链",
@@ -134,7 +134,16 @@ func _cleanup_view(view: Control) -> void:
 	await process_frame
 
 
-func _step(kind: CombatStep.Kind, source_name: String, player_hp: int, monster_hp: int) -> CombatStep:
+func _step(
+	kind: CombatStep.Kind,
+	source_name: String,
+	player_hp: int,
+	monster_hp: int,
+	points_before: int = 0,
+	points_after: int = 0,
+	armor_before: int = 0,
+	armor_after: int = 0
+) -> CombatStep:
 	return CombatStep.new(
 		kind,
 		source_name,
@@ -142,9 +151,12 @@ func _step(kind: CombatStep.Kind, source_name: String, player_hp: int, monster_h
 		_stats(player_hp + 1),
 		_stats(player_hp),
 		_stats(monster_hp + 1),
-		_stats(monster_hp)
+		_stats(monster_hp),
+		points_before,
+		points_after,
+		armor_before,
+		armor_after
 	)
-
 
 func _result(
 	outcome: CombatResult.Outcome, steps: Array[CombatStep], penalties: Array[CombatPenalty] = []

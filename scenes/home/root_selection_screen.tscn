@@ -1,6 +1,6 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene format=3 uid="uid://ekt0t1xv7e4o"]
 
-[ext_resource type="Script" path="res://scripts/home/root_selection_screen.gd" id="1_root_selection"]
+[ext_resource type="Script" uid="uid://t1xf8poruogh" path="res://scripts/home/root_selection_screen.gd" id="1_root_selection"]
 [ext_resource type="Texture2D" uid="uid://dr8r3tybbugxn" path="res://assert/bg/Home1_2k.jpg" id="2_home_background"]
 
 [sub_resource type="Gradient" id="Gradient_top"]
@@ -14,7 +14,78 @@ height = 512
 fill_from = Vector2(0.5, 0)
 fill_to = Vector2(0.5, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.025, 0.05, 0.1, 0.72)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.42, 0.3, 0.13, 0.78)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_pressed"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.018, 0.045, 0.09, 0.98)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.66, 0.43, 0.14, 0.96)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_hover"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.035, 0.075, 0.14, 0.94)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.8, 0.57, 0.2, 0.96)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0, 0, 0, 0.38)
+shadow_size = 6
+shadow_offset = Vector2(0, 3)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_focus"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.98, 0.76, 0.29, 0.9)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+expand_margin_left = 2.0
+expand_margin_top = 2.0
+expand_margin_right = 2.0
+expand_margin_bottom = 2.0
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 22.0
+content_margin_top = 20.0
+content_margin_right = 22.0
+content_margin_bottom = 20.0
 bg_color = Color(0.015, 0.031, 0.071, 0.9)
 border_width_left = 1
 border_width_top = 1
@@ -25,15 +96,15 @@ corner_radius_top_left = 8
 corner_radius_top_right = 8
 corner_radius_bottom_right = 8
 corner_radius_bottom_left = 8
-content_margin_left = 22.0
-content_margin_top = 20.0
-content_margin_right = 22.0
-content_margin_bottom = 20.0
 shadow_color = Color(0, 0, 0, 0.46)
 shadow_size = 12
 shadow_offset = Vector2(0, 6)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button"]
+content_margin_left = 24.0
+content_margin_top = 14.0
+content_margin_right = 24.0
+content_margin_bottom = 14.0
 bg_color = Color(0.035, 0.075, 0.14, 0.98)
 border_width_left = 1
 border_width_top = 1
@@ -44,34 +115,15 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-content_margin_left = 24.0
-content_margin_top = 14.0
-content_margin_right = 24.0
-content_margin_bottom = 14.0
 shadow_color = Color(0, 0, 0, 0.58)
 shadow_size = 10
 shadow_offset = Vector2(0, 5)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
-bg_color = Color(0.055, 0.11, 0.2, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.93, 0.68, 0.22, 1)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_pressed"]
 content_margin_left = 24.0
 content_margin_top = 14.0
 content_margin_right = 24.0
 content_margin_bottom = 14.0
-shadow_color = Color(0.65, 0.4, 0.08, 0.24)
-shadow_size = 14
-shadow_offset = Vector2(0, 6)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_pressed"]
 bg_color = Color(0.018, 0.045, 0.09, 1)
 border_width_left = 2
 border_width_top = 2
@@ -82,15 +134,34 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-content_margin_left = 24.0
-content_margin_top = 14.0
-content_margin_right = 24.0
-content_margin_bottom = 14.0
 shadow_color = Color(0, 0, 0, 0.4)
 shadow_size = 3
 shadow_offset = Vector2(0, 2)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_hover"]
+content_margin_left = 24.0
+content_margin_top = 14.0
+content_margin_right = 24.0
+content_margin_bottom = 14.0
+bg_color = Color(0.055, 0.11, 0.2, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.93, 0.68, 0.22, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+shadow_color = Color(0.65, 0.4, 0.08, 0.24)
+shadow_size = 14
+shadow_offset = Vector2(0, 6)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_button_disabled"]
+content_margin_left = 24.0
+content_margin_top = 14.0
+content_margin_right = 24.0
+content_margin_bottom = 14.0
 bg_color = Color(0.09, 0.12, 0.16, 0.88)
 border_width_left = 1
 border_width_top = 1
@@ -101,10 +172,6 @@ corner_radius_top_left = 6
 corner_radius_top_right = 6
 corner_radius_bottom_right = 6
 corner_radius_bottom_left = 6
-content_margin_left = 24.0
-content_margin_top = 14.0
-content_margin_right = 24.0
-content_margin_bottom = 14.0
 shadow_color = Color(0, 0, 0, 0.32)
 shadow_size = 5
 shadow_offset = Vector2(0, 3)
@@ -125,73 +192,7 @@ expand_margin_top = 3.0
 expand_margin_right = 3.0
 expand_margin_bottom = 3.0
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back"]
-bg_color = Color(0.025, 0.05, 0.1, 0.72)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.42, 0.3, 0.13, 0.78)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_hover"]
-bg_color = Color(0.035, 0.075, 0.14, 0.94)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.8, 0.57, 0.2, 0.96)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-shadow_color = Color(0, 0, 0, 0.38)
-shadow_size = 6
-shadow_offset = Vector2(0, 3)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_pressed"]
-bg_color = Color(0.018, 0.045, 0.09, 0.98)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.66, 0.43, 0.14, 0.96)
-corner_radius_top_left = 6
-corner_radius_top_right = 6
-corner_radius_bottom_right = 6
-corner_radius_bottom_left = 6
-content_margin_left = 16.0
-content_margin_top = 8.0
-content_margin_right = 16.0
-content_margin_bottom = 8.0
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_back_focus"]
-bg_color = Color(0, 0, 0, 0)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.98, 0.76, 0.29, 0.9)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
-expand_margin_left = 2.0
-expand_margin_top = 2.0
-expand_margin_right = 2.0
-expand_margin_bottom = 2.0
-[node name="RootSelectionScreen" type="Control"]
+[node name="RootSelectionScreen" type="Control" unique_id=2139416446]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -200,7 +201,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_root_selection")
 
-[node name="Background" type="TextureRect" parent="."]
+[node name="Background" type="TextureRect" parent="." unique_id=1756782653]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -216,7 +217,7 @@ grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("2_home_background")
 
-[node name="TopGradientOverlay" type="TextureRect" parent="."]
+[node name="TopGradientOverlay" type="TextureRect" parent="." unique_id=1927674178]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -227,7 +228,8 @@ mouse_filter = 2
 texture = SubResource("GradientTexture2D_top")
 expand_mode = 1
 stretch_mode = 6
-[node name="SafeArea" type="ScrollContainer" parent="."]
+
+[node name="SafeArea" type="ScrollContainer" parent="." unique_id=2000605140]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -240,7 +242,7 @@ grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
 
-[node name="Content" type="MarginContainer" parent="SafeArea"]
+[node name="Content" type="MarginContainer" parent="SafeArea" unique_id=1728012066]
 custom_minimum_size = Vector2(720, 820)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -249,31 +251,31 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 28
 theme_override_constants/margin_bottom = 20
 
-[node name="ContentLayout" type="VBoxContainer" parent="SafeArea/Content"]
+[node name="ContentLayout" type="VBoxContainer" parent="SafeArea/Content" unique_id=761100111]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="Header" type="HBoxContainer" parent="SafeArea/Content/ContentLayout"]
+[node name="Header" type="HBoxContainer" parent="SafeArea/Content/ContentLayout" unique_id=1864721439]
 layout_mode = 2
 
-[node name="BackButton" type="Button" parent="SafeArea/Content/ContentLayout/Header" unique_name_in_owner=true]
+[node name="BackButton" type="Button" parent="SafeArea/Content/ContentLayout/Header" unique_id=1561578366]
 custom_minimum_size = Vector2(104, 42)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.84, 0.75, 0.54, 1)
-theme_override_colors/font_hover_color = Color(1, 0.9, 0.63, 1)
 theme_override_colors/font_pressed_color = Color(0.93, 0.72, 0.35, 1)
+theme_override_colors/font_hover_color = Color(1, 0.9, 0.63, 1)
 theme_override_font_sizes/font_size = 16
 theme_override_styles/normal = SubResource("StyleBoxFlat_back")
-theme_override_styles/hover = SubResource("StyleBoxFlat_back_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_back_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_back_hover")
 theme_override_styles/focus = SubResource("StyleBoxFlat_back_focus")
 text = "BACK"
 
-[node name="HeaderCopy" type="VBoxContainer" parent="SafeArea/Content/ContentLayout/Header"]
+[node name="HeaderCopy" type="VBoxContainer" parent="SafeArea/Content/ContentLayout/Header" unique_id=71320029]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="TitleLabel" type="Label" parent="SafeArea/Content/ContentLayout/Header/HeaderCopy"]
+[node name="TitleLabel" type="Label" parent="SafeArea/Content/ContentLayout/Header/HeaderCopy" unique_id=815154442]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.95, 0.69, 0.17, 1)
 theme_override_colors/font_shadow_color = Color(0.55, 0.25, 0.025, 0.72)
@@ -284,7 +286,7 @@ theme_override_font_sizes/font_size = 38
 text = "CHOOSE A ROOT"
 horizontal_alignment = 1
 
-[node name="SubtitleLabel" type="Label" parent="SafeArea/Content/ContentLayout/Header/HeaderCopy"]
+[node name="SubtitleLabel" type="Label" parent="SafeArea/Content/ContentLayout/Header/HeaderCopy" unique_id=304921667]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.69, 0.5, 0.2, 1)
 theme_override_colors/font_outline_color = Color(0.08, 0.05, 0.02, 0.9)
@@ -293,46 +295,45 @@ theme_override_font_sizes/font_size = 15
 text = "Your root determines this expedition's starting deck and future combat rules."
 horizontal_alignment = 1
 
-[node name="HeaderSpacer" type="Control" parent="SafeArea/Content/ContentLayout/Header"]
+[node name="HeaderSpacer" type="Control" parent="SafeArea/Content/ContentLayout/Header" unique_id=2024917842]
 custom_minimum_size = Vector2(104, 0)
 layout_mode = 2
 
-[node name="MainArea" type="BoxContainer" parent="SafeArea/Content/ContentLayout" unique_name_in_owner=true]
+[node name="MainArea" type="BoxContainer" parent="SafeArea/Content/ContentLayout" unique_id=1312909647]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 20
-vertical = false
 
-[node name="ChoicePanel" type="PanelContainer" parent="SafeArea/Content/ContentLayout/MainArea"]
+[node name="ChoicePanel" type="PanelContainer" parent="SafeArea/Content/ContentLayout/MainArea" unique_id=1317603053]
 custom_minimum_size = Vector2(310, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 0.6
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="ChoiceLayout" type="VBoxContainer" parent="SafeArea/Content/ContentLayout/MainArea/ChoicePanel"]
+[node name="ChoiceLayout" type="VBoxContainer" parent="SafeArea/Content/ContentLayout/MainArea/ChoicePanel" unique_id=291281658]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="SectionTitle" type="Label" parent="SafeArea/Content/ContentLayout/MainArea/ChoicePanel/ChoiceLayout"]
+[node name="SectionTitle" type="Label" parent="SafeArea/Content/ContentLayout/MainArea/ChoicePanel/ChoiceLayout" unique_id=365463379]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.86, 0.7, 0.32, 1)
 theme_override_font_sizes/font_size = 20
 text = "AVAILABLE ROOTS"
 
-[node name="SectionHint" type="Label" parent="SafeArea/Content/ContentLayout/MainArea/ChoicePanel/ChoiceLayout"]
+[node name="SectionHint" type="Label" parent="SafeArea/Content/ContentLayout/MainArea/ChoicePanel/ChoiceLayout" unique_id=1580550622]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.56, 0.52, 0.42, 1)
 theme_override_font_sizes/font_size = 14
 text = "Each root carries a complete starting deck."
 autowrap_mode = 2
 
-[node name="RootOptionList" type="VBoxContainer" parent="SafeArea/Content/ContentLayout/MainArea/ChoicePanel/ChoiceLayout" unique_name_in_owner=true]
+[node name="RootOptionList" type="VBoxContainer" parent="SafeArea/Content/ContentLayout/MainArea/ChoicePanel/ChoiceLayout" unique_id=2043261148]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 10
 
-[node name="PreviewPanel" type="PanelContainer" parent="SafeArea/Content/ContentLayout/MainArea"]
+[node name="PreviewPanel" type="PanelContainer" parent="SafeArea/Content/ContentLayout/MainArea" unique_id=1791409061]
 custom_minimum_size = Vector2(520, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -340,65 +341,65 @@ size_flags_stretch_ratio = 1.4
 mouse_filter = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
 
-[node name="PreviewLayout" type="VBoxContainer" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel"]
+[node name="PreviewLayout" type="VBoxContainer" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel" unique_id=1241130908]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 10
 
-[node name="PreviewTitle" type="Label" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel/PreviewLayout"]
+[node name="PreviewTitle" type="Label" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel/PreviewLayout" unique_id=947880403]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.86, 0.7, 0.32, 1)
 theme_override_font_sizes/font_size = 20
 text = "ROOT & STARTING DECK"
 horizontal_alignment = 1
 
-[node name="RootPreviewSlot" type="Control" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel/PreviewLayout" unique_name_in_owner=true]
+[node name="RootPreviewSlot" type="Control" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel/PreviewLayout" unique_id=649708830]
 custom_minimum_size = Vector2(0, 310)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="StarterDivider" type="HSeparator" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel/PreviewLayout"]
+[node name="StarterDivider" type="HSeparator" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel/PreviewLayout" unique_id=1486471527]
 layout_mode = 2
 
-[node name="StarterTitle" type="Label" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel/PreviewLayout"]
+[node name="StarterTitle" type="Label" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel/PreviewLayout" unique_id=547786085]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.7, 0.58, 0.3, 1)
 theme_override_font_sizes/font_size = 16
 text = "REMAINING STARTING CARDS"
 horizontal_alignment = 1
 
-[node name="RemainingStarterCardPreviewRow" type="Control" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel/PreviewLayout" unique_name_in_owner=true]
+[node name="RemainingStarterCardPreviewRow" type="Control" parent="SafeArea/Content/ContentLayout/MainArea/PreviewPanel/PreviewLayout" unique_id=503447309]
 custom_minimum_size = Vector2(0, 230)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="Footer" type="VBoxContainer" parent="SafeArea/Content/ContentLayout"]
+[node name="Footer" type="VBoxContainer" parent="SafeArea/Content/ContentLayout" unique_id=743300718]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="UnlockHintLabel" type="Label" parent="SafeArea/Content/ContentLayout/Footer" unique_name_in_owner=true]
+[node name="UnlockHintLabel" type="Label" parent="SafeArea/Content/ContentLayout/Footer" unique_id=1639057050]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.93, 0.68, 0.24, 1)
 theme_override_font_sizes/font_size = 15
 horizontal_alignment = 1
 autowrap_mode = 2
 
-[node name="FooterActions" type="CenterContainer" parent="SafeArea/Content/ContentLayout/Footer"]
+[node name="FooterActions" type="CenterContainer" parent="SafeArea/Content/ContentLayout/Footer" unique_id=1826657590]
 layout_mode = 2
 
-[node name="StartExplorationButton" type="Button" parent="SafeArea/Content/ContentLayout/Footer/FooterActions" unique_name_in_owner=true]
+[node name="StartExplorationButton" type="Button" parent="SafeArea/Content/ContentLayout/Footer/FooterActions" unique_id=1444355890]
 custom_minimum_size = Vector2(320, 72)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.94, 0.91, 0.8, 1)
-theme_override_colors/font_hover_color = Color(1, 0.92, 0.66, 1)
 theme_override_colors/font_pressed_color = Color(0.98, 0.84, 0.52, 1)
+theme_override_colors/font_hover_color = Color(1, 0.92, 0.66, 1)
 theme_override_colors/font_disabled_color = Color(0.49, 0.52, 0.54, 1)
 theme_override_font_sizes/font_size = 26
 theme_override_styles/normal = SubResource("StyleBoxFlat_button")
-theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_button_pressed")
+theme_override_styles/hover = SubResource("StyleBoxFlat_button_hover")
 theme_override_styles/disabled = SubResource("StyleBoxFlat_button_disabled")
 theme_override_styles/focus = SubResource("StyleBoxFlat_button_focus")
 text = "BEGIN EXPEDITION"

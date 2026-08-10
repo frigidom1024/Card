@@ -35,7 +35,7 @@ func _run_tests() -> void:
 	await _test_card_view_shows_placeholder_without_artwork()
 	await _test_card_view_loads_artwork_from_data_path()
 	await _test_card_entity_loads_artwork_from_uid_path()
-	await _test_damage_tag_stays_upright_below_rotated_card()
+	await _test_point_tag_stays_upright_below_rotated_card()
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -188,7 +188,7 @@ func _test_card_entity_loads_artwork_from_uid_path() -> void:
 	await process_frame
 
 
-func _test_damage_tag_stays_upright_below_rotated_card() -> void:
+func _test_point_tag_stays_upright_below_rotated_card() -> void:
 	var card := CardEntityScene.instantiate() as CardEntity
 	card.bind_instance(CardInstance.new(ThornHeavyBlade))
 	root.add_child(card)
@@ -202,13 +202,13 @@ func _test_damage_tag_stays_upright_below_rotated_card() -> void:
 		_expect(tag_anchor.z_index > 100, "combat tags render above dragged cards")
 		var tag_container := tag_anchor.get_node_or_null("TagContainer") as Container
 		_expect(tag_container != null, "combat-tag anchor exposes a tag container")
-		_expect(tag_container != null and tag_container.get_child_count() == 1, "damage-only card creates one stat tag")
+		_expect(tag_container != null and tag_container.get_child_count() == 1, "point-only card creates one stat tag")
 		if tag_container != null and tag_container.get_child_count() == 1:
-			var damage_tag := tag_container.get_child(0) as Control
-			var attribute_label := damage_tag.get_node_or_null("AttributeLabel") as Label
-			var value_label := damage_tag.get_node_or_null("ValueLabel") as Label
-			_expect(attribute_label == null, "damage tag does not include an attribute text prefix")
-			_expect(value_label != null and value_label.text == "4", "damage tag shows only the card damage value")
+			var point_tag := tag_container.get_child(0) as Control
+			var attribute_label := point_tag.get_node_or_null("AttributeLabel") as Label
+			var value_label := point_tag.get_node_or_null("ValueLabel") as Label
+			_expect(attribute_label == null, "point tag does not include an attribute text prefix")
+			_expect(value_label != null and value_label.text == str(card.card_instance.current_points), "point tag shows the card current points")
 
 		card.rotation = PI / 2.0
 		await process_frame

@@ -29,10 +29,18 @@ func get_next_action() -> MobAction:
 	return next_action()
 
 
+## Makes a surviving echo tougher after the chain fails to defeat it.
+## Health increases rather than resetting, so damage from earlier attempts stays
+## meaningful while the next attempt is slightly more demanding.
 func gain_enhancement() -> bool:
-	var previous_stacks := enhancement_stacks
-	enhancement_stacks = mini(enhancement_stacks + 1, max_enhancement_stacks)
-	return enhancement_stacks > previous_stacks
+	if enhancement_stacks >= max_enhancement_stacks:
+		return false
+	enhancement_stacks += 1
+	var health_bonus := data.enhancement_hp_bonus if data != null else 0
+	if stats != null and health_bonus > 0:
+		stats.max_hp += health_bonus
+		stats.hp = mini(stats.hp + health_bonus, stats.max_hp)
+	return true
 
 
 func duplicate_for_encounter() -> MobInstance:

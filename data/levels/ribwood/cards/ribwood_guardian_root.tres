@@ -1,15 +1,14 @@
-[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://jd5etmfils42"]
+[gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Script" uid="uid://bvx1h805ben8h" path="res://scripts/combatv2/card/card_rule.gd" id="1_5s1rl"]
-[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_script"]
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_5s1rl"]
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
 
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_guardian_root.png"
 card_id = 1001
 card_name = "守护之根"
-value = 6
+artwork_path = "res://assert/card/ribwood_guardian_root.png"
 card_type = 0
-defense = 2
-description = "牌链唯一合法的开端。它不是武器，只是让旅人站稳脚步。"
+max_points = 2
+description = "牌链唯一合法的开端。点数耗尽时，重整后返回手牌。"
 tags = Array[int]([4])

@@ -1,19 +1,21 @@
-[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://bwr3r5066symu"]
+[gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Script" uid="uid://bvx1h805ben8h" path="res://scripts/combatv2/card/card_rule.gd" id="1_ceb1i"]
-[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_script"]
-[ext_resource type="Script" uid="uid://cx2huaf5nvaqb" path="res://scripts/combatv2/card/rules/last_card_defense_bonus_rule.gd" id="rule_script"]
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_ceb1i"]
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+[ext_resource type="Script" path="res://scripts/combatv2/card/rules/next_card_armor_bonus_rule.gd" id="rule_script"]
 
-[sub_resource type="Resource" id="CardRule_main"]
+[sub_resource type="Resource" id="Resource_ceb1i"]
 script = ExtResource("rule_script")
+armor = 2
+effective_count = 1
 
 [resource]
 script = ExtResource("card_script")
 card_id = 1012
 card_name = "肋盾残片"
-value = 6
+value = 8
 artwork_path = "res://assert/card/ribwood_shield_fragment.png"
-defense = 3
-effect_rules = Array[ExtResource("1_ceb1i")]([SubResource("CardRule_main")])
-description = "从一面旧盾上剥落的骨片。若本牌是牌链最后一张，额外获得 1 点护甲。"
+armor = 1
+effect_rules = Array[ExtResource("1_ceb1i")]([SubResource("Resource_ceb1i")])
+description = "裂开的肋盾碎片。本牌前方的下一张卡牌获得 +2 护甲。此效果仅生效 1 次。"
 tags = Array[int]([1, 6])

@@ -1,14 +1,21 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="card_rule"]
 [ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+[ext_resource type="Script" path="res://scripts/combatv2/card/rules/next_card_armor_bonus_rule.gd" id="rule_script"]
+
+[sub_resource type="Resource" id="Resource_wvcui"]
+script = ExtResource("rule_script")
+armor = 2
+effective_count = 2
+
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_bone_armor_round_shield.png"
 card_id = 1021
 card_name = "骨甲圆盾"
-value = 6
-card_type = 1
-defense = 3
-description = "断旗营用骨片和旧皮带修好的圆盾，沉重但可靠。"
+value = 8
+artwork_path = "res://assert/card/ribwood_bone_armor_round_shield.png"
+armor = 2
+effect_rules = Array[ExtResource("card_rule")]([SubResource("Resource_wvcui")])
+description = "用旧骨甲削成的圆盾。本牌前方的下一张卡牌获得 +2 护甲。此效果仅生效 2 次。"
 tags = Array[int]([1, 6])
-rarity = 0

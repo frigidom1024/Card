@@ -1,19 +1,22 @@
-[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://chqk1jp20v7jd"]
+[gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Script" uid="uid://bvx1h805ben8h" path="res://scripts/combatv2/card/card_rule.gd" id="1_3v4lb"]
-[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_script"]
-[ext_resource type="Script" uid="uid://c5eqp0pwukap8" path="res://scripts/combatv2/card/rules/previous_defense_damage_bonus_rule.gd" id="rule_script"]
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_3v4lb"]
+[ext_resource type="Script" path="res://scripts/combatv2/card/rules/armored_next_card_point_bonus_rule.gd" id="2_3v4lb"]
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
 
-[sub_resource type="Resource" id="CardRule_main"]
-script = ExtResource("rule_script")
+[sub_resource type="Resource" id="Resource_26quw"]
+script = ExtResource("2_3v4lb")
+bonus_points = 2
+effective_count = 2
 
 [resource]
 script = ExtResource("card_script")
 card_id = 1031
 card_name = "缝骨针"
-value = 6
+value = 12
 artwork_path = "res://assert/card/ribwood_bone_stitch_needle.png"
-damage = 1
-effect_rules = Array[ExtResource("1_3v4lb")]([SubResource("CardRule_main")])
-description = "缝骨者遗落的长针。若上一张牌提供防御，伤害 +2。"
+max_points = 2
+effect_rules = Array[ExtResource("1_3v4lb")]([SubResource("Resource_26quw")])
+description = "缝补披风和行囊的骨针。当你在本牌前方放置一张具有护甲的卡牌时，该卡牌获得 +2 点数。此效果仅生效 2 次。"
 tags = Array[int]([0, 6])
+rarity = 1

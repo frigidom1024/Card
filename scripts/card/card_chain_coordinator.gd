@@ -31,5 +31,7 @@ func resolve_placement(result: BoardPlacementResult) -> int:
 	var applied_count := _card_chain_rule_service.resolve_card_added(
 		_board.get_combat_card_chain(), added_entity.card_instance
 	)
+	if applied_count > 0:
+		added_entity.refresh_combat_tags()
 	card_chain_rules_applied.emit(result, applied_count)
 	return applied_count

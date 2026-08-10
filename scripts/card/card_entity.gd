@@ -193,6 +193,10 @@ func _apply_layout() -> void:
 	call_deferred("_position_combat_tags")
 
 
+func refresh_combat_tags() -> void:
+	_refresh_combat_tags()
+
+
 func _refresh_combat_tags() -> void:
 	if _tag_container == null:
 		return
@@ -205,9 +209,8 @@ func _refresh_combat_tags() -> void:
 
 	var data := card_instance.card_data
 	var stat_entries := [
-		{"scene": STAT_TAG_SCENES["damage"], "value": data.damage},
-		{"scene": STAT_TAG_SCENES["guard"], "value": data.defense},
-		{"scene": STAT_TAG_SCENES["heal"], "value": data.heal},
+		{"scene": STAT_TAG_SCENES["damage"], "value": card_instance.current_points},
+		{"scene": STAT_TAG_SCENES["guard"], "value": card_instance.current_armor},
 	]
 	for entry in stat_entries:
 		var value: int = entry["value"]

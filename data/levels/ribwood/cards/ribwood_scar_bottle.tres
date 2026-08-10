@@ -1,14 +1,15 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_ixy0o"]
 [ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_scar_bottle.png"
 card_id = 1024
 card_name = "结痂药瓶"
-value = 6
-card_type = 1
-heal = 3
-description = "装着苦涩药膏的小瓶，抹在伤口上能让血很快停下。"
+value = 8
+artwork_path = "res://assert/card/ribwood_scar_bottle.png"
+max_points = 2
+armor = 2
+description = "装着结痂粉末的小瓶。无额外效果。"
 tags = Array[int]([2, 6])
-rarity = 0

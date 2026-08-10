@@ -68,6 +68,14 @@ func consume_armor(amount: int) -> int:
 	return consumed
 
 
+## Armor is always spent before points. This is the only combat-side mutation
+## cards need; comparison and encounter outcome remain in CombatService2.
+func take_point_damage(amount: int) -> int:
+	var incoming := maxi(amount, 0)
+	var absorbed := consume_armor(incoming)
+	return consume_points(incoming - absorbed)
+
+
 func get_rule_trigger_count(rule_index: int) -> int:
 	return int(_rule_trigger_counts.get(rule_index, 0))
 

@@ -1,14 +1,15 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_envs4"]
 [ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_amber_marrow_bottle.png"
 card_id = 1013
 card_name = "琥珀骨髓瓶"
-value = 6
-card_type = 1
-heal = 3
-description = "凝固成琥珀色的骨髓，摇晃时仍会映出远处的火光。"
+value = 8
+artwork_path = "res://assert/card/ribwood_amber_marrow_bottle.png"
+max_points = 2
+armor = 2
+description = "封着暖金色骨髓的玻璃瓶。无额外效果。"
 tags = Array[int]([2, 6])
-rarity = 0

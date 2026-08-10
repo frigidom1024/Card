@@ -17,7 +17,7 @@ func _init() -> void:
 
 
 func _run_tests() -> void:
-	_test_explicit_placement_resolution_applies_rules_without_board_subscription()
+	await _test_explicit_placement_resolution_applies_rules_without_board_subscription()
 	_test_guide_placement_does_not_resolve_normal_chain_rules()
 	quit(1 if _failure_count > 0 else 0)
 
@@ -49,6 +49,11 @@ func _test_explicit_placement_resolution_applies_rules_without_board_subscriptio
 	_expect(coordinator.resolve_placement(result) == 1, "explicit placement resolution applies card-chain rules")
 	_expect(applied_counts == [1], "explicit placement resolution emits the applied rule count")
 	_expect(added.card_instance.current_points == 3, "rule modifies the newly added card")
+	await process_frame
+	_expect(
+		_combat_tag_value(added) == "3",
+		"card-chain point bonus refreshes the added card combat tag"
+	)
 	_expect(source.card_instance.get_rule_trigger_count(0) == 1, "source instance owns rule usage")
 	board.queue_free()
 
@@ -87,6 +92,15 @@ func _make_card(board: Board, max_points: int) -> CardEntity:
 	data.max_points = max_points
 	card.bind_instance(CardInstanceScript.new(data))
 	return card
+
+
+func _combat_tag_value(card: CardEntity) -> String:
+	var tag_container := card.get_node_or_null("CombatTagAnchor/TagContainer") as Container
+	if tag_container == null or tag_container.get_child_count() == 0:
+		return ""
+	var tag := tag_container.get_child(0) as Control
+	var value_label := tag.get_node_or_null("ValueLabel") as Label if tag != null else null
+	return value_label.text if value_label != null else ""
 
 
 func _expect(condition: bool, message: String) -> void:

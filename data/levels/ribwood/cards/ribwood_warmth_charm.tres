@@ -1,20 +1,23 @@
-[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://c5bnwon15sure"]
+[gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Script" uid="uid://bvx1h805ben8h" path="res://scripts/combatv2/card/card_rule.gd" id="1_crsks"]
-[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_script"]
-[ext_resource type="Script" uid="uid://c52pj0k3cpfb8" path="res://scripts/combatv2/card/rules/previous_defense_heal_bonus_rule.gd" id="rule_script"]
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_crsks"]
+[ext_resource type="Script" path="res://scripts/combatv2/card/rules/chain_length_head_armor_bonus_rule.gd" id="2_crsks"]
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
 
-[sub_resource type="Resource" id="CardRule_main"]
-script = ExtResource("rule_script")
+[sub_resource type="Resource" id="Resource_gnn4x"]
+script = ExtResource("2_crsks")
+armor = 2
+effective_count = 1
 
 [resource]
 script = ExtResource("card_script")
 card_id = 1023
 card_name = "余温护符"
-value = 6
+value = 10
 artwork_path = "res://assert/card/ribwood_warmth_charm.png"
-defense = 1
-heal = 2
-effect_rules = Array[ExtResource("1_crsks")]([SubResource("CardRule_main")])
-description = "贴在胸前仍有温度的护符。若上一张牌提供防御，治疗 +1。"
+max_points = 2
+armor = 1
+effect_rules = Array[ExtResource("1_crsks")]([SubResource("Resource_gnn4x")])
+description = "缠在腕上的余温护符。只要本牌仍在牌链中，当你放置的卡牌使牌链达到 4 张或以上时，该头部卡牌获得 +2 护甲。此效果仅生效 1 次。"
 tags = Array[int]([1, 2, 6])
+rarity = 1

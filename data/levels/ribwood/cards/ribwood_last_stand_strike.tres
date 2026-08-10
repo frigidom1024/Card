@@ -1,14 +1,15 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_ulf6m"]
 [ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_last_stand_strike.png"
 card_id = 1033
 card_name = "末路重击"
-value = 6
-card_type = 1
-damage = 4
-description = "把全身重量压在一次挥击上。没有花巧，只有在退无可退时留下的痕迹。"
+value = 12
+artwork_path = "res://assert/card/ribwood_last_stand_strike.png"
+max_points = 4
+description = "走投无路时挥出的重击。无额外效果。"
 tags = Array[int]([0, 6])
-rarity = 0
+rarity = 1

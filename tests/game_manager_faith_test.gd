@@ -15,7 +15,7 @@ func _init() -> void:
 func _run_tests() -> void:
 	await _test_new_run_starts_with_faith()
 	await _test_confirmed_board_card_retraction_spends_one_faith()
-	await _test_faith_is_visible_and_system_tail_return_is_free()
+	await _test_faith_is_visible_and_system_combat_settlement_is_free()
 	await _test_zero_faith_allows_manual_chain_removal_and_generates_an_encounter()
 	await _test_reaching_zero_faith_spawns_a_random_monster()
 	quit(0 if _failure_count == 0 else 1)
@@ -58,7 +58,7 @@ func _test_confirmed_board_card_retraction_spends_one_faith() -> void:
 	_cleanup_manager(manager)
 
 
-func _test_faith_is_visible_and_system_tail_return_is_free() -> void:
+func _test_faith_is_visible_and_system_combat_settlement_is_free() -> void:
 	var manager := await _make_game_manager()
 	var tail_card := _place_card(manager, Vector2i(0, 0), CardData.CardType.ROOT)
 	var follower := _place_card(manager, Vector2i(2, 0), CardData.CardType.NORMAL)
@@ -77,11 +77,16 @@ func _test_faith_is_visible_and_system_tail_return_is_free() -> void:
 			"Faith retreat settles through the EventModalCoordinator public path"
 		)
 	_expect(
-		manager.player_data.get("faith") == 3, "RETREAT tail return does not spend PlayerData faith"
+		manager.player_data.get("faith") == 3,
+		"system-driven combat settlement does not spend PlayerData faith"
 	)
 	_expect(
-		tail_card in manager.board.cards and follower in manager.hand_area.cards,
-		"RETREAT keeps the root and returns only the tail"
+		tail_card not in manager.board.cards and tail_card in manager.hand_area.cards,
+		"a depleted root resets and returns to hand during RETREAT"
+	)
+	_expect(
+		follower not in manager.board.cards and follower not in manager.hand_area.cards,
+		"a depleted normal card is destroyed during RETREAT instead of returning to hand"
 	)
 	_cleanup_manager(manager)
 

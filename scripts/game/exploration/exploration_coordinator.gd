@@ -4,10 +4,9 @@ extends RefCounted
 const ExplorationEventServiceScript := preload("res://scripts/game/exploration/exploration_event_service.gd")
 const BossPressureServiceScript := preload("res://scripts/game/exploration/boss_pressure_service.gd")
 
-## Responds to placements resolved by PlacementPipelineCoordinator. Event interaction remains a single path for
-## every event type, including a pursuing Boss.
+## Applies exploration-side effects after PlacementPipelineCoordinator commits a placement.
+## PlacementPipelineCoordinator owns the event-interaction request emitted to RunFlowCoordinator.
 signal event_spawned(event_node: BoardEvent)
-signal event_interaction_requested(instance: EventInstance)
 signal boss_registered(event_node: BoardEvent)
 
 var _event_service := ExplorationEventServiceScript.new()
@@ -47,8 +46,6 @@ func resolve_placement(result: BoardPlacementResult) -> void:
 	_event_service.try_spawn_after_placement(result)
 	if boss_before_placement != null and result.overlapped_event != boss_before_placement.event_instance:
 		_boss_pressure_service.record_placement(_board, result)
-	if result.overlapped_event != null and not result.overlapped_event.is_resolved:
-		event_interaction_requested.emit(result.overlapped_event)
 
 
 ## Uses the current level EventLib to place one normal residual encounter after a faith consequence.

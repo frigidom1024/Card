@@ -26,11 +26,12 @@ description = "空腔哀鸣：造成 4 点伤害。"
 
 [sub_resource type="Resource" id="HartStats"]
 script = ExtResource("stats")
-max_hp = 26
+max_hp = 20
 attack = 3
 
 [resource]
 script = ExtResource("mob")
+enhancement_hp_bonus = 2
 mob_name = "抱肋者·白角守墓鹿"
 base_stats = SubResource("HartStats")
 actions = Array[ExtResource("action")]([SubResource("HartAction_charge"), SubResource("HartAction_crouch"), SubResource("HartAction_wail")])

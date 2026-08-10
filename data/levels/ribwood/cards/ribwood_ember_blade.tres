@@ -1,19 +1,22 @@
-[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://dqrv4ajgxhcih"]
+[gd_resource type="Resource" script_class="CardData" format=3]
 
-[ext_resource type="Script" uid="uid://bvx1h805ben8h" path="res://scripts/combatv2/card/card_rule.gd" id="1_i61qa"]
-[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="card_script"]
-[ext_resource type="Script" uid="uid://gsxytc3ln7ni" path="res://scripts/combatv2/card/rules/previous_weapon_damage_bonus_rule.gd" id="rule_script"]
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_i61qa"]
+[ext_resource type="Script" path="res://scripts/combatv2/card/rules/chain_length_head_point_bonus_rule.gd" id="2_i61qa"]
+[ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
 
-[sub_resource type="Resource" id="CardRule_main"]
-script = ExtResource("rule_script")
+[sub_resource type="Resource" id="Resource_w1u38"]
+script = ExtResource("2_i61qa")
+bonus_points = 2
+effective_count = 1
 
 [resource]
 script = ExtResource("card_script")
 card_id = 1022
 card_name = "余烬短刃"
-value = 6
+value = 10
 artwork_path = "res://assert/card/ribwood_ember_blade.png"
-damage = 3
-effect_rules = Array[ExtResource("1_i61qa")]([SubResource("CardRule_main")])
-description = "刀身藏着未熄的火星。若上一张牌是武器，伤害 +1。"
+max_points = 3
+effect_rules = Array[ExtResource("1_i61qa")]([SubResource("Resource_w1u38")])
+description = "仍带余温的短刃。只要本牌仍在牌链中，当你放置的卡牌使牌链达到 4 张或以上时，该头部卡牌获得 +2 点数。此效果仅生效 1 次。"
 tags = Array[int]([0, 6])
+rarity = 1

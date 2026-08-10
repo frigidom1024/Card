@@ -16,8 +16,8 @@ func _run_tests() -> void:
 	await _test_game_manager_delegates_combat_settlement_to_run_flow()
 	await _test_monster_victory_resolves_event_and_unlocks_exploration()
 	await _test_boss_victory_removes_the_intercepting_event()
-	await _test_retreat_preserves_encounter_and_returns_the_real_tail_card()
-	await _test_defeat_emits_failure_and_keeps_exploration_locked()
+	await _test_retreat_persists_echo_damage_and_settles_only_depleted_cards()
+	await _test_nonlethal_point_clash_retreats_without_player_defeat()
 	await _test_shop_event_routes_purchase_and_close()
 	await _test_treasure_event_routes_claim_and_resolves()
 	quit(0 if _failure_count == 0 else 1)
@@ -191,7 +191,7 @@ func _test_boss_victory_removes_the_intercepting_event() -> void:
 	_cleanup_manager(manager)
 
 
-func _test_retreat_preserves_encounter_and_returns_the_real_tail_card() -> void:
+func _test_retreat_persists_echo_damage_and_settles_only_depleted_cards() -> void:
 	var manager := await _make_game_manager()
 	if not _require_combat_signals(manager):
 		_cleanup_manager(manager)
@@ -200,8 +200,6 @@ func _test_retreat_preserves_encounter_and_returns_the_real_tail_card() -> void:
 	var runtime_player_stats: CombatStats = manager.get_run_context().player_stats
 	runtime_player_stats.max_hp = 10
 	runtime_player_stats.hp = 10
-	runtime_player_stats.attack = 0
-	runtime_player_stats.defense = 0
 	var board: Board = manager.board
 	var event_node := _attach_encounter_event(
 		board,
@@ -213,138 +211,67 @@ func _test_retreat_preserves_encounter_and_returns_the_real_tail_card() -> void:
 	var outcomes: Array[CombatResult] = []
 	manager.connect("combat_resolved", func(_instance, result): outcomes.append(result))
 
-	_expect(
-		(
-			_place_card(
-				manager,
-				_horizontal_card_center(board, Vector2i(0, 0)),
-				90.0,
-				CardData.CardType.ROOT,
-				0
-			)
-			!= null
-		),
-		"retreat setup places root"
+	var root_card := _place_card(
+		manager,
+		_horizontal_card_center(board, Vector2i(0, 0)),
+		90.0,
+		CardData.CardType.ROOT,
+		2
 	)
-	_expect(
-		(
-			_place_card(
-				manager,
-				_horizontal_card_center(board, Vector2i(2, 0)),
-				90.0,
-				CardData.CardType.NORMAL,
-				3
-			)
-			!= null
-		),
-		"retreat setup places first weapon"
+	var middle := _place_card(
+		manager,
+		_horizontal_card_center(board, Vector2i(2, 0)),
+		90.0,
+		CardData.CardType.NORMAL,
+		3
 	)
 	var tail := _place_card(
-		manager, _horizontal_card_center(board, Vector2i(4, 0)), 90.0, CardData.CardType.NORMAL, 1
+		manager,
+		_horizontal_card_center(board, Vector2i(4, 0)),
+		90.0,
+		CardData.CardType.NORMAL,
+		1
 	)
-	_expect(tail != null, "retreat setup places tail weapon")
+	_expect(root_card != null and middle != null and tail != null, "retreat setup places a three-card chain")
 
 	var runtime_state := event_node.event_instance.runtime_state as EncounterRuntimeState
 	var combat_view := _combat_view(manager)
 	_expect(combat_view != null and combat_view.visible, "retreat opens the combat modal")
-	_expect(
-		not event_node.event_instance.is_resolved,
-		"retreat leaves the encounter unresolved before confirmation"
-	)
+	_expect(not event_node.event_instance.is_resolved, "retreat leaves the encounter unresolved before confirmation")
 	_expect(outcomes.is_empty(), "retreat does not emit combat result before confirmation")
-	_expect(
-		manager.player_stats.hp == 10, "retreat does not apply player state before confirmation"
-	)
-	_expect(
-		runtime_state.mob_instance.stats.hp == 20,
-		"retreat does not persist monster damage before confirmation"
-	)
-	_expect(
-		board.cards.size() == 3, "retreat does not return the board tail card before confirmation"
-	)
-	_expect(tail in board.cards, "retreat retains the real final CardEntity before confirmation")
-	_expect(
-		manager.drag_layer.is_interaction_locked(),
-		"retreat keeps exploration locked before confirmation"
-	)
+	_expect(manager.player_stats.hp == 10, "retreat does not apply player state before confirmation")
+	_expect(runtime_state.mob_instance.stats.hp == 20, "retreat does not persist echo damage before confirmation")
+	_expect(board.cards.size() == 3, "retreat keeps every card on the board before confirmation")
+	_expect(manager.drag_layer.is_interaction_locked(), "retreat keeps exploration locked before confirmation")
 
 	_confirm_combat_settlement(manager)
-	_expect(
-		not event_node.event_instance.is_resolved,
-		"confirmed retreat leaves the encounter unresolved"
-	)
+	_expect(not event_node.event_instance.is_resolved, "confirmed retreat leaves the encounter unresolved")
 	_expect(outcomes.size() == 1, "confirmed retreat emits one combat result")
 	_expect(
 		outcomes.size() == 1 and outcomes[0].outcome == CombatResult.Outcome.RETREAT,
 		"confirmed retreat result has RETREAT outcome"
 	)
-	_expect(manager.player_stats.hp == 7, "confirmed retreat persists player damage")
+	_expect(manager.player_stats.hp == 10, "normal point clashes do not damage player HP")
 	_expect(manager.player_stats.defense == 0, "confirmed retreat clears player encounter defense")
 	_expect(
-		runtime_state.mob_instance.stats.hp == 16, "confirmed retreat persists monster HP damage"
+		runtime_state.mob_instance.stats.hp == 15,
+		"confirmed retreat preserves damage, then restores one configured enhancement HP"
 	)
-	_expect(
-		runtime_state.mob_instance.stats.defense == 0,
-		"confirmed retreat clears monster encounter defense"
-	)
-	_expect(
-		runtime_state.mob_instance.action_index == 0,
-		"confirmed retreat preserves the next monster action"
-	)
-	_expect(
-		runtime_state.mob_instance.enhancement_stacks == 1,
-		"confirmed retreat adds one enhancement stack"
-	)
-	_expect(board.cards.size() == 2, "confirmed retreat removes one board tail card")
-	_expect(
-		tail not in board.cards, "confirmed retreat removes the actual final CardEntity from Board"
-	)
-	_expect(
-		tail.card_instance.cur_zone == CardInstance.ZONE.HAND,
-		"confirmed retreat moves the tail instance to hand"
-	)
-	_expect(
-		tail in manager.hand_area.cards, "confirmed retreat returns the actual tail entity to hand"
-	)
-	_expect(
-		tail in manager.card_entities, "confirmed retreat preserves returned tail entity ownership"
-	)
-	_expect(
-		tail.card_instance in manager.cards_inst,
-		"confirmed retreat preserves returned tail instance ownership"
-	)
-	_expect(
-		not manager.drag_layer.is_interaction_locked(),
-		"confirmed retreat unlocks exploration for another challenge"
-	)
-
-	if tail != null and manager.hand_area.remove_card(tail):
-		tail.global_position = board.to_global(_horizontal_card_center(board, Vector2i(4, 0)))
-		tail.rotation_degrees = 90.0
-		_expect(
-			board.add_card(tail),
-			"returned tail can be placed to challenge the same encounter again"
-		)
-		await process_frame
-		var next_result: CombatResult = (
-			manager._event_interaction_controller.get_pending_combat_result()
-		)
-		_expect(
-			next_result != null and next_result.outcome == CombatResult.Outcome.RETREAT,
-			"second challenge opens another retreat result"
-		)
-		_expect(
-			(
-				next_result != null
-				and next_result.steps.size() >= 3
-				and next_result.steps[2].effects[0].value == 4
-			),
-			"strengthening adds one to the next monster action"
-		)
+	_expect(runtime_state.mob_instance.stats.max_hp == 21, "retreat increases the echo maximum HP")
+	_expect(runtime_state.mob_instance.stats.defense == 0, "confirmed retreat clears monster encounter defense")
+	_expect(runtime_state.mob_instance.action_index == 0, "basic point clashes do not advance echo actions")
+	_expect(runtime_state.mob_instance.enhancement_stacks == 1, "confirmed retreat adds one enhancement stack")
+	_expect(board.cards.is_empty(), "all depleted cards leave the board")
+	_expect(root_card in manager.hand_area.cards, "a depleted root returns to hand")
+	_expect(root_card.card_instance.current_points == 2, "returned root resets its points")
+	_expect(tail not in manager.hand_area.cards, "a depleted normal tail is not returned to hand")
+	_expect(middle not in manager.hand_area.cards, "a depleted normal middle card is not returned to hand")
+	_expect(tail.card_instance not in manager.cards_inst, "destroyed tail instance leaves the run card registry")
+	_expect(middle.card_instance not in manager.cards_inst, "destroyed middle instance leaves the run card registry")
+	_expect(not manager.drag_layer.is_interaction_locked(), "confirmed retreat unlocks exploration for another challenge")
 	_cleanup_manager(manager)
 
-
-func _test_defeat_emits_failure_and_keeps_exploration_locked() -> void:
+func _test_nonlethal_point_clash_retreats_without_player_defeat() -> void:
 	var manager := await _make_game_manager()
 	if not _require_combat_signals(manager):
 		_cleanup_manager(manager)
@@ -353,70 +280,54 @@ func _test_defeat_emits_failure_and_keeps_exploration_locked() -> void:
 	var runtime_player_stats: CombatStats = manager.get_run_context().player_stats
 	runtime_player_stats.max_hp = 10
 	runtime_player_stats.hp = 10
-	runtime_player_stats.attack = 0
-	runtime_player_stats.defense = 0
 	var board: Board = manager.board
 	var event_node := _attach_encounter_event(
 		board, EventData.EventType.BOSS, Vector2i(3, 0), 20, [_action(MobAction.Type.ATTACK, 10)]
 	)
 	var failures: Array[CombatResult] = []
+	var outcomes: Array[CombatResult] = []
 	manager.connect("exploration_failed", func(result): failures.append(result))
+	manager.connect("combat_resolved", func(_instance, result): outcomes.append(result))
 
 	_expect(
-		(
-			_place_card(
-				manager,
-				_horizontal_card_center(board, Vector2i(0, 0)),
-				90.0,
-				CardData.CardType.ROOT,
-				0
-			)
-			!= null
-		),
-		"defeat setup places root"
+		_place_card(
+			manager,
+			_horizontal_card_center(board, Vector2i(0, 0)),
+			90.0,
+			CardData.CardType.ROOT,
+			2
+		) != null,
+		"nonlethal setup places root"
 	)
 	_expect(
-		(
-			_place_card(
-				manager,
-				_horizontal_card_center(board, Vector2i(2, 0)),
-				90.0,
-				CardData.CardType.NORMAL,
-				1
-			)
-			!= null
-		),
-		"defeat setup places weapon"
+		_place_card(
+			manager,
+			_horizontal_card_center(board, Vector2i(2, 0)),
+			90.0,
+			CardData.CardType.NORMAL,
+			1
+		) != null,
+		"nonlethal setup places weapon"
 	)
 
 	var combat_view := _combat_view(manager)
-	_expect(combat_view != null and combat_view.visible, "defeat opens the combat modal")
-	_expect(
-		not event_node.event_instance.is_resolved,
-		"defeat does not resolve the encounter event before confirmation"
-	)
-	_expect(failures.is_empty(), "defeat does not emit exploration failure before confirmation")
-	_expect(manager.player_stats.hp == 10, "defeat does not persist player HP before confirmation")
-	_expect(
-		manager.drag_layer.is_interaction_locked(),
-		"defeat keeps exploration locked before confirmation"
-	)
+	_expect(combat_view != null and combat_view.visible, "nonlethal clash opens the combat modal")
+	_expect(not event_node.event_instance.is_resolved, "nonlethal clash does not resolve the encounter before confirmation")
+	_expect(failures.is_empty(), "nonlethal clash does not emit exploration failure before confirmation")
+	_expect(manager.player_stats.hp == 10, "nonlethal clash does not persist player HP before confirmation")
+	_expect(manager.drag_layer.is_interaction_locked(), "combat keeps exploration locked before confirmation")
 
 	_confirm_combat_settlement(manager)
+	_expect(not event_node.event_instance.is_resolved, "confirmed RETREAT does not resolve the encounter event")
+	_expect(failures.is_empty(), "basic point clashes do not emit exploration failure")
 	_expect(
-		not event_node.event_instance.is_resolved,
-		"confirmed defeat does not resolve the encounter event"
+		outcomes.size() == 1 and outcomes[0].outcome == CombatResult.Outcome.RETREAT,
+		"nonlethal point clash settles as RETREAT rather than DEFEAT"
 	)
-	_expect(failures.size() == 1, "confirmed defeat emits one exploration failure")
-	_expect(
-		failures.size() == 1 and failures[0].outcome == CombatResult.Outcome.DEFEAT,
-		"confirmed defeat result has DEFEAT outcome"
-	)
-	_expect(manager.player_stats.hp == 0, "confirmed defeat persists player HP at zero")
-	_expect(manager.player_stats.defense == 0, "confirmed defeat clears player encounter defense")
-	_expect(manager.drag_layer.is_interaction_locked(), "confirmed defeat keeps exploration locked")
+	_expect(manager.player_stats.hp == 10, "RETREAT keeps player HP unchanged")
+	_expect(manager.player_stats.defense == 0, "RETREAT clears player encounter defense")
+	_expect(not manager.drag_layer.is_interaction_locked(), "confirmed RETREAT unlocks exploration")
 	_cleanup_manager(manager)
-
 
 func _test_shop_event_routes_purchase_and_close() -> void:
 	var manager := await _make_game_manager()
@@ -676,11 +587,11 @@ func _place_card(
 	local_position: Vector2,
 	rotation: float,
 	card_type: CardData.CardType,
-	damage: int
+	points: int
 ) -> CardEntity:
 	var data := CardData.new()
 	data.card_type = card_type
-	data.damage = damage
+	data.max_points = points
 	var instance := CardInstance.new(data)
 	var card := CardEntityScene.instantiate() as CardEntity
 	card.bind_instance(instance)
@@ -702,10 +613,10 @@ func _shop_item(card_data: CardData, price: int) -> ShopItemData:
 	return item
 
 
-func _make_card_data(damage: int) -> CardData:
+func _make_card_data(points: int) -> CardData:
 	var data := CardData.new()
 	data.card_type = CardData.CardType.NORMAL
-	data.damage = damage
+	data.max_points = points
 	return data
 
 

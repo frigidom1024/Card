@@ -21,16 +21,12 @@ class RecordingCardChain extends CardChainCoordinator:
 
 class RecordingExploration extends ExplorationCoordinator:
 	var order: Array[String]
-	var contact_to_emit: EventInstance
 
-	func _init(initial_order: Array[String], initial_contact: EventInstance = null) -> void:
+	func _init(initial_order: Array[String]) -> void:
 		order = initial_order
-		contact_to_emit = initial_contact
 
 	func resolve_placement(_result: BoardPlacementResult) -> void:
 		order.append("exploration")
-		if contact_to_emit != null:
-			event_interaction_requested.emit(contact_to_emit)
 
 
 var _failure_count := 0
@@ -42,7 +38,8 @@ func _init() -> void:
 
 func _run_tests() -> void:
 	_test_card_chain_resolves_before_exploration_after_board_commit()
-	_test_pipeline_forwards_one_exploration_contact()
+	_test_pipeline_emits_contact_from_committed_placement()
+	_test_pipeline_does_not_subscribe_to_exploration_interaction_signal()
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -66,7 +63,7 @@ func _test_card_chain_resolves_before_exploration_after_board_commit() -> void:
 	board.queue_free()
 
 
-func _test_pipeline_forwards_one_exploration_contact() -> void:
+func _test_pipeline_emits_contact_from_committed_placement() -> void:
 	var board := _make_board()
 	var order: Array[String] = []
 	var contact := EventDataScript.new().create_instance()
@@ -76,17 +73,39 @@ func _test_pipeline_forwards_one_exploration_contact() -> void:
 		pipeline.configure(
 			board,
 			RecordingCardChain.new(order, 0),
-			RecordingExploration.new(order, contact)
+			RecordingExploration.new(order)
 		),
-		"pipeline configures contact forwarding"
+		"pipeline configures placement contact routing"
 	)
 	pipeline.event_interaction_requested.connect(
 		func(instance: EventInstance) -> void: received.append(instance)
 	)
 
-	pipeline.resolve_placement(_make_chain_extended_result())
+	pipeline.resolve_placement(_make_chain_extended_result(contact))
 
-	_expect(received == [contact], "pipeline forwards each exploration contact exactly once")
+	_expect(received == [contact], "pipeline emits the event overlapped by the committed placement")
+	board.queue_free()
+
+
+func _test_pipeline_does_not_subscribe_to_exploration_interaction_signal() -> void:
+	var board := _make_board()
+	var order: Array[String] = []
+	var exploration := RecordingExploration.new(order)
+	var contact := EventDataScript.new().create_instance()
+	var pipeline := PlacementPipelineCoordinatorScript.new()
+	var received: Array[EventInstance] = []
+	_expect(
+		pipeline.configure(board, RecordingCardChain.new(order, 0), exploration),
+		"pipeline configures without an exploration interaction relay"
+	)
+	pipeline.event_interaction_requested.connect(
+		func(instance: EventInstance) -> void: received.append(instance)
+	)
+
+	if exploration.has_signal("event_interaction_requested"):
+		exploration.emit_signal("event_interaction_requested", contact)
+
+	_expect(received.is_empty(), "pipeline ignores interaction signals emitted outside a placement commit")
 	board.queue_free()
 
 
@@ -96,9 +115,9 @@ func _make_board() -> Board:
 	return board
 
 
-func _make_chain_extended_result() -> BoardPlacementResult:
+func _make_chain_extended_result(overlapped_event: EventInstance = null) -> BoardPlacementResult:
 	return BoardPlacementResult.new(
-		BoardPlacementResult.Kind.CHAIN_EXTENDED, null, null, [], []
+		BoardPlacementResult.Kind.CHAIN_EXTENDED, null, null, [], [], overlapped_event
 	)
 
 

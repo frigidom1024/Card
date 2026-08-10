@@ -20,7 +20,6 @@ func _init() -> void:
 func _run_tests() -> void:
 	_test_initial_events_are_visible_after_initialization()
 	_test_root_and_normal_placements_generate_but_guide_does_not()
-	_test_boss_contact_uses_the_same_event_request_path_as_monster()
 	_test_defeated_boss_is_removed_from_event_grid()
 	quit(1 if _failure_count > 0 else 0)
 
@@ -60,23 +59,6 @@ func _test_root_and_normal_placements_generate_but_guide_does_not() -> void:
 	board.queue_free()
 
 
-func _test_boss_contact_uses_the_same_event_request_path_as_monster() -> void:
-	var board := _make_board()
-	var event_lib := _make_event_lib()
-	var config := _make_config()
-	var coordinator := ExplorationCoordinatorScript.new()
-	_expect(coordinator.configure(event_lib, board, config), "coordinator configures ordinary event interaction")
-	var requested: Array[EventInstance] = []
-	coordinator.event_interaction_requested.connect(func(instance: EventInstance) -> void:
-		requested.append(instance)
-	)
-	var source_card := _make_card(board, CardData.CardType.NORMAL)
-	var monster := _attach_event(board, event_lib.entries[0].event_data.create_instance(), Vector2i(0, 0))
-	var boss := _attach_event(board, event_lib.entries[1].event_data.create_instance(), Vector2i(5, 4))
-	coordinator.resolve_placement(_make_result(source_card, BoardPlacementResult.Kind.CHAIN_EXTENDED, monster.event_instance))
-	coordinator.resolve_placement(_make_result(source_card, BoardPlacementResult.Kind.CHAIN_EXTENDED, boss.event_instance))
-	_expect(requested == [monster.event_instance, boss.event_instance], "monster and Boss contact use the same ordinary event request signal")
-	board.queue_free()
 
 
 func _test_defeated_boss_is_removed_from_event_grid() -> void:

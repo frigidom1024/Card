@@ -138,8 +138,8 @@ func _show_settlement() -> void:
 			_result_body_label.text = "已击败 %s。\n本次遭遇已解决。" % _monster_name()
 			_confirm_button.text = "确认继续"
 		CombatResult.Outcome.RETREAT:
-			_result_title_label.text = "牌链耗尽"
-			_result_body_label.text = "未能击败 %s。\n最后一张牌返回手牌；残响已强化。重新布置牌链后可再次挑战。" % _monster_name()
+			_result_title_label.text = "牌链未能击杀"
+			_result_body_label.text = "未能击败 %s。\n已耗尽的卡牌离场；残响已强化。重新布置牌链后可再次挑战。" % _monster_name()
 			_confirm_button.text = "重整牌链"
 		CombatResult.Outcome.DEFEAT:
 			_result_title_label.text = "远征失败"
@@ -177,17 +177,18 @@ func _format_stats(subject_name: String, stats: CombatStats) -> String:
 
 
 func _format_step(step: CombatStep) -> String:
-	var headline := ""
-	match step.kind:
-		CombatStep.Kind.ROOT_CARD:
-			headline = "根牌效果：%s" % _source_name(step.source_name, "根牌")
-		CombatStep.Kind.PLAYER_CARD:
-			headline = "玩家结算：%s" % _source_name(step.source_name, "卡牌")
-		CombatStep.Kind.MONSTER_ACTION:
-			headline = "%s 行动" % _source_name(step.source_name, _monster_name())
-	for effect in step.effects:
-		if effect != null:
-			headline += "（%s）" % _format_effect(effect)
+	var card_name := _source_name(step.source_name, "卡牌")
+	if step.kind == CombatStep.Kind.MONSTER_ACTION:
+		return "%s 行动" % card_name
+	var headline := "%s：点数 %d → %d" % [
+		card_name, step.card_points_before, step.card_points_after
+	]
+	if step.card_armor_before != step.card_armor_after:
+		headline += "，护甲 %d → %d" % [step.card_armor_before, step.card_armor_after]
+	if step.monster_before != null and step.monster_after != null:
+		headline += "；%s 生命 %d → %d" % [
+			_monster_name(), step.monster_before.hp, step.monster_after.hp
+		]
 	return headline
 
 

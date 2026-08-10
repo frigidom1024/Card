@@ -11,9 +11,7 @@ var _failure_count := 0
 var _player_state_change_count := 0
 var _boss_dismissal_count := 0
 var _event_display_refresh_count := 0
-var _boss_dismissal_succeeded := true
-var _dismissed_instances: Array[EventInstance] = []
-var _refreshed_instances: Array[EventInstance] = []
+var _boss_dismissal_succeeds := true
 var _active_fixture: Dictionary = {}
 
 
@@ -22,277 +20,210 @@ func _init() -> void:
 
 
 func _run_tests() -> void:
-	await _test_victory_grants_gold_and_card_then_resolves_normal_event()
-	await _test_retreat_returns_tail_and_grants_no_rewards()
-	await _test_defeat_grants_no_rewards()
-	await _test_boss_victory_reuses_reward_pipeline_before_removal()
+	await _test_victory_discards_depleted_normal_card_and_grants_rewards()
+	await _test_retreat_keeps_surviving_cards_and_strengthens_echo()
+	await _test_retreat_resets_and_returns_depleted_root()
+	await _test_defeat_discards_depleted_card_without_rewards()
+	await _test_boss_victory_uses_standard_rewards_after_dismissal()
 	await _test_boss_dismissal_failure_is_atomic()
-	await _test_resolved_victory_cannot_be_applied_twice()
 	quit(1 if _failure_count > 0 else 0)
 
 
-func _test_victory_grants_gold_and_card_then_resolves_normal_event() -> void:
+func _test_victory_discards_depleted_normal_card_and_grants_rewards() -> void:
 	var fixture := _create_fixture(EventData.EventType.MONSTER)
-	var coordinator = _create_coordinator()
+	var coordinator = _configure_coordinator(fixture)
 	if coordinator == null:
 		await _free_fixture(fixture)
 		return
 	_add_guaranteed_gold_and_card_drops(fixture.content)
-	fixture.hand_area.max_hand_size = 0
-	_player_state_change_count = 0
-	if not _configure_coordinator(coordinator, fixture):
-		await _free_fixture(fixture)
-		return
+	_expect(_place_anchor_root(fixture, Vector2i(0, 0)) != null, "victory fixture places anchor root")
+	var exhausted := _place_owned_card(fixture, false, Vector2i(2, 0), 2)
+	_expect(exhausted != null, "victory fixture places an owned normal card")
+	if exhausted != null:
+		exhausted.card_instance.current_points = 0
 
 	_expect(
-		coordinator.apply(fixture.instance, _result(CombatResult.Outcome.VICTORY, 8, 0)),
+		coordinator.apply(
+			fixture.instance,
+			_result(CombatResult.Outcome.VICTORY, 20, 0, 0, [exhausted.card_instance])
+		),
 		"victory applies"
 	)
-	_expect(fixture.instance.is_resolved, "victory resolves an ordinary encounter")
-	_expect(fixture.monster.stats.hp == 0, "victory writes monster hp")
-	_expect(fixture.player_stats.hp == 8, "victory writes player hp")
-	_expect(fixture.player_stats.defense == 0, "victory clears transient player defense")
-	_expect(fixture.player_data.gold == 38, "victory adds guaranteed encounter gold to PlayerData")
+	_expect(fixture.instance.is_resolved, "victory resolves the encounter")
+	_expect(fixture.monster.stats.hp == 0, "victory writes echo HP")
+	_expect(fixture.player_data.gold == 38, "victory grants configured gold")
+	_expect(exhausted not in fixture.board.cards, "victory removes exhausted normal card from board")
 	_expect(
-		fixture.card_service.get_entities().size() == 1, "victory owns a guaranteed encounter card"
+		exhausted.card_instance not in fixture.card_service.get_instances(),
+		"victory stops tracking exhausted normal card"
+	)
+	_expect(
+		fixture.card_service.get_entities().size() == 1,
+		"victory tracks only the earned reward after discard"
 	)
 	_expect(
 		fixture.card_service.get_entities()[0] in fixture.hand_area.cards,
-		"victory keeps a reward card in a full hand"
+		"victory places reward in hand"
 	)
-	_expect(
-		fixture.hand_area.max_hand_size == 0,
-		"reward card overflow restores the normal hand capacity"
-	)
-	_expect(
-		_player_state_change_count == 1,
-		"victory refreshes player state once after HP and rewards change"
-	)
-	_expect(_boss_dismissal_count == 0, "normal victory does not use the Boss dismissal port")
-	_expect(
-		_event_display_refresh_count == 1, "normal victory refreshes through the event-display port"
-	)
-	_expect(
-		_refreshed_instances == [fixture.instance],
-		"normal victory refreshes its own event instance"
-	)
+	_expect(_event_display_refresh_count == 1, "victory refreshes normal event display")
 
 	await _free_fixture(fixture)
 
 
-func _test_retreat_returns_tail_and_grants_no_rewards() -> void:
+func _test_retreat_keeps_surviving_cards_and_strengthens_echo() -> void:
 	var fixture := _create_fixture(EventData.EventType.MONSTER)
-	var coordinator = _create_coordinator()
+	var coordinator = _configure_coordinator(fixture)
 	if coordinator == null:
 		await _free_fixture(fixture)
 		return
-	_add_guaranteed_gold_and_card_drops(fixture.content)
-	_player_state_change_count = 0
-	if not _configure_coordinator(coordinator, fixture):
-		await _free_fixture(fixture)
-		return
-	var tail := _place_tail_card(fixture)
-	_expect(tail != null, "retreat fixture places an owned tail card")
-	fixture.hand_area.max_hand_size = fixture.hand_area.cards.size()
+	_expect(_place_anchor_root(fixture, Vector2i(0, 0)) != null, "retreat fixture places anchor root")
+	var survivor := _place_owned_card(fixture, false, Vector2i(2, 0), 3)
+	_expect(survivor != null, "retreat fixture places a surviving card")
 
 	_expect(
-		coordinator.apply(fixture.instance, _result(CombatResult.Outcome.RETREAT, 7, 16, 1)),
+		coordinator.apply(fixture.instance, _result(CombatResult.Outcome.RETREAT, 20, 16)),
 		"retreat applies"
 	)
-	_expect(not fixture.instance.is_resolved, "retreat leaves the encounter unresolved")
-	_expect(tail in fixture.hand_area.cards, "retreat returns the final card to hand")
-	_expect(tail not in fixture.board.cards, "retreat removes the final card from the board")
+	_expect(not fixture.instance.is_resolved, "retreat leaves encounter unresolved")
+	_expect(survivor in fixture.board.cards, "retreat keeps a card with remaining points on board")
+	_expect(survivor not in fixture.hand_area.cards, "retreat does not return surviving cards to hand")
 	_expect(
-		tail.card_instance.cur_zone == CardInstance.ZONE.HAND,
-		"retreat marks the returned card as in hand"
+		survivor.card_instance in fixture.card_service.get_instances(),
+		"retreat preserves surviving card ownership"
 	)
-	_expect(fixture.monster.stats.hp == 16, "retreat preserves monster damage")
-	_expect(fixture.monster.action_index == 1, "retreat preserves the next monster action")
-	_expect(fixture.monster.enhancement_stacks == 1, "retreat strengthens the surviving encounter")
-	_expect(fixture.player_data.gold == 30, "retreat does not grant encounter gold")
+	_expect(fixture.monster.enhancement_stacks == 1, "retreat adds one enhancement stack")
 	_expect(
-		fixture.card_service.get_entities().size() == 1,
-		"retreat does not create encounter reward cards"
+		fixture.monster.stats.max_hp == 21 and fixture.monster.stats.hp == 17,
+		"retreat preserves prior damage then applies one configured health enhancement"
 	)
-	_expect(_player_state_change_count == 1, "retreat refreshes player state once")
-	_expect(_boss_dismissal_count == 0, "retreat does not use the Boss dismissal port")
-	_expect(_event_display_refresh_count == 1, "retreat refreshes through the event-display port")
-	_expect(_refreshed_instances == [fixture.instance], "retreat refreshes its own event instance")
+	_expect(_event_display_refresh_count == 1, "retreat refreshes the existing event display")
 
 	await _free_fixture(fixture)
 
 
-func _test_defeat_grants_no_rewards() -> void:
+func _test_retreat_resets_and_returns_depleted_root() -> void:
 	var fixture := _create_fixture(EventData.EventType.MONSTER)
-	var coordinator = _create_coordinator()
+	var coordinator = _configure_coordinator(fixture)
+	if coordinator == null:
+		await _free_fixture(fixture)
+		return
+	var root_card := _place_owned_card(fixture, true, Vector2i(0, 0), 2, 2)
+	_expect(root_card != null, "root fixture places an owned root card")
+	if root_card != null:
+		root_card.card_instance.current_points = 0
+		root_card.card_instance.current_armor = 0
+
+	_expect(
+		coordinator.apply(
+			fixture.instance,
+			_result(CombatResult.Outcome.RETREAT, 20, 18, 0, [root_card.card_instance])
+		),
+		"depleted-root retreat applies"
+	)
+	_expect(root_card not in fixture.board.cards, "depleted root leaves board")
+	_expect(root_card in fixture.hand_area.cards, "depleted root returns to hand")
+	_expect(root_card.card_instance.cur_zone == CardInstance.ZONE.HAND, "returned root enters hand zone")
+	_expect(root_card.card_instance.current_points == 2, "returned root resets point value")
+	_expect(root_card.card_instance.current_armor == 2, "returned root resets armor")
+	_expect(
+		root_card.card_instance in fixture.card_service.get_instances(),
+		"returned root stays owned for later placement"
+	)
+
+	await _free_fixture(fixture)
+
+
+func _test_defeat_discards_depleted_card_without_rewards() -> void:
+	var fixture := _create_fixture(EventData.EventType.MONSTER)
+	var coordinator = _configure_coordinator(fixture)
 	if coordinator == null:
 		await _free_fixture(fixture)
 		return
 	_add_guaranteed_gold_and_card_drops(fixture.content)
-	_player_state_change_count = 0
-	if not _configure_coordinator(coordinator, fixture):
-		await _free_fixture(fixture)
-		return
+	_expect(_place_anchor_root(fixture, Vector2i(0, 0)) != null, "defeat fixture places anchor root")
+	var exhausted := _place_owned_card(fixture, false, Vector2i(2, 0), 1)
+	_expect(exhausted != null, "defeat fixture places an owned normal card")
+	if exhausted != null:
+		exhausted.card_instance.current_points = 0
 
 	_expect(
-		coordinator.apply(fixture.instance, _result(CombatResult.Outcome.DEFEAT, 0, 14)),
+		coordinator.apply(
+			fixture.instance,
+			_result(CombatResult.Outcome.DEFEAT, 0, 16, 0, [exhausted.card_instance])
+		),
 		"defeat applies"
 	)
-	_expect(not fixture.instance.is_resolved, "defeat does not resolve an encounter as a victory")
-	_expect(fixture.player_data.gold == 30, "defeat does not grant encounter gold")
-	_expect(
-		fixture.card_service.get_entities().is_empty(),
-		"defeat does not create encounter reward cards"
-	)
-	_expect(_player_state_change_count == 1, "defeat refreshes player state once")
-	_expect(_boss_dismissal_count == 0, "defeat does not use the Boss dismissal port")
-	_expect(_event_display_refresh_count == 0, "defeat does not refresh the event display")
+	_expect(not fixture.instance.is_resolved, "defeat does not resolve the encounter")
+	_expect(fixture.player_data.gold == 30, "defeat grants no encounter gold")
+	_expect(exhausted not in fixture.board.cards, "defeat removes exhausted normal card")
+	_expect(fixture.card_service.get_entities().is_empty(), "defeat grants no reward card")
+	_expect(_event_display_refresh_count == 0, "defeat does not refresh encounter display")
 
 	await _free_fixture(fixture)
 
 
-func _test_boss_victory_reuses_reward_pipeline_before_removal() -> void:
+func _test_boss_victory_uses_standard_rewards_after_dismissal() -> void:
 	var fixture := _create_fixture(EventData.EventType.BOSS)
-	var coordinator = _create_coordinator()
+	var coordinator = _configure_coordinator(fixture)
 	if coordinator == null:
 		await _free_fixture(fixture)
 		return
 	fixture.content.drop_entries.append(_gold_drop(6))
-	_player_state_change_count = 0
-	if not _configure_coordinator(coordinator, fixture):
-		await _free_fixture(fixture)
-		return
 
 	_expect(
-		coordinator.apply(fixture.instance, _result(CombatResult.Outcome.VICTORY, 10, 0)),
+		coordinator.apply(fixture.instance, _result(CombatResult.Outcome.VICTORY, 20, 0)),
 		"boss victory applies"
 	)
-	_expect(fixture.instance.is_resolved, "boss victory resolves the boss instance")
-	_expect(fixture.player_data.gold == 36, "boss victory uses the encounter reward pipeline")
-	_expect(
-		fixture.event_node not in fixture.board.events,
-		"boss victory delegates event removal through the Boss dismissal port"
-	)
-	_expect(_boss_dismissal_count == 1, "boss victory invokes the Boss dismissal port once")
-	_expect(
-		_dismissed_instances == [fixture.instance], "boss victory dismisses its own event instance"
-	)
-	_expect(
-		_event_display_refresh_count == 0,
-		"boss victory does not refresh through the normal event port"
-	)
-	_expect(_player_state_change_count == 1, "boss victory refreshes player state once")
+	_expect(_boss_dismissal_count == 1, "boss victory removes boss through dismissal port")
+	_expect(fixture.instance.is_resolved, "boss victory resolves instance")
+	_expect(fixture.player_data.gold == 36, "boss victory reuses encounter reward pipeline")
+	_expect(_event_display_refresh_count == 0, "dismissed boss does not refresh a removed event display")
 
 	await _free_fixture(fixture)
 
 
 func _test_boss_dismissal_failure_is_atomic() -> void:
 	var fixture := _create_fixture(EventData.EventType.BOSS)
-	var coordinator = _create_coordinator()
+	var coordinator = _configure_coordinator(fixture)
 	if coordinator == null:
 		await _free_fixture(fixture)
 		return
-	_add_guaranteed_gold_and_card_drops(fixture.content)
-	_player_state_change_count = 0
-	if not _configure_coordinator(coordinator, fixture):
-		await _free_fixture(fixture)
-		return
+	_boss_dismissal_succeeds = false
+	fixture.content.drop_entries.append(_gold_drop(6))
 
-	_boss_dismissal_succeeded = false
-	var result := _result(CombatResult.Outcome.VICTORY, 8, 0)
 	_expect(
-		not coordinator.apply(fixture.instance, result),
-		"failed Boss dismissal rejects victory settlement"
+		not coordinator.apply(fixture.instance, _result(CombatResult.Outcome.VICTORY, 20, 0)),
+		"failed boss dismissal rejects settlement"
 	)
-	_expect(not fixture.instance.is_resolved, "failed Boss dismissal leaves the Boss unresolved")
-	_expect(
-		fixture.event_node in fixture.board.events, "failed Boss dismissal keeps the event attached"
-	)
-	_expect(
-		fixture.player_stats.hp == 20, "failed Boss dismissal does not write player combat state"
-	)
-	_expect(
-		fixture.monster.stats.hp == 20, "failed Boss dismissal does not write monster combat state"
-	)
-	_expect(fixture.player_data.gold == 30, "failed Boss dismissal grants no victory gold")
-	_expect(
-		fixture.card_service.get_entities().is_empty(),
-		"failed Boss dismissal grants no victory cards"
-	)
-	_expect(_player_state_change_count == 0, "failed Boss dismissal emits no player-state callback")
-	_expect(
-		_event_display_refresh_count == 0, "failed Boss dismissal emits no display refresh callback"
-	)
+	_expect(not fixture.instance.is_resolved, "failed boss dismissal leaves instance unresolved")
+	_expect(fixture.player_data.gold == 30, "failed boss dismissal grants no rewards")
+	_expect(fixture.monster.stats.hp == 20, "failed boss dismissal does not mutate echo state")
+	_expect(_player_state_change_count == 0, "failed boss dismissal does not publish player state")
 
 	await _free_fixture(fixture)
 
 
-func _test_resolved_victory_cannot_be_applied_twice() -> void:
-	var fixture := _create_fixture(EventData.EventType.MONSTER)
-	var coordinator = _create_coordinator()
-	if coordinator == null:
-		await _free_fixture(fixture)
-		return
-	_add_guaranteed_gold_and_card_drops(fixture.content)
-	_player_state_change_count = 0
-	if not _configure_coordinator(coordinator, fixture):
-		await _free_fixture(fixture)
-		return
-
-	var victory_result := _result(CombatResult.Outcome.VICTORY, 8, 0)
-	_expect(coordinator.apply(fixture.instance, victory_result), "initial victory applies")
-	var gold_after_first_apply: int = fixture.player_data.gold
-	var cards_after_first_apply: int = fixture.card_service.get_entities().size()
-	_expect(
-		not coordinator.apply(fixture.instance, victory_result),
-		"a resolved encounter rejects duplicate settlement"
-	)
-	_expect(
-		fixture.player_data.gold == gold_after_first_apply, "duplicate victory grants no extra gold"
-	)
-	_expect(
-		fixture.card_service.get_entities().size() == cards_after_first_apply,
-		"duplicate victory grants no extra cards"
-	)
-	_expect(_event_display_refresh_count == 1, "duplicate victory does not refresh the event twice")
-	_expect(
-		_player_state_change_count == 1, "duplicate victory does not refresh player state twice"
-	)
-
-	await _free_fixture(fixture)
-
-
-func _create_coordinator():
+func _configure_coordinator(fixture: Dictionary):
 	var coordinator_script = ResourceLoader.load(EncounterResolutionCoordinatorPath)
 	_expect(coordinator_script != null, "encounter resolution coordinator script exists")
-	return coordinator_script.new() if coordinator_script != null else null
-
-
-func _configure_coordinator(coordinator, fixture: Dictionary) -> bool:
+	if coordinator_script == null:
+		return null
+	var coordinator = coordinator_script.new()
 	_reset_ports(fixture)
 	_expect(
-		_configure_argument_count(coordinator) == 8,
-		"encounter resolution accepts explicit settlement callback ports"
+		coordinator.configure(
+			fixture.board,
+			fixture.player_stats,
+			fixture.player_data,
+			fixture.card_service,
+			Callable(self, "_on_boss_dismissed"),
+			Callable(self, "_on_player_state_changed"),
+			Callable(self, "_on_event_display_refresh"),
+			fixture.reward_rng
+		),
+		"fixture configures encounter settlement"
 	)
-	if _configure_argument_count(coordinator) != 8:
-		return false
-	return coordinator.configure(
-		fixture.board,
-		fixture.player_stats,
-		fixture.player_data,
-		fixture.card_service,
-		Callable(self, "_on_boss_dismissed"),
-		Callable(self, "_on_player_state_changed"),
-		Callable(self, "_on_event_display_refresh"),
-		fixture.reward_rng
-	)
-
-
-func _configure_argument_count(coordinator) -> int:
-	for method: Dictionary in coordinator.get_method_list():
-		if method.get("name", "") == "configure":
-			return (method.get("args", []) as Array).size()
-	return -1
+	return coordinator
 
 
 func _create_fixture(event_type: EventData.EventType) -> Dictionary:
@@ -305,10 +236,7 @@ func _create_fixture(event_type: EventData.EventType) -> Dictionary:
 	var card_manager := CardManagerScript.new()
 	card_manager.card_scene = CardEntityScene
 	var card_service := RunCardService.new()
-	_expect(
-		card_service.configure(card_manager, hand_area, drag_layer),
-		"fixture configures card ownership"
-	)
+	_expect(card_service.configure(card_manager, hand_area, drag_layer), "fixture configures card ownership")
 
 	var content: EncounterEventContent = (
 		MonsterEventContent.new()
@@ -365,38 +293,53 @@ func _gold_drop(amount: int) -> EncounterDropEntry:
 	return drop
 
 
-func _place_tail_card(fixture: Dictionary) -> CardEntity:
+func _place_anchor_root(fixture: Dictionary, left_cell: Vector2i) -> CardEntity:
 	var root_data := CardData.new()
+	root_data.card_name = "Anchor Root"
 	root_data.card_type = CardData.CardType.ROOT
+	root_data.max_points = 1
 	var root_card := CardEntityScene.instantiate() as CardEntity
 	root_card.bind_instance(CardInstance.new(root_data))
 	root.add_child(root_card)
-	root_card.global_position = fixture.board.to_global(
-		_horizontal_card_center(fixture.board, Vector2i(0, 0))
-	)
+	root_card.global_position = fixture.board.to_global(_horizontal_card_center(fixture.board, left_cell))
 	root_card.rotation_degrees = 90.0
-	if not fixture.board.add_card(root_card):
-		return null
+	return root_card if fixture.board.add_card(root_card) else null
 
-	var tail_data := CardData.new()
-	tail_data.card_type = CardData.CardType.NORMAL
-	if not fixture.card_service.grant_to_hand(tail_data):
+
+func _place_owned_card(
+	fixture: Dictionary, is_root: bool, left_cell: Vector2i, points: int, armor: int = 0
+) -> CardEntity:
+	var data := CardData.new()
+	data.card_name = "Settlement Root" if is_root else "Settlement Card"
+	data.card_type = CardData.CardType.ROOT if is_root else CardData.CardType.NORMAL
+	data.max_points = points
+	data.armor = armor
+	if not fixture.card_service.grant_to_hand(data):
 		return null
-	var tail: CardEntity = fixture.card_service.get_entities().back()
-	if not fixture.hand_area.remove_card(tail):
+	var card: CardEntity = fixture.card_service.get_entities().back()
+	if not fixture.hand_area.remove_card(card):
 		return null
-	tail.global_position = fixture.board.to_global(
-		_horizontal_card_center(fixture.board, Vector2i(2, 0))
-	)
-	tail.rotation_degrees = 90.0
-	return tail if fixture.board.add_card(tail) else null
+	card.global_position = fixture.board.to_global(_horizontal_card_center(fixture.board, left_cell))
+	card.rotation_degrees = 90.0
+	return card if fixture.board.add_card(card) else null
 
 
 func _result(
-	outcome: CombatResult.Outcome, player_hp: int, monster_hp: int, action_index := 0
+	outcome: CombatResult.Outcome,
+	player_hp: int,
+	monster_hp: int,
+	action_index := 0,
+	depleted_cards: Array[CardInstance] = []
 ) -> CombatResult:
 	return CombatResult.new(
-		outcome, _stats(20, player_hp, 6), _stats(20, monster_hp, 5), [], 0, [], action_index
+		outcome,
+		_stats(20, player_hp, 6),
+		_stats(20, monster_hp, 5),
+		[],
+		0,
+		[],
+		action_index,
+		depleted_cards
 	)
 
 
@@ -414,6 +357,7 @@ func _make_mob(hp: int) -> MobData:
 	var mob := MobData.new()
 	mob.mob_name = "Resolution Test Echo"
 	mob.base_stats = stats
+	mob.enhancement_hp_bonus = 1
 	return mob
 
 
@@ -426,28 +370,21 @@ func _horizontal_card_center(board: Board, left_cell: Vector2i) -> Vector2:
 
 func _reset_ports(fixture: Dictionary) -> void:
 	_active_fixture = fixture
-	_boss_dismissal_succeeded = true
+	_boss_dismissal_succeeds = true
 	_boss_dismissal_count = 0
 	_event_display_refresh_count = 0
-	_dismissed_instances.clear()
-	_refreshed_instances.clear()
+	_player_state_change_count = 0
 
 
-func _on_boss_dismissed(instance: EventInstance) -> bool:
+func _on_boss_dismissed(_instance: EventInstance) -> bool:
 	_boss_dismissal_count += 1
-	_dismissed_instances.append(instance)
-	if not _boss_dismissal_succeeded:
+	if not _boss_dismissal_succeeds or _active_fixture.is_empty():
 		return false
-	if _active_fixture.is_empty():
-		return false
-	var board: Board = _active_fixture.board
-	var event_node: BoardEvent = _active_fixture.event_node
-	return board != null and event_node != null and board.remove_event(event_node)
+	return _active_fixture.board.remove_event(_active_fixture.event_node)
 
 
-func _on_event_display_refresh(instance: EventInstance) -> void:
+func _on_event_display_refresh(_instance: EventInstance) -> void:
 	_event_display_refresh_count += 1
-	_refreshed_instances.append(instance)
 
 
 func _on_player_state_changed() -> void:

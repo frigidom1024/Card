@@ -111,6 +111,23 @@ func forget_card(card: CardEntity) -> bool:
 	return true
 
 
+## Permanently removes an owned card after its combat points are exhausted.
+## Callers remove it from the board first; this method also tolerates a card
+## still being in hand so it can be reused by other discard effects.
+func destroy_existing_card(card: CardEntity) -> bool:
+	if card == null or card not in _entities:
+		return false
+	if hand_area != null and card in hand_area.cards:
+		hand_area.remove_card(card, false)
+	if not forget_card(card):
+		return false
+	if card.card_instance != null:
+		card.card_instance.cur_zone = CardInstance.ZONE.DISCARD
+	if is_instance_valid(card):
+		card.queue_free()
+	return true
+
+
 func clear() -> void:
 	for entity in _entities:
 		if not is_instance_valid(entity):

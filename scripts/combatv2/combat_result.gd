@@ -10,6 +10,9 @@ var steps: Array[CombatStep]
 var processed_card_count: int
 var penalties: Array[CombatPenalty]
 var monster_action_index_after: int
+## These are the original board CardInstances whose points reached zero during
+## this resolution. The encounter settlement layer owns the board mutation.
+var depleted_cards: Array[CardInstance]
 
 
 func _init(
@@ -19,7 +22,8 @@ func _init(
 	steps: Array[CombatStep],
 	processed_card_count: int,
 	penalties: Array[CombatPenalty],
-	monster_action_index_after: int = 0
+	monster_action_index_after: int = 0,
+	depleted_cards: Array[CardInstance] = []
 ) -> void:
 	self.outcome = outcome
 	self.player_stats_after = player_stats_after.duplicate_runtime() if player_stats_after else null
@@ -34,3 +38,4 @@ func _init(
 	for penalty in penalties:
 		self.penalties.append(penalty)
 	self.monster_action_index_after = monster_action_index_after
+	self.depleted_cards = depleted_cards.duplicate()

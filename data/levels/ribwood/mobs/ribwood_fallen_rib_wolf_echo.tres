@@ -25,6 +25,7 @@ attack = 2
 
 [resource]
 script = ExtResource("mob")
+enhancement_hp_bonus = 1
 mob_name = "腐肋幼狼"
 base_stats = SubResource("WolfStats")
 actions = Array[ExtResource("action")]([SubResource("WolfAction_bite"), SubResource("WolfAction_guard")])

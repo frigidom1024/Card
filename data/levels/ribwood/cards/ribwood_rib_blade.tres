@@ -1,14 +1,19 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="card_rule"]
 [ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+[ext_resource type="Script" path="res://scripts/combatv2/card/rules/next_card_point_bonus_rule.gd" id="rule_script"]
+
+[sub_resource type="Resource" id="Resource_7yu6c"]
+script = ExtResource("rule_script")
+
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_rib_blade.png"
 card_id = 1002
 card_name = "肋骨短刃"
-value = 6
-card_type = 1
-damage = 2
-description = "从灰白肋骨上削下的短刃，刃口仍带着骨髓的暖光。"
+value = 4
+artwork_path = "res://assert/card/ribwood_rib_blade.png"
+max_points = 2
+effect_rules = Array[ExtResource("card_rule")]([SubResource("Resource_7yu6c")])
+description = "从灰白肋骨上削下的短刃。每当你在本牌前方放置一张卡牌时，该卡牌获得 +1 点数。"
 tags = Array[int]([0, 6])
-rarity = 0

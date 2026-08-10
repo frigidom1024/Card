@@ -1,14 +1,14 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_fguk4"]
 [ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_rib_nail.png"
 card_id = 1011
 card_name = "肋骨穿钉"
-value = 6
-card_type = 1
-damage = 3
-description = "巡礼者用来固定帐篷和骨架的长钉，也能钉住扑来的残响。"
+value = 8
+artwork_path = "res://assert/card/ribwood_rib_nail.png"
+max_points = 3
+description = "从肋骨边缘拔下的长钉，沉重却可靠。无额外效果。"
 tags = Array[int]([0, 6])
-rarity = 0

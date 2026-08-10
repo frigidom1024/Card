@@ -1,15 +1,15 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_53rh6"]
 [ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_old_chest_cloak.png"
 card_id = 1032
 card_name = "覆胸旧斗篷"
-value = 6
-card_type = 1
-defense = 2
-heal = 2
-description = "缝满骨片的旧斗篷，披上后既能挡风，也能藏住伤口。"
+value = 10
+artwork_path = "res://assert/card/ribwood_old_chest_cloak.png"
+max_points = 2
+armor = 2
+description = "胸前磨白的旧斗篷，缝线里夹着干燥草药。无额外效果。"
 tags = Array[int]([1, 2, 6])
-rarity = 0

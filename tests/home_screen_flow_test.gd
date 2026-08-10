@@ -218,10 +218,13 @@ func _test_root_selection_filters_presets_and_requests_exploration_once() -> voi
 	_expect(root_preview_slot != null and root_preview_slot.get_child_count() == 1, "selected root has one real card preview")
 	if root_preview_slot != null and root_preview_slot.get_child_count() == 1:
 		_expect(root_preview_slot.get_child(0).call("is_display_only"), "root preview uses display-only CardEntity")
-	_expect(starter_preview_row != null and starter_preview_row.get_child_count() == 4, "remaining complete starting deck is previewed without the root")
-	if starter_preview_row != null and starter_preview_row.get_child_count() == 4:
+	_expect(
+		starter_preview_row != null and starter_preview_row.get_child_count() == RevivalDeck.get_remaining_starter_cards().size(),
+		"remaining complete starting deck is previewed without the root"
+	)
+	if starter_preview_row != null and starter_preview_row.get_child_count() == RevivalDeck.get_remaining_starter_cards().size():
 		var first_starter_preview := starter_preview_row.get_child(0) as Node2D
-		var last_starter_preview := starter_preview_row.get_child(3) as Node2D
+		var last_starter_preview := starter_preview_row.get_child(starter_preview_row.get_child_count() - 1) as Node2D
 		_expect(
 			first_starter_preview != null and last_starter_preview != null
 				and is_equal_approx(

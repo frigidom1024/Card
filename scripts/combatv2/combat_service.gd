@@ -1,151 +1,81 @@
 class_name CombatService2
 extends RefCounted
 
+## Resolves one encounter as a sequence of point clashes.
+##
+## The chain resolves from its head (the final placed card) back toward the
+## root. Each eligible card compares its current points with the echo's current
+## HP once: it first spends points against the echo, then armor absorbs the
+## echo's pre-clash HP before any remaining retaliation consumes card points.
+## Normal echo actions and player HP are intentionally outside this baseline
+## loop; specialised outcome effects remain available through CombatResult.
 
-var action_queue:Array[CombatAction]
-const MobActionResolverScript = preload("res://scripts/combatv2/mob_action_resolver.gd")
 
-var player_index:int = 0
-var monster_index:int = 0
-
-# gdlint: disable=max-returns
 func resolve_encounter(
 	player_stats: CombatStats, card_chain: Array[CardInstance], monster: MobInstance
 ) -> CombatResult:
-	player_index = 0
-	monster_index = 0
-	action_queue.clear()
 	var player_copy := player_stats.duplicate_runtime() if player_stats != null else null
 	var monster_copy := monster.duplicate_for_encounter() if monster != null else null
-	var cards_copy: Array[CardInstance] = []
-	for card in card_chain:
-		cards_copy.append(card)
-	var context := CombatContext.new(player_copy, monster_copy, cards_copy)
+	var context := CombatContext.new(player_copy, monster_copy, card_chain)
 
 	if context.cards.is_empty() or not _is_root_card(context.cards[0]):
 		push_error("CombatService requires the first card in a chain to be a root card")
 		return _build_result(context, CombatResult.Outcome.RETREAT)
+	if context.monster == null or context.monster.stats == null:
+		push_error("CombatService requires an encounter monster with combat stats")
+		return _build_result(context, CombatResult.Outcome.RETREAT)
 
-	var root: CardInstance = context.cards[0]
-	if resolve_player_card(context, root, 0, CombatEffect.SourceType.ROOT_CARD):
-		return _build_result(context, CombatResult.Outcome.VICTORY)
-	if _is_player_defeated(context):
-		return _build_result(context, CombatResult.Outcome.DEFEAT)
-	player_index+=1
+	for card_index in range(context.cards.size() - 1, -1, -1):
+		if _resolve_card_clash(context, context.cards[card_index]):
+			return _build_result(context, CombatResult.Outcome.VICTORY)
 
-	while player_index < context.cards.size():
-		action_queue.append(CombatAction.new(CombatAction.TYPE.PLAYER, player_index))
-		while not action_queue.is_empty():
-			var result := _process_action(context)
-			if result != null:
-				return result
-		
-		action_queue.append(CombatAction.new(CombatAction.TYPE.MONSTER, monster_index))
-		while not action_queue.is_empty():
-			var result := _process_action(context)
-			if result != null:
-				return result
-	
-	if _is_player_defeated(context):
-		return _build_result(context, CombatResult.Outcome.DEFEAT)
-	if _is_monster_defeated(context):
-		return _build_result(context, CombatResult.Outcome.VICTORY)
 	return _build_result(context, CombatResult.Outcome.RETREAT)
 
 
-# gdlint: enable=max-returns
-func apply_effect(context: CombatContext, effect: CombatEffect) -> int:
-	if context == null or effect == null:
-		return 0
-	var target_stats := _target_stats(context, effect.target)
-	if target_stats == null:
-		return 0
-	match effect.type:
-		CombatEffect.Type.DAMAGE:
-			return target_stats.take_damage(effect.value)
-		CombatEffect.Type.ADD_DEFENSE:
-			var defense_before := target_stats.defense
-			target_stats.add_defense(effect.value)
-			return target_stats.defense - defense_before
-		CombatEffect.Type.HEAL:
-			return target_stats.heal(effect.value)
-	return 0
-
-
-func resolve_player_card(
-	context: CombatContext, card: CardInstance, index: int, source_type: CombatEffect.SourceType
-) -> bool:
+## Resolves one simultaneous card-versus-echo comparison.
+## Returns true only when this clash defeats the echo.
+func _resolve_card_clash(context: CombatContext, card: CardInstance) -> bool:
 	var player_before := _copy_player_stats(context)
 	var monster_before := _copy_monster_stats(context)
+	var points_before := card.current_points if card != null else 0
+	var armor_before := card.current_armor if card != null else 0
 	var source_name := _card_name(card)
 	var applied_effects: Array[CombatEffect] = []
+	var card_was_used := card != null and card.card_data != null and points_before > 0
 
-	if card != null and card.card_data != null:
-		var resolution_context := CardResolutionContext.new(context, card, index)
-		var draft := CardResolutionDraft.from_card(card.card_data)
-		for rule in card.card_data.effect_rules:
-			if rule != null:
-				rule.execute(resolution_context, draft)
-		for effect in draft.to_effects(source_type, source_name):
-			apply_effect(context, effect)
-			applied_effects.append(effect)
-			if _is_monster_defeated(context) or _is_player_defeated(context):
-				break
+	if card_was_used:
+		# The echo's pre-clash HP is its power for this comparison. Its own armor
+		# still absorbs incoming card points through CombatStats.take_damage().
+		var echo_power := context.monster.stats.hp
+		context.monster.take_damage(points_before)
+		applied_effects.append(
+			CombatEffect.new(
+				CombatEffect.Type.DAMAGE,
+				CombatEffect.Target.MONSTER,
+				points_before,
+				_source_type_for(card),
+				source_name
+			)
+		)
+		card.take_point_damage(echo_power)
 
-	var kind := (
-		CombatStep.Kind.ROOT_CARD
-		if source_type == CombatEffect.SourceType.ROOT_CARD
-		else CombatStep.Kind.PLAYER_CARD
-	)
-	_append_step(context, kind, source_name, applied_effects, player_before, monster_before)
-	context.resolved_cards.append(card)
-	context.remaining_cards.erase(card)
-	return _is_monster_defeated(context)
-
-
-func resolve_monster_action(context: CombatContext) -> bool:
-	var player_before := _copy_player_stats(context)
-	var monster_before := _copy_monster_stats(context)
-	var source_name := _monster_name(context)
-	var applied_effects: Array[CombatEffect] = []
-	var action: MobAction = (
-		context.monster.next_action() if context != null and context.monster != null else null
-	)
-	if action != null:
-		for effect in MobActionResolverScript.to_effects(
-			action, source_name, context.monster.enhancement_stacks
-		):
-			apply_effect(context, effect)
-			applied_effects.append(effect)
-			if _is_player_defeated(context) or _is_monster_defeated(context):
-				break
 	_append_step(
 		context,
-		CombatStep.Kind.MONSTER_ACTION,
+		CombatStep.Kind.ROOT_CARD if _is_root_card(card) else CombatStep.Kind.PLAYER_CARD,
 		source_name,
 		applied_effects,
 		player_before,
-		monster_before
+		monster_before,
+		points_before,
+		card.current_points if card != null else 0,
+		armor_before,
+		card.current_armor if card != null else 0
 	)
-	return _is_player_defeated(context)
-
-
-
-
-func _process_action(context: CombatContext) -> CombatResult:
-	var action: CombatAction = action_queue.front()
-	action_queue.pop_front()
-	if action.type == CombatAction.TYPE.PLAYER:
-		var card := context.cards[player_index]
-		if resolve_player_card(context, card, player_index, CombatEffect.SourceType.PLAYER_CARD):
-			return _build_result(context, CombatResult.Outcome.VICTORY)
-		player_index += 1
-	if action.type == CombatAction.TYPE.MONSTER:
-		resolve_monster_action(context)
-		if _is_player_defeated(context):
-			return _build_result(context, CombatResult.Outcome.DEFEAT)
-		monster_index += 1
-	return null
+	context.resolved_cards.append(card)
+	context.remaining_cards.erase(card)
+	if card_was_used and card.is_depleted() and card not in context.depleted_cards:
+		context.depleted_cards.append(card)
+	return _is_monster_defeated(context)
 
 
 func _append_step(
@@ -154,7 +84,11 @@ func _append_step(
 	source_name: String,
 	effects: Array[CombatEffect],
 	player_before: CombatStats,
-	monster_before: CombatStats
+	monster_before: CombatStats,
+	card_points_before: int,
+	card_points_after: int,
+	card_armor_before: int,
+	card_armor_after: int
 ) -> void:
 	if context == null:
 		return
@@ -166,31 +100,26 @@ func _append_step(
 			player_before,
 			_copy_player_stats(context),
 			monster_before,
-			_copy_monster_stats(context)
+			_copy_monster_stats(context),
+			card_points_before,
+			card_points_after,
+			card_armor_before,
+			card_armor_after
 		)
 	)
 
 
-func _build_result(
-	context: CombatContext, outcome: CombatResult.Outcome, penalties: Array[CombatPenalty] = []
-) -> CombatResult:
+func _build_result(context: CombatContext, outcome: CombatResult.Outcome) -> CombatResult:
 	return CombatResult.new(
 		outcome,
 		context.player_stats if context != null else null,
 		context.monster.stats if context != null and context.monster != null else null,
 		context.steps if context != null else [],
 		context.resolved_cards.size() if context != null else 0,
-		penalties,
-		context.monster.action_index if context != null and context.monster != null else 0
+		[],
+		context.monster.action_index if context != null and context.monster != null else 0,
+		context.depleted_cards if context != null else []
 	)
-
-
-func _target_stats(context: CombatContext, target: CombatEffect.Target) -> CombatStats:
-	if target == CombatEffect.Target.PLAYER:
-		return context.player_stats
-	if target == CombatEffect.Target.MONSTER and context.monster != null:
-		return context.monster.stats
-	return null
 
 
 func _copy_player_stats(context: CombatContext) -> CombatStats:
@@ -207,10 +136,6 @@ func _copy_monster_stats(context: CombatContext) -> CombatStats:
 		if context != null and context.monster != null and context.monster.stats != null
 		else null
 	)
-
-
-func _is_player_defeated(context: CombatContext) -> bool:
-	return context == null or context.player_stats == null or not context.player_stats.is_alive()
 
 
 func _is_monster_defeated(context: CombatContext) -> bool:
@@ -230,13 +155,9 @@ func _is_root_card(card: CardInstance) -> bool:
 	)
 
 
+func _source_type_for(card: CardInstance) -> CombatEffect.SourceType:
+	return CombatEffect.SourceType.ROOT_CARD if _is_root_card(card) else CombatEffect.SourceType.PLAYER_CARD
+
+
 func _card_name(card: CardInstance) -> String:
 	return card.card_data.card_name if card != null and card.card_data != null else ""
-
-
-func _monster_name(context: CombatContext) -> String:
-	return (
-		context.monster.data.mob_name
-		if context != null and context.monster != null and context.monster.data != null
-		else ""
-	)

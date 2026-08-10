@@ -6,6 +6,7 @@ var monster: MobInstance
 var cards: Array[CardInstance]
 var resolved_cards: Array[CardInstance] = []
 var remaining_cards: Array[CardInstance]
+var depleted_cards: Array[CardInstance] = []
 var steps: Array[CombatStep] = []
 var current_batch_id := 0
 var current_batch_card_count := 0
@@ -23,9 +24,4 @@ func _init(
 static func _duplicate_monster(source: MobInstance) -> MobInstance:
 	if source == null:
 		return null
-	var copy := MobInstance.new(source.data)
-	copy.stats = source.stats.duplicate_runtime() if source.stats else null
-	copy.action_index = source.action_index
-	copy.enhancement_stacks = source.enhancement_stacks
-	copy.max_enhancement_stacks = source.max_enhancement_stacks
-	return copy
+	return source.duplicate_for_encounter()

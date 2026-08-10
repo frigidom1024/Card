@@ -1,7 +1,8 @@
 class_name PlacementPipelineCoordinator
 extends RefCounted
 
-## Owns the sole Board placement subscription and resolves card rules before exploration.
+## Owns the sole Board placement subscription, resolves card rules before exploration,
+## and routes the committed event contact directly to RunFlowCoordinator.
 signal event_interaction_requested(instance: EventInstance)
 signal placement_resolved(result: BoardPlacementResult, card_rules_applied: int)
 
@@ -18,21 +19,10 @@ func configure(
 		return false
 	if _board != null and _board.placement_committed.is_connected(_on_placement_committed):
 		_board.placement_committed.disconnect(_on_placement_committed)
-	if (
-		_exploration != null
-		and _exploration.event_interaction_requested.is_connected(
-			_forward_event_interaction_requested
-		)
-	):
-		_exploration.event_interaction_requested.disconnect(_forward_event_interaction_requested)
 	_board = board
 	_card_chain = card_chain
 	_exploration = exploration
 	_placement_guard = Callable()
-	if not _exploration.event_interaction_requested.is_connected(
-		_forward_event_interaction_requested
-	):
-		_exploration.event_interaction_requested.connect(_forward_event_interaction_requested)
 	return true
 
 
@@ -58,6 +48,7 @@ func resolve_placement(result: BoardPlacementResult) -> void:
 		return
 	var card_rules_applied := _card_chain.resolve_placement(result)
 	_exploration.resolve_placement(result)
+	_emit_event_interaction_request(result)
 	placement_resolved.emit(result, card_rules_applied)
 
 
@@ -65,5 +56,9 @@ func _on_placement_committed(result: BoardPlacementResult) -> void:
 	resolve_placement(result)
 
 
-func _forward_event_interaction_requested(instance: EventInstance) -> void:
-	event_interaction_requested.emit(instance)
+func _emit_event_interaction_request(result: BoardPlacementResult) -> void:
+	if result == null or result.overlapped_event == null:
+		return
+	if result.overlapped_event.is_resolved:
+		return
+	event_interaction_requested.emit(result.overlapped_event)

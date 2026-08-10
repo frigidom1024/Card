@@ -1,15 +1,16 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_5gkbc"]
 [ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_white_horn_relic.png"
 card_id = 1041
 card_name = "白角遗片"
-value = 6
-card_type = 1
-damage = 2
-defense = 2
-description = "从白角守墓鹿的角上落下的一片骨白遗物。"
+value = 16
+artwork_path = "res://assert/card/ribwood_white_horn_relic.png"
+max_points = 3
+armor = 1
+description = "白角守墓鹿遗下的一截角片，既锋利又能挡住一次冲撞。无额外效果。"
 tags = Array[int]([0, 1, 6])
-rarity = 0
+rarity = 2

@@ -72,6 +72,7 @@ func apply(instance: EventInstance, result: CombatResult) -> bool:
 					return false
 			_apply_player_combat_state(result.player_stats_after)
 			_apply_monster_combat_state(instance, result.monster_stats_after)
+			_settle_depleted_cards(result)
 			_apply_victory_rewards(instance)
 			instance.resolve()
 			if instance.get_event_type() != EventData.EventType.BOSS:
@@ -81,11 +82,12 @@ func apply(instance: EventInstance, result: CombatResult) -> bool:
 			_apply_monster_combat_state(
 				instance, result.monster_stats_after, result.monster_action_index_after
 			)
-			_return_tail_card_to_hand()
+			_settle_depleted_cards(result)
 			_strengthen_encounter_monster(instance)
 			_on_event_display_refresh.call(instance)
 		CombatResult.Outcome.DEFEAT:
 			_apply_player_combat_state(result.player_stats_after)
+			_settle_depleted_cards(result)
 			_clear_monster_transient_state(instance)
 			exploration_failed.emit(result)
 		_:
@@ -138,14 +140,43 @@ func _strengthen_encounter_monster(instance: EventInstance) -> void:
 		monster.gain_enhancement()
 
 
-func _return_tail_card_to_hand() -> void:
-	if _board.cards.size() <= 1:
+func _settle_depleted_cards(result: CombatResult) -> void:
+	if result == null:
 		return
-	var tail: CardEntity = _board.cards.back()
-	if tail == null or not _board.remove_card(tail):
-		return
-	if not _card_service.return_existing_to_hand_temporarily(tail):
-		push_error("RETREAT failed to return the final card to hand")
+	for depleted_instance in result.depleted_cards:
+		var entity := _find_board_entity(depleted_instance)
+		if entity == null:
+			continue
+		if not _board.remove_card(entity):
+			continue
+		if _is_root_instance(depleted_instance):
+			depleted_instance.reset_points()
+			depleted_instance.reset_armor()
+			if not _card_service.return_existing_to_hand_temporarily(entity):
+				push_error("Failed to return a depleted root card to hand")
+		elif not _card_service.destroy_existing_card(entity):
+			push_error("Failed to destroy a depleted normal card")
+
+	for retained_entity in _board.cards:
+		if retained_entity != null:
+			retained_entity.refresh_combat_tags()
+
+
+func _find_board_entity(instance: CardInstance) -> CardEntity:
+	if instance == null:
+		return null
+	for entity in _board.cards:
+		if entity != null and entity.card_instance == instance:
+			return entity
+	return null
+
+
+func _is_root_instance(instance: CardInstance) -> bool:
+	return (
+		instance != null
+		and instance.card_data != null
+		and instance.card_data.card_type == CardData.CardType.ROOT
+	)
 
 
 func _get_event_monster(instance: EventInstance) -> MobInstance:

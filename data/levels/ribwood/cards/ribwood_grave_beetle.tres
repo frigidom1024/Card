@@ -1,15 +1,16 @@
 [gd_resource type="Resource" script_class="CardData" format=3]
 
+[ext_resource type="Script" path="res://scripts/combatv2/card/card_rule.gd" id="1_ehyk2"]
 [ext_resource type="Script" path="res://scripts/card/card_data.gd" id="card_script"]
+
 [resource]
 script = ExtResource("card_script")
-artwork_path = "res://assert/card/ribwood_grave_beetle.png"
 card_id = 1025
 card_name = "守墓甲虫"
-value = 6
-card_type = 1
-damage = 2
-defense = 3
-description = "甲壳像一块小型墓碑的甲虫，会跟着巡礼者守住行囊。"
+value = 14
+artwork_path = "res://assert/card/ribwood_grave_beetle.png"
+max_points = 3
+armor = 2
+description = "守墓甲虫伏在行囊上，硬壳会替旅人承受撞击。无额外效果。"
 tags = Array[int]([0, 1, 5])
-rarity = 0
+rarity = 1
