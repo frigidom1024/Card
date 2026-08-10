@@ -9,6 +9,15 @@ const NextCardPointBonusRuleScript = preload(
 const NextCardArmorBonusRuleScript = preload(
 	"res://scripts/combatv2/card/rules/next_card_armor_bonus_rule.gd"
 )
+const ArmoredNextCardPointBonusRuleScript = preload(
+	"res://scripts/combatv2/card/rules/armored_next_card_point_bonus_rule.gd"
+)
+const ChainLengthHeadPointBonusRuleScript = preload(
+	"res://scripts/combatv2/card/rules/chain_length_head_point_bonus_rule.gd"
+)
+const ChainLengthHeadArmorBonusRuleScript = preload(
+	"res://scripts/combatv2/card/rules/chain_length_head_armor_bonus_rule.gd"
+)
 
 var _failure_count := 0
 
@@ -23,6 +32,9 @@ func _run_tests() -> void:
 	_test_effective_count_stops_after_successful_uses()
 	_test_non_adjacent_card_does_not_consume_rule_use()
 	_test_adjacent_support_grants_armor()
+	_test_armored_next_card_requires_current_armor()
+	_test_chain_length_head_point_rule_requires_head_and_threshold()
+	_test_chain_length_head_armor_rule_respects_effective_count()
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -108,6 +120,81 @@ func _test_adjacent_support_grants_armor() -> void:
 
 	_expect(added.current_armor == 2, "adjacent armor rule grants armor to the added card")
 	_expect(support.get_rule_trigger_count(0) == 1, "successful armor rule consumes one use")
+
+
+func _test_armored_next_card_requires_current_armor() -> void:
+	var armored_support := _card("先护后刺", 1)
+	var armor_rule := NextCardArmorBonusRuleScript.new()
+	armor_rule.armor = 1
+	var point_rule := ArmoredNextCardPointBonusRuleScript.new()
+	point_rule.bonus_points = 2
+	armored_support.card_data.effect_rules.append(armor_rule)
+	armored_support.card_data.effect_rules.append(point_rule)
+	var added := _card("受护短刃", 1)
+
+	var applied := CardChainRuleServiceScript.new().resolve_card_added(
+		[_root(), armored_support, added], added
+	)
+
+	_expect(applied == 2, "armor setup and armored point rule both apply")
+	_expect(added.current_armor == 1, "earlier rule grants armor before condition is checked")
+	_expect(added.current_points == 3, "armored adjacent card gains two points")
+	_expect(armored_support.get_rule_trigger_count(1) == 1, "armored point rule records only success")
+
+	var unarmored_support := _card("只会缝合", 1)
+	var unarmored_rule := ArmoredNextCardPointBonusRuleScript.new()
+	unarmored_rule.bonus_points = 2
+	unarmored_support.card_data.effect_rules.append(unarmored_rule)
+	var unarmored_added := _card("无甲短刃", 1)
+
+	applied = CardChainRuleServiceScript.new().resolve_card_added(
+		[_root(), unarmored_support, unarmored_added], unarmored_added
+	)
+
+	_expect(applied == 0, "unarmored adjacent card does not apply the rule")
+	_expect(unarmored_added.current_points == 1, "unarmored card keeps its base points")
+	_expect(unarmored_support.get_rule_trigger_count(0) == 0, "failed armor condition consumes no use")
+
+
+func _test_chain_length_head_point_rule_requires_head_and_threshold() -> void:
+	var support := _card("长链火刃", 1)
+	var rule := ChainLengthHeadPointBonusRuleScript.new()
+	rule.minimum_chain_size = 4
+	rule.bonus_points = 2
+	support.card_data.effect_rules.append(rule)
+	var short_head := _card("短链头部", 1)
+	var qualifying_head := _card("长链头部", 1)
+	var non_head := _card("非头部", 1)
+	var later_head := _card("更新头部", 1)
+	var service := CardChainRuleServiceScript.new()
+
+	service.resolve_card_added([_root(), support, short_head], short_head)
+	service.resolve_card_added([_root(), support, _card("过渡", 1), qualifying_head], qualifying_head)
+	service.resolve_card_added([_root(), support, non_head, later_head], non_head)
+
+	_expect(short_head.current_points == 1, "short chain head receives no point bonus")
+	_expect(qualifying_head.current_points == 3, "four-card chain head gains two points")
+	_expect(non_head.current_points == 1, "non-head card receives no long-chain bonus")
+	_expect(support.get_rule_trigger_count(0) == 1, "only qualifying head consumes the point rule")
+
+
+func _test_chain_length_head_armor_rule_respects_effective_count() -> void:
+	var support := _card("长链护符", 1)
+	var rule := ChainLengthHeadArmorBonusRuleScript.new()
+	rule.minimum_chain_size = 4
+	rule.armor = 2
+	rule.effective_count = 1
+	support.card_data.effect_rules.append(rule)
+	var first_head := _card("第一长链头部", 1)
+	var second_head := _card("第二长链头部", 1)
+	var service := CardChainRuleServiceScript.new()
+
+	service.resolve_card_added([_root(), support, _card("过渡一", 1), first_head], first_head)
+	service.resolve_card_added([_root(), support, _card("过渡二", 1), second_head], second_head)
+
+	_expect(first_head.current_armor == 2, "first qualifying head gains two armor")
+	_expect(second_head.current_armor == 0, "exhausted armor rule grants no armor")
+	_expect(support.get_rule_trigger_count(0) == 1, "armor rule consumes one successful use")
 
 
 func _root() -> CardInstance:

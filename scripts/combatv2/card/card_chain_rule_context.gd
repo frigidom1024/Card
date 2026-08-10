@@ -48,6 +48,12 @@ func is_added_card_head() -> bool:
 	return _added_index >= 0 and _added_index == _chain.size() - 1
 
 
+## Evaluated at placement-rule resolution time, after any earlier rules may
+## have granted armor to this same newly added card.
+func added_card_has_armor() -> bool:
+	return _added_card != null and _added_card.current_armor > 0
+
+
 func add_points_to_added_card(amount: int) -> int:
 	if _added_card == null:
 		return 0
