@@ -40,7 +40,7 @@ func show_zoom(display_only: bool, zoom_enabled: bool) -> bool:
 		push_error("CardInfoController requires a zoom view scene")
 		return false
 
-	var root := _card.get_tree().current_scene
+	var root: Node = _card.get_tree().current_scene
 	if root == null:
 		return false
 
@@ -120,3 +120,4 @@ func _on_zoom_background_input(event: InputEvent, background: ColorRect) -> void
 	if zoom_view != null and zoom_view.get_global_rect().has_point(event.position):
 		return
 	hide_zoom()
+

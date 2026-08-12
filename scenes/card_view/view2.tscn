@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://bw13swiwxl8vv"]
+
+[sub_resource type="GDScript" id="GDScript_hive2"]
+script/source = "extends Control
+
+
+func _draw():
+
+	# 外框
+	draw_rect(
+		Rect2(0,0,128,192),
+		Color(\"#555555\"),
+		false,
+		4
+	)
+
+	# 内框
+	draw_rect(
+		Rect2(4,4,120,184),
+		Color(\"#aaaaaa\"),
+		false,
+		2
+	)
+"
+
+[node name="View2" type="Control" unique_id=1928499993]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = SubResource("GDScript_hive2")

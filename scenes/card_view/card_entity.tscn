@@ -4,6 +4,10 @@
 [ext_resource type="PackedScene" path="res://scenes/card_view/zoom_view.tscn" id="2_noe1h"]
 [ext_resource type="PackedScene" uid="uid://0t2nmkt0asxh" path="res://scenes/card_view/card_view.tscn" id="3_ltfih"]
 [ext_resource type="PackedScene" path="res://scenes/card_view/card_combat_tag_bar.tscn" id="4_tags"]
+[ext_resource type="Script" path="res://scripts/card/card_interaction_controller.gd" id="5_interaction"]
+[ext_resource type="Script" path="res://scripts/card/card_display_controller.gd" id="6_display"]
+[ext_resource type="Script" path="res://scripts/card/card_info_controller.gd" id="7_info"]
+[ext_resource type="Script" path="res://scripts/card/card_tag_controller.gd" id="8_tags_controller"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_p5p3o"]
 size = Vector2(104, 208)
@@ -29,6 +33,18 @@ offset_bottom = 72.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="CardInteractionController" type="Node" parent="." unique_id=225973249]
+script = ExtResource("5_interaction")
+
+[node name="CardDisplayController" type="Node" parent="." unique_id=225973250]
+script = ExtResource("6_display")
+
+[node name="CardInfoController" type="Node" parent="." unique_id=225973251]
+script = ExtResource("7_info")
+
+[node name="CardTagController" type="Node" parent="." unique_id=225973252]
+script = ExtResource("8_tags_controller")
+
 [node name="CombatTagAnchor" parent="." unique_id=1535414076 instance=ExtResource("4_tags")]
 top_level = true
 z_as_relative = false
@@ -38,3 +54,5 @@ anchors_preset = 0
 [connection signal="input_event" from="." to="." method="_on_input_event"]
 [connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]
 [connection signal="mouse_exited" from="." to="." method="_on_mouse_exited"]
+
+
