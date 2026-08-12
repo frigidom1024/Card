@@ -37,20 +37,17 @@ func _init() -> void:
 	_expect(LayoutConfigScript.CELL_SIZE == 104, "CELL_SIZE is 104 at the 1920x1080 baseline")
 	_expect(LayoutConfigScript.CARD_MARGIN == 20, "CARD_MARGIN preserves the configured card inset")
 	_expect(LayoutConfigScript.CARD_W == 84, "CARD_W derives from CELL_SIZE minus margin")
-	_expect(LayoutConfigScript.CARD_H == 188, "CARD_H covers two cells minus margin")
+	_expect(LayoutConfigScript.CARD_H == 154, "CARD_H matches the redesigned card face height")
 	_expect(LayoutConfigScript.HAND_SPACING == 36, "HAND_SPACING derives from CELL_SIZE")
 	_expect(LayoutConfigScript.HAND_STEP == 120, "HAND_STEP is card width plus spacing")
 	_expect(
-		(
-			LayoutConfigScript.CARD_H + LayoutConfigScript.CARD_MARGIN
-			== LayoutConfigScript.CELL_SIZE * 2
-		),
-		"card height plus margin fills exactly two cells"
+		LayoutConfigScript.card_view_rect(104).size == Vector2(84, 154),
+		"card face rectangle matches the redesigned visual card size"
 	)
 
 	var card_rect := LayoutConfigScript.card_view_rect(104)
-	_expect(card_rect.size == Vector2(84, 188), "card view rect size follows cell size")
-	_expect(card_rect.position == Vector2(-42, -94), "card view rect is centered on the entity")
+	_expect(card_rect.size == Vector2(84, 154), "card view rect matches the redesigned card size")
+	_expect(card_rect.position == Vector2(-40, -81), "card view rect matches the CardEntity scene placement")
 
 	var board_pos := LayoutConfigScript.board_origin(Vector2(1920, 1080), 10, 8, 104)
 	_expect(board_pos == Vector2(440, 19), "board origin centers the 1040x832 grid horizontally")
@@ -112,17 +109,17 @@ func _test_card_entity_sizing() -> void:
 		"card collision box covers two resized cells"
 	)
 	var card_view := card.get_node("CardView") as Control
-	_expect(card_view.size == Vector2(84, 188), "card view derives from the configured cell size")
+	_expect(card_view.size == Vector2(84, 154), "card view uses the redesigned card dimensions")
 	card.queue_free()
 
 
 func _test_card_view_label_container() -> void:
 	var view := CardViewScene.instantiate() as Control
 	root.add_child(view)
-	view.size = Vector2(84, 188)
+	view.size = Vector2(84, 154)
 	var label := view.get_node("LabelContainer") as Control
-	_expect(label.offset_bottom == 188.0, "label container pins to the resized card bottom")
-	_expect(label.offset_top == 165.0, "label container bar height stays 23")
+	_expect(label.offset_bottom == 154.0, "label container pins to the redesigned card bottom")
+	_expect(label.offset_top == 131.0, "label container bar height stays 23")
 	view.queue_free()
 
 

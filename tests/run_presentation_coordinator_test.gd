@@ -52,6 +52,7 @@ func _run_tests() -> void:
 	_test_duplicate_bind_is_rejected()
 	_test_hand_count_updates_tray()
 	_test_player_state_sync_updates_crest()
+	_test_retraction_cost_updates_gold_display()
 	_test_modal_lock_request_reaches_drag_layer()
 	_test_failed_flow_cannot_unlock_input()
 	_test_flow_terminal_signals_keep_input_locked()
@@ -143,6 +144,33 @@ func _test_player_state_sync_updates_crest() -> void:
 	_cleanup_fixture(fixture)
 
 
+func _test_retraction_cost_updates_gold_display() -> void:
+	var presentation = _new_presentation()
+	if presentation == null:
+		return
+	var fixture := _make_fixture()
+	fixture.player.gold = 10
+	fixture.retraction.configure(fixture.player)
+	_expect(
+		presentation.configure(
+			fixture.hand,
+			fixture.hand_tray,
+			fixture.crest,
+			fixture.drag_layer,
+			fixture.player,
+			fixture.stats,
+			fixture.faith,
+			fixture.retraction
+		),
+		"retraction-cost fixture configures"
+	)
+	presentation.sync_all()
+	_expect(fixture.crest.last_gold == 10, "retraction fixture starts with current gold")
+	fixture.retraction.retraction_cost_paid.emit(2, 1, 8)
+	_expect(fixture.crest.last_gold == 8, "retraction cost updates the gold display immediately")
+	_cleanup_fixture(fixture)
+
+
 func _test_modal_lock_request_reaches_drag_layer() -> void:
 	var presentation = _new_presentation()
 	if presentation == null:
@@ -225,7 +253,8 @@ func _configure(presentation, fixture: Dictionary) -> bool:
 		fixture.drag_layer,
 		fixture.player,
 		fixture.stats,
-		fixture.faith
+		fixture.faith,
+		fixture.retraction
 	)
 
 
@@ -250,6 +279,7 @@ func _make_fixture() -> Dictionary:
 	var flow := RunFlowCoordinator.new()
 	var modal := EventModalCoordinator.new()
 	var market := PersistentMarketCoordinator.new()
+	var retraction := CardRetractionCostService.new()
 	return {
 		"hand": hand,
 		"hand_tray": hand_tray,
@@ -261,6 +291,7 @@ func _make_fixture() -> Dictionary:
 		"flow": flow,
 		"modal": modal,
 		"market": market,
+		"retraction": retraction,
 	}
 
 
@@ -269,3 +300,4 @@ func _expect(condition: bool, message: String) -> void:
 		return
 	_failure_count += 1
 	push_error(message)
+

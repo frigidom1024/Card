@@ -6,7 +6,7 @@
 [ext_resource type="Resource" uid="uid://dn5rv3mmyjcq" path="res://data/levels/ribwood/cards/ribwood_warmth_charm.tres" id="charm"]
 [ext_resource type="Script" uid="uid://16lnshifkonp" path="res://scripts/game/event/shop/shop_event_content.gd" id="content"]
 [ext_resource type="Script" uid="uid://dqghli5cxc22q" path="res://scripts/game/event/shop/shop_item_data.gd" id="item"]
-[ext_resource type="Resource" path="res://data/levels/ribwood/cards/ribwood_broken_banner_scout.tres" id="scout"]
+[ext_resource type="Resource" uid="uid://deeohec4mhy0m" path="res://data/levels/ribwood/cards/ribwood_broken_banner_scout.tres" id="scout"]
 [ext_resource type="Resource" uid="uid://cdmmj16i5cdfj" path="res://data/levels/ribwood/cards/ribwood_bone_armor_round_shield.tres" id="shield"]
 
 [sub_resource type="Resource" id="ShopItem_shield"]

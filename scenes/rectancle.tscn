@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://3l83pojgw7v6"]
+
+[ext_resource type="Texture2D" uid="uid://dleai87kjx6tl" path="res://assert/ui/board2px.png" id="1_pny85"]
+
+[node name="Rectancle" type="Control" unique_id=1056984694]
+layout_mode = 3
+anchors_preset = 0
+offset_left = 22.0
+offset_top = 7.0
+offset_right = 195.0
+offset_bottom = 232.0
+
+[node name="NewPiskel(4)" type="Sprite2D" parent="." unique_id=1532193285]
+position = Vector2(62, 72)
+texture = ExtResource("1_pny85")

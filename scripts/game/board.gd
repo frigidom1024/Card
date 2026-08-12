@@ -31,9 +31,22 @@ var _grid_owner: Dictionary = {}
 var _event_grid_owner: Dictionary[Vector2i, BoardEvent] = {}
 
 func _ready() -> void:
-	var background := get_node_or_null("Sprite2D") as Sprite2D
+	var background := get_node_or_null("BoardBackground") as BoardBackground
 	if background != null:
 		background.z_index = RenderPriority.BOARD_BACKGROUND
+	sync_layout()
+
+
+## 同步棋盘视觉背景与 DropDetector 的逻辑尺寸。
+func sync_layout() -> void:
+	# 运行时配置仍可能来自外部资源或编辑器输入；统一钳制为可绘制、可碰撞的最小棋盘。
+	width = maxi(width, 1)
+	height = maxi(height, 1)
+	cell_size = maxi(cell_size, 1)
+
+	var background := get_node_or_null("BoardBackground") as BoardBackground
+	if background != null:
+		background.configure(Vector2(width * cell_size, height * cell_size), cell_size, width, height)
 	_apply_drop_detector_size()
 
 
@@ -50,21 +63,6 @@ func _apply_drop_detector_size() -> void:
 
 
 func _draw():
-	# 绘制棋盘
-	for x in width:
-		for y in height:
-			draw_rect(
-				Rect2(
-					x * cell_size,
-					y * cell_size,
-					cell_size,
-					cell_size
-				),
-				Color.GRAY,
-				false
-			)
-
-
 	# 绘制卡牌预览（黄色=可放置  红色=不可放置）
 	var preview_color = highlight_valid_color if preview_valid else highlight_invalid_color
 	for cell in highlight_cells:

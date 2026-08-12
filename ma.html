@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>按钮九宫格素材生成器</title>
+    <style>
+        body {
+            background: #2d2d2d;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        canvas {
+            border: 2px solid #666;
+            image-rendering: pixelated;
+            margin: 20px;
+        }
+        .info {
+            color: #fff;
+            text-align: center;
+            background: #444;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .preview {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .label {
+            color: #aaa;
+            font-size: 14px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="preview">
+        <div class="label">原始素材 (64x64，像素风格)</div>
+        <canvas id="canvas" width="64" height="64"></canvas>
+        
+        <div class="label">放大预览 (点击图片保存)</div>
+        <canvas id="preview" width="256" height="256" style="cursor:pointer;"></canvas>
+        
+        <div class="info">
+            <p>✅ 尺寸: 64x64 像素</p>
+            <p>🎨 红色填充 + 黑色边框 + 圆角</p>
+            <p>📐 九宫格边距建议: 8px</p>
+            <button onclick="downloadImage()">📥 下载 PNG 素材</button>
+        </div>
+    </div>
+
+    <script>
+        // ============================================
+        // 绘制圆角矩形按钮素材
+        // ============================================
+        
+        const SIZE = 64;
+        const RADIUS = 8;
+        const BORDER_SIZE = 2;
+        
+        // 颜色
+        const FILL_COLOR = [204, 25, 25, 255];    // 红色 #CC1919
+        const BORDER_COLOR = [0, 0, 0, 255];       // 黑色
+        
+        // 主画布
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const imageData = ctx.createImageData(SIZE, SIZE);
+        const data = imageData.data;
+        
+        // 判断像素是否在圆角矩形内
+        function isInsideRoundedRect(x, y, w, h, r) {
+            if (x < 0 || x >= w || y < 0 || y >= h) return false;
+            
+            // 中心矩形区域
+            if (x >= r && x < w - r && y >= r && y < h - r) {
+                return true;
+            }
+            
+            // 检查四个角
+            // 左上
+            if (x < r && y < r) {
+                return (x - r) * (x - r) + (y - r) * (y - r) <= r * r;
+            }
+            // 右上
+            if (x >= w - r && y < r) {
+                return (x - (w - r)) * (x - (w - r)) + (y - r) * (y - r) <= r * r;
+            }
+            // 左下
+            if (x < r && y >= h - r) {
+                return (x - r) * (x - r) + (y - (h - r)) * (y - (h - r)) <= r * r;
+            }
+            // 右下
+            if (x >= w - r && y >= h - r) {
+                return (x - (w - r)) * (x - (w - r)) + (y - (h - r)) * (y - (h - r)) <= r * r;
+            }
+            
+            return false;
+        }
+        
+        // 判断是否在边框上
+        function isOnBorder(x, y, w, h, r, borderSize) {
+            var innerX = x - borderSize;
+            var innerY = y - borderSize;
+            var innerW = w - borderSize * 2;
+            var innerH = h - borderSize * 2;
+            var innerR = Math.max(0, r - borderSize);
+            
+            return !isInsideRoundedRect(innerX, innerY, innerW, innerH, innerR);
+        }
+        
+        // 生成像素数据
+        for (var y = 0; y < SIZE; y++) {
+            for (var x = 0; x < SIZE; x++) {
+                var idx = (y * SIZE + x) * 4;
+                
+                // 检查是否在圆角矩形内
+                if (isInsideRoundedRect(x, y, SIZE, SIZE, RADIUS)) {
+                    // 检查是否在边框上
+                    if (isOnBorder(x, y, SIZE, SIZE, RADIUS, BORDER_SIZE)) {
+                        // 边框颜色
+                        data[idx] = BORDER_COLOR[0];
+                        data[idx + 1] = BORDER_COLOR[1];
+                        data[idx + 2] = BORDER_COLOR[2];
+                        data[idx + 3] = BORDER_COLOR[3];
+                    } else {
+                        // 填充颜色
+                        data[idx] = FILL_COLOR[0];
+                        data[idx + 1] = FILL_COLOR[1];
+                        data[idx + 2] = FILL_COLOR[2];
+                        data[idx + 3] = FILL_COLOR[3];
+                    }
+                } else {
+                    // 透明
+                    data[idx + 3] = 0;
+                }
+            }
+        }
+        
+        // 绘制到画布
+        ctx.putImageData(imageData, 0, 0);
+        
+        // 放大预览
+        const previewCanvas = document.getElementById('preview');
+        const previewCtx = previewCanvas.getContext('2d');
+        previewCtx.imageSmoothingEnabled = false;
+        
+        // 先绘制原始大小，然后放大
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = SIZE;
+        tempCanvas.height = SIZE;
+        const tempCtx = tempCanvas.getContext('2d');
+        tempCtx.putImageData(imageData, 0, 0);
+        
+        // 绘制到预览画布（放大4倍）
+        previewCtx.drawImage(tempCanvas, 0, 0, 256, 256);
+        
+        // 点击下载
+        function downloadImage() {
+            const link = document.createElement('a');
+            link.download = 'button_ninepatch_64x64.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        }
+        
+        // 点击预览图也可以下载
+        previewCanvas.onclick = downloadImage;
+        
+        console.log('✅ 按钮素材已生成！');
+        console.log('📐 NinePatchRect 边距设置: 8px');
+    </script>
+</body>
+</html>

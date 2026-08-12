@@ -4,17 +4,17 @@
 [ext_resource type="PackedScene" uid="uid://ciyw0gfmhhgap" path="res://scenes/game/hand.tscn" id="2_jdad8"]
 [ext_resource type="PackedScene" uid="uid://yddvotpojs2x" path="res://scenes/game/card_manager.tscn" id="3_k4jhu"]
 [ext_resource type="PackedScene" uid="uid://c6j6lgcbmdqrv" path="res://scenes/card_view/card_entity.tscn" id="4_frtjd"]
-[ext_resource type="Resource" path="res://data/levels/ribwood/card_lib.tres" id="5_0rse5"]
+[ext_resource type="Resource" uid="uid://cj14j0xskkkc3" path="res://data/levels/ribwood/card_lib.tres" id="5_0rse5"]
 [ext_resource type="Script" uid="uid://d4g532r3gevbr" path="res://scripts/game/drag_layer.gd" id="6_aonbx"]
 [ext_resource type="PackedScene" uid="uid://bf2h2gqo4hyjl" path="res://scenes/game/board.tscn" id="7_lcbjr"]
 [ext_resource type="Resource" uid="uid://b5ybu7vxrcp4j" path="res://data/player/player_data.tres" id="8_player"]
 [ext_resource type="Resource" uid="uid://5lnyr257q51n" path="res://data/levels/ribwood/event_lib.tres" id="9_event_lib"]
-[ext_resource type="Resource" path="res://data/levels/ribwood/exploration_config.tres" id="10_exploration_config"]
+[ext_resource type="Resource" uid="uid://d3sqca4f0r2eo" path="res://data/levels/ribwood/exploration_config.tres" id="10_exploration_config"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_shop.tscn" id="10_shop_event"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_treasure.tscn" id="11_treasure_event"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_combat.tscn" id="12_combat_event"]
 [ext_resource type="Script" uid="uid://dkoovc0bwysbb" path="res://scripts/game/gameplay_canvas.gd" id="13_gameplay_canvas"]
-[ext_resource type="PackedScene" path="res://scenes/game/hand_tray.tscn" id="15_hand_tray"]
+[ext_resource type="PackedScene" uid="uid://63ase0hw2q5f" path="res://scenes/game/hand_tray.tscn" id="15_hand_tray"]
 [ext_resource type="PackedScene" path="res://scenes/game/pilgrim_crest_hud.tscn" id="16_pilgrim_crest"]
 [ext_resource type="PackedScene" path="res://scenes/game/persistent_market.tscn" id="17_persistent_market"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_hover_preview.tscn" id="18_event_hover_preview"]
@@ -45,15 +45,13 @@ offset_right = 1851.0
 offset_bottom = 730.0
 
 [node name="HandTray" parent="GameplayCanvas" unique_id=1277788652 instance=ExtResource("15_hand_tray")]
-layout_mode = 3
-anchors_preset = 0
-offset_left = 286.0
-offset_top = 846.0
-offset_right = 1822.0
-offset_bottom = 1070.0
+offset_left = 270.0
+offset_top = 847.0
+offset_right = 1806.0
+offset_bottom = 1071.0
 
 [node name="HandManager" parent="GameplayCanvas" unique_id=279800638 instance=ExtResource("2_jdad8")]
-position = Vector2(963, 955)
+position = Vector2(963, 956)
 
 [node name="CardManager" parent="GameplayCanvas" unique_id=869829253 instance=ExtResource("3_k4jhu")]
 position = Vector2(965, 958)
@@ -66,10 +64,10 @@ script = ExtResource("6_aonbx")
 [node name="Board" parent="GameplayCanvas" unique_id=969095891 instance=ExtResource("7_lcbjr")]
 position = Vector2(146, 3)
 
-[node name="EventHoverPreviewLayer" type="CanvasLayer" parent="."]
+[node name="EventHoverPreviewLayer" type="CanvasLayer" parent="." unique_id=782202781]
 layer = 5
 
-[node name="EventHoverPreview" parent="EventHoverPreviewLayer" instance=ExtResource("18_event_hover_preview")]
+[node name="EventHoverPreview" parent="EventHoverPreviewLayer" unique_id=883643485 instance=ExtResource("18_event_hover_preview")]
 visible = false
 
 [node name="EventModalLayer" type="CanvasLayer" parent="." unique_id=1098015688]

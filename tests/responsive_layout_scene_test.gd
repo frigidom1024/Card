@@ -42,12 +42,12 @@ func _run_test() -> void:
         "background layer appears before the routed screen layer"
     )
     _expect(manager == null, "main does not create gameplay before an exploration is selected")
-    _expect(screen_layer != null and screen_layer.get_node_or_null("MainMenuScreen") != null, "main routes boot into the main menu")
+    _expect(screen_layer != null and screen_layer.get_node_or_null("Menu") != null, "main routes boot into the new menu")
     _expect(background != null, "background layer owns a background fill")
     if background != null:
         _expect(background.anchors_preset == Control.PRESET_FULL_RECT, "background fill covers the window")
         _expect(background.mouse_filter == Control.MOUSE_FILTER_IGNORE, "background never blocks game input")
-        _expect(background.color == Color(0.035, 0.075, 0.055, 1), "background fill uses the safe forest green")
+        _expect(background.color == Color(0.96862745, 0.9607843, 0.94509804, 1), "background fill uses the warm white menu color")
     if background != null:
         background.size = Vector2(1.0, 1.0)
         root.get_viewport().size_changed.emit()

@@ -14,6 +14,7 @@ var _drag_layer: DragLayer
 var _player_data: PlayerData
 var _player_stats: CombatStats
 var _faith: FaithService
+var _retraction_cost: CardRetractionCostService
 
 var _flow: RunFlowCoordinator
 var _modal: EventModalCoordinator
@@ -32,7 +33,8 @@ func configure(
 	drag_layer: DragLayer,
 	player_data: PlayerData,
 	player_stats: CombatStats,
-	faith: FaithService = null
+	faith: FaithService = null,
+	retraction_cost: CardRetractionCostService = null
 ) -> bool:
 	if _configured:
 		return false
@@ -52,6 +54,7 @@ func configure(
 	_player_data = player_data
 	_player_stats = player_stats
 	_faith = faith
+	_retraction_cost = retraction_cost
 	_configured = true
 	_connect_presentation_signals()
 	return true
@@ -110,6 +113,8 @@ func _connect_presentation_signals() -> void:
 		_hand_area.hand_count_changed.connect(_on_hand_count_changed)
 	if _faith != null and not _faith.faith_changed.is_connected(_on_faith_changed):
 		_faith.faith_changed.connect(_on_faith_changed)
+	if _retraction_cost != null and not _retraction_cost.retraction_cost_paid.is_connected(_on_retraction_cost_paid):
+		_retraction_cost.retraction_cost_paid.connect(_on_retraction_cost_paid)
 
 
 func _connect_domain_signals() -> void:
@@ -151,6 +156,11 @@ func _sync_hand_tray(current_count: int, max_count: int) -> void:
 func _on_faith_changed(current_faith: int) -> void:
 	if _crest != null:
 		_crest.set_faith(current_faith)
+
+
+func _on_retraction_cost_paid(_cost: int, _returned_count: int, remaining_gold: int) -> void:
+	if _crest != null:
+		_crest.set_gold(remaining_gold)
 
 
 func _on_market_player_state_changed() -> void:

@@ -1,0 +1,127 @@
+[gd_scene format=3 uid="uid://chl73nty5dp5e"]
+
+[ext_resource type="Texture2D" uid="uid://cuowft6ecdsmd" path="res://assert/ui/board6px.png" id="1_v86rl"]
+[ext_resource type="FontFile" uid="uid://5qd1jdkfevdl" path="res://assert/font/press_start_2p/PressStart2P.ttf" id="2_13sgg"]
+[ext_resource type="Script" uid="uid://biuj72gsxcko2" path="res://scenes/sep_line.gd" id="3_i6lef"]
+[ext_resource type="Texture2D" uid="uid://duribk4xfiv8t" path="res://assert/ui/New Piskel (8).png" id="4_70i5f"]
+[ext_resource type="Texture2D" uid="uid://32t2b8gh5e3q" path="res://assert/ui/button/button_normal.png" id="5_mj5lg"]
+[ext_resource type="Texture2D" uid="uid://bn4n1jq8bej8b" path="res://assert/ui/button/button_press.png" id="6_ufwb2"]
+[ext_resource type="Texture2D" uid="uid://y74y80tbtor8" path="res://assert/ui/button/button_hover.png" id="7_6cdou"]
+[ext_resource type="Script" uid="uid://cbuhf1nve87kp" path="res://scripts/home/menu_screen.gd" id="8_menu_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i42df"]
+bg_color = Color(1, 1, 1, 1)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ygwf5"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_ygwf5"]
+texture = ExtResource("5_mj5lg")
+texture_margin_left = 44.0
+texture_margin_top = 41.0
+texture_margin_right = 44.0
+texture_margin_bottom = 41.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_alb72"]
+texture = ExtResource("6_ufwb2")
+texture_margin_left = 44.0
+texture_margin_top = 41.0
+texture_margin_right = 44.0
+texture_margin_bottom = 41.0
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_a47l7"]
+texture = ExtResource("7_6cdou")
+texture_margin_left = 44.0
+texture_margin_top = 41.0
+texture_margin_right = 44.0
+texture_margin_bottom = 41.0
+
+[node name="Menu" type="Panel" unique_id=2075295373]
+offset_right = 1922.0
+offset_bottom = 1082.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_i42df")
+script = ExtResource("8_menu_script")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=318252566]
+layout_mode = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+theme_override_constants/margin_left = 60
+theme_override_constants/margin_top = 60
+theme_override_constants/margin_right = 60
+theme_override_constants/margin_bottom = 60
+
+[node name="Panel" type="Panel" parent="MarginContainer" unique_id=378406522]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_ygwf5")
+
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer/Panel" unique_id=2047042605]
+layout_mode = 0
+offset_right = 1800.0
+offset_bottom = 960.0
+texture = ExtResource("1_v86rl")
+patch_margin_left = 30
+patch_margin_top = 30
+patch_margin_right = 30
+patch_margin_bottom = 30
+
+[node name="Title2" type="RichTextLabel" parent="MarginContainer/Panel" unique_id=931866518]
+layout_mode = 0
+offset_left = 104.0
+offset_top = 301.0
+offset_right = 1144.0
+offset_bottom = 381.0
+theme_override_fonts/normal_font = ExtResource("2_13sgg")
+theme_override_font_sizes/normal_font_size = 80
+bbcode_enabled = true
+text = "[color=\"#000000\"]STACK[/color][color=\"#d92424\"]//[/color][color=\"#000000\"]STRIKE[/color]"
+fit_content = true
+autowrap_mode = 0
+
+[node name="Title3" type="RichTextLabel" parent="MarginContainer/Panel" unique_id=1436420125]
+layout_mode = 0
+offset_left = 302.0
+offset_top = 408.0
+offset_right = 902.0
+offset_bottom = 428.0
+theme_override_fonts/normal_font = ExtResource("2_13sgg")
+theme_override_font_sizes/normal_font_size = 20
+bbcode_enabled = true
+text = "[color=\"#000000\"]BUILD A[/color] [color=\"#d92424\"]DECK.[/color] [color=\"#000000\"]BREAK THE[/color] [color=\"#d92424\"]BOARD.[/color]"
+fit_content = true
+autowrap_mode = 0
+
+[node name="SepLine" type="ColorRect" parent="MarginContainer/Panel" unique_id=1736800427]
+custom_minimum_size = Vector2(10, 850)
+layout_mode = 0
+offset_left = 1225.0
+offset_top = 55.0
+offset_right = 1235.0
+offset_bottom = 905.0
+color = Color(0.44291046, 0.44291088, 0.4429106, 1)
+script = ExtResource("3_i6lef")
+
+[node name="Card" type="NinePatchRect" parent="MarginContainer/Panel" unique_id=146246453]
+layout_mode = 0
+offset_left = 1345.0
+offset_top = 43.0
+offset_right = 1689.0
+offset_bottom = 661.24884
+texture = ExtResource("4_70i5f")
+patch_margin_left = 35
+patch_margin_top = 35
+patch_margin_right = 35
+patch_margin_bottom = 35
+
+[node name="BtnStart" type="Button" parent="MarginContainer/Panel" unique_id=1272719359]
+layout_mode = 0
+offset_left = 1361.0
+offset_top = 706.0
+offset_right = 1684.0
+offset_bottom = 835.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_13sgg")
+theme_override_font_sizes/font_size = 47
+theme_override_styles/normal = SubResource("StyleBoxTexture_ygwf5")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_alb72")
+theme_override_styles/hover = SubResource("StyleBoxTexture_a47l7")
+text = "START"

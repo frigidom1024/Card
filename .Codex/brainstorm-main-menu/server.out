@@ -1,0 +1,10 @@
+{"type":"server-started","port":58736,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:58736/?key=fd1feac97f9de23566240167d6ad595f09650814e6cf21a4bbcf90ef84fd75c1","screen_dir":"D:\\project\\MonoCard\\mono-card\\.Codex\\brainstorm-main-menu\\content","state_dir":"D:\\project\\MonoCard\\mono-card\\.Codex\\brainstorm-main-menu\\state","idle_timeout_ms":14400000}
+{"type":"screen-added","file":"D:\\project\\MonoCard\\mono-card\\.Codex\\brainstorm-main-menu\\content\\main-menu-directions.html"}
+{"type":"screen-updated","file":"D:\\project\\MonoCard\\mono-card\\.Codex\\brainstorm-main-menu\\content\\main-menu-directions.html"}
+{"type":"screen-updated","file":"D:\\project\\MonoCard\\mono-card\\.Codex\\brainstorm-main-menu\\content\\main-menu-directions.html"}
+{"type":"screen-updated","file":"D:\\project\\MonoCard\\mono-card\\.Codex\\brainstorm-main-menu\\content\\main-menu-directions.html"}
+{"type":"screen-updated","file":"D:\\project\\MonoCard\\mono-card\\.Codex\\brainstorm-main-menu\\content\\main-menu-directions.html"}
+{"type":"screen-updated","file":"D:\\project\\MonoCard\\mono-card\\.Codex\\brainstorm-main-menu\\content\\main-menu-directions.html"}
+{"type":"screen-updated","file":"D:\\project\\MonoCard\\mono-card\\.Codex\\brainstorm-main-menu\\content\\main-menu-directions.html"}
+{"type":"screen-updated","file":"D:\\project\\MonoCard\\mono-card\\.Codex\\brainstorm-main-menu\\content\\main-menu-directions.html"}
+{"type":"server-stopped","reason":"idle timeout"}

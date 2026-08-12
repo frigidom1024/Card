@@ -209,4 +209,3 @@ func get_cards_ahead_of_current(count: int = -1) -> Array[CardInstance]:
 			cards.append(card)
 		next_index += 1
 	return cards
-

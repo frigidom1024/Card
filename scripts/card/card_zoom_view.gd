@@ -2,6 +2,7 @@ extends PanelContainer
 
 const CardViewScene = preload("res://scenes/card_view/card_view.tscn")
 const CardDetailStatSealScene = preload("res://scenes/card_view/card_detail_stat_seal.tscn")
+const ZOOM_PREVIEW_SIZE := Vector2(210, 385)
 
 var card_inst: CardInstance
 
@@ -50,8 +51,8 @@ func _update_preview() -> void:
 		preview = CardViewScene.instantiate() as Control
 		preview.name = "CardPreview"
 		card_preview_host.add_child(preview)
-	preview.custom_minimum_size = Vector2(252, 378)
-	preview.size = Vector2(252, 378)
+	preview.custom_minimum_size = ZOOM_PREVIEW_SIZE
+	preview.size = ZOOM_PREVIEW_SIZE
 	preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	preview.set_value(card_inst)
 	preview.refresh_display()

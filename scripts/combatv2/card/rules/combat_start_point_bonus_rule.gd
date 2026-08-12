@@ -7,7 +7,7 @@ extends CardRule
 
 ## Grants this card combat-only points through the common effect pipeline.
 ## CombatService2 removes the remaining temporary amount at encounter end.
-func on_combat_started(draft) -> bool:
+func on_combat_started(draft:CombatEffectDraft) -> bool:
 	if draft == null or draft.current_card == null or bonus_points <= 0:
 		return false
 	draft.add_card_points(

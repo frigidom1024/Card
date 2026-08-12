@@ -1,6 +1,6 @@
 extends Node2D
 
-const MAIN_MENU_SCENE := preload("res://scenes/home/main_menu_screen.tscn")
+const MAIN_MENU_SCENE := preload("res://scenes/menu.tscn")
 const ROOT_SELECTION_SCENE := preload("res://scenes/home/root_selection_screen.tscn")
 const GAME_MANAGER_SCENE := preload("res://scenes/game/game_manager.tscn")
 
@@ -31,7 +31,7 @@ func _ready() -> void:
 func _show_main_menu() -> void:
 	_clear_active_content()
 	var menu := MAIN_MENU_SCENE.instantiate() as Control
-	menu.name = "MainMenuScreen"
+	menu.name = "Menu"
 	menu.connect("start_game_requested", _show_root_selection)
 	screen_layer.add_child(menu)
 	_active_screen = menu

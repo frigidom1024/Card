@@ -14,18 +14,22 @@ const MAX_GAMEPLAY_SCALE := 1.35
 const CELL_SIZE := 104
 const CARD_MARGIN := 20
 const CARD_W := CELL_SIZE - CARD_MARGIN
-const CARD_H := CELL_SIZE * 2 - CARD_MARGIN
+## 新版卡框比原先的两格长卡更紧凑；碰撞范围仍由 CardEntity 保持为 1×2 格。
+const CARD_FACE_HEIGHT_REDUCTION := 34
+const CARD_H := CELL_SIZE * 2 - CARD_MARGIN - CARD_FACE_HEIGHT_REDUCTION
+const CARD_FACE_OFFSET := Vector2(2.0, -4.0)
 const HAND_SPACING := int(CELL_SIZE * 0.35)
 const HAND_STEP := CARD_W + HAND_SPACING
 const BOARD_TOP_MARGIN := 19.0
 const HAND_BOTTOM_MARGIN := 115.0
 
 
-## 卡面在卡牌实体局部坐标下的矩形（以两格中心为原点）。
+## 卡面在卡牌实体局部坐标下的矩形。
+## 保留碰撞区的 1×2 格逻辑，但使用新版较短的卡框及其视觉偏移。
 static func card_view_rect(cell_size: int) -> Rect2:
 	var w := cell_size - CARD_MARGIN
-	var h := cell_size * 2 - CARD_MARGIN
-	return Rect2(-w / 2.0, -h / 2.0, w, h)
+	var h := cell_size * 2 - CARD_MARGIN - CARD_FACE_HEIGHT_REDUCTION
+	return Rect2(Vector2(-w / 2.0, -h / 2.0) + CARD_FACE_OFFSET, Vector2(w, h))
 
 
 ## 棋盘节点原点：水平居中，垂直方向让出底部手牌区。

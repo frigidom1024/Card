@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://c0s5yyn6jsir1" path="res://scripts/game/event/encounter/monster_event_content.gd" id="content"]
 [ext_resource type="Script" uid="uid://c176jwqgtrlqu" path="res://scripts/game/event/encounter/encounter_drop_entry.gd" id="drop_entry"]
 [ext_resource type="Resource" uid="uid://m6hgxus4fc6b" path="res://data/levels/ribwood/mobs/ribwood_marrow_rat_echo.tres" id="mob"]
-[ext_resource type="Resource" uid="uid://8jnyfwlm1v8a" path="res://data/levels/ribwood/cards/ribwood_old_tinder.tres" id="old_tinder"]
+[ext_resource type="Resource" uid="uid://c6gui3870o4j" path="res://data/levels/ribwood/cards/ribwood_old_tinder.tres" id="old_tinder"]
 
 [sub_resource type="Resource" id="Drop_gold"]
 script = ExtResource("drop_entry")

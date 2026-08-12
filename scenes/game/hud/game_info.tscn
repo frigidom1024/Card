@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://txjxkqmuwx5"]
+
+[ext_resource type="StyleBox" uid="uid://d26o07b1e6h87" path="res://assert/ui/info_panel.tres" id="1_1hsyp"]
+
+[node name="GameInfo" type="Panel" unique_id=1925670509]
+offset_left = 50.0
+offset_top = 241.0
+offset_right = 450.0
+offset_bottom = 441.0
+theme_override_styles/panel = ExtResource("1_1hsyp")

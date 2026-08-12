@@ -1,12 +1,15 @@
 [gd_scene format=3 uid="uid://bf2h2gqo4hyjl"]
 
 [ext_resource type="Script" uid="uid://dh5vjxc0y58eg" path="res://scripts/game/board.gd" id="1_bw3vb"]
+[ext_resource type="PackedScene" path="res://scenes/game/board_background.tscn" id="2_board_background"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_8ba60"]
 size = Vector2(1040, 832)
 
 [node name="Board" type="Node2D" unique_id=969095891]
 script = ExtResource("1_bw3vb")
+
+[node name="BoardBackground" parent="." instance=ExtResource("2_board_background")]
 
 [node name="DropDetector" type="Area2D" parent="." unique_id=517732839]
 collision_layer = 0

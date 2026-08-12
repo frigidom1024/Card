@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c0s5yyn6jsir1" path="res://scripts/game/event/encounter/monster_event_content.gd" id="content"]
 [ext_resource type="Script" uid="uid://c176jwqgtrlqu" path="res://scripts/game/event/encounter/encounter_drop_entry.gd" id="drop_entry"]
-[ext_resource type="Resource" uid="uid://c743ld02n57c0" path="res://data/levels/ribwood/cards/ribwood_folded_rib_shield.tres" id="folded_rib_shield"]
+[ext_resource type="Resource" uid="uid://cumkomo5jd1tn" path="res://data/levels/ribwood/cards/ribwood_folded_rib_shield.tres" id="folded_rib_shield"]
 [ext_resource type="Resource" uid="uid://csxn2n53f5nxr" path="res://data/levels/ribwood/mobs/ribwood_fallen_rib_wolf_echo.tres" id="mob"]
 
 [sub_resource type="Resource" id="Drop_gold"]

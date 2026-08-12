@@ -39,7 +39,10 @@ func _run_test() -> void:
 	var hint := zoom_view.get_node_or_null("SheetMargin/Sheet/CloseHint") as Label if zoom_view != null else null
 	_expect(zoom_view != null and zoom_view.mouse_filter == Control.MOUSE_FILTER_STOP, "record blocks clicks inside its sheet")
 	_expect(preview != null and preview.get("card_inst") == card.card_instance, "record preview uses the opened CardInstance")
+	_expect(preview != null and preview is Panel, "record preview uses the redesigned Panel card view")
 	_expect(preview != null and preview is Control and preview.mouse_filter == Control.MOUSE_FILTER_IGNORE, "record preview is display-only")
+	if preview is Control:
+		_expect(is_equal_approx((preview as Control).size.x / (preview as Control).size.y, 210.0 / 385.0), "record preview preserves the redesigned card aspect ratio")
 	_expect(detail != null, "record includes a detail column")
 	_expect(hint != null and hint.text == "CLICK OUTSIDE OR PRESS ESC TO CLOSE", "record uses the approved English close hint")
 

@@ -63,7 +63,7 @@ var _on_board := false
 var drag_layer
 var _card_info_overlay: CardInfoOverlay = null
 
-@onready var _card_view: ColorRect = $CardView
+@onready var _card_view: Control = $CardView
 @onready var _combat_tag_anchor: Control = $CombatTagAnchor
 @onready var _tag_container: HBoxContainer = $CombatTagAnchor/TagContainer
 
@@ -179,7 +179,7 @@ func _on_card_view_gui_input(event: InputEvent) -> void:
 	_on_input_event(get_viewport(), event, 0)
 
 
-## 卡牌尺寸由 LayoutConfig.CELL_SIZE 派生（碰撞盒 1×2 格，卡面居中）
+## 卡牌碰撞盒仍覆盖 1×2 格；卡面位置与尺寸统一由 LayoutConfig 提供。
 func _apply_layout() -> void:
 	var shape := RectangleShape2D.new()
 	shape.size = Vector2(LayoutConfig.CELL_SIZE, LayoutConfig.CELL_SIZE * 2)

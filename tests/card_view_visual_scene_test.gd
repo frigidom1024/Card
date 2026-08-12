@@ -30,12 +30,14 @@ func _run_tests() -> void:
 	_test_editable_visual_scenes_exist()
 	_test_rarity_frames_include_subtle_paper_depth()
 	await _test_card_view_has_visual_hosts()
+	await _test_card_view_visual_layers_do_not_capture_pointer_input()
 	await _test_card_view_head_indicator_points_outward_and_rotates_with_card()
-	await _test_scene_preview_artwork_overlays_placeholder()
-	await _test_card_view_shows_placeholder_without_artwork()
+	await _test_card_view_uses_the_new_panel_shell()
+	await _test_card_view_hides_artwork_without_artwork_data()
 	await _test_card_view_loads_artwork_from_data_path()
 	await _test_card_entity_loads_artwork_from_uid_path()
 	await _test_point_tag_stays_upright_below_rotated_card()
+	await _test_shadow_stays_screen_bottom_right_after_rotation()
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -68,8 +70,25 @@ func _test_card_view_has_visual_hosts() -> void:
 	root.add_child(view)
 	await process_frame
 
-	_expect(view.get_node_or_null("FrameHost") != null, "card view exposes a frame host")
+	_expect(view is Panel, "card view uses the new Panel shell")
+	_expect(view.get_theme_stylebox("panel") != null, "card view exposes its panel frame style")
+	_expect(view.get_node_or_null("Artwork") is TextureRect, "card view exposes an artwork texture layer")
 	_expect(view.get_node_or_null("NamePlate") == null, "card view does not render a removed title plate")
+
+	view.free()
+	await process_frame
+
+
+func _test_card_view_visual_layers_do_not_capture_pointer_input() -> void:
+	var view := CardViewScene.instantiate() as Control
+	root.add_child(view)
+	await process_frame
+
+	for node_path in ["Card", "Shadow", "FrameHost", "HeadIndicator", "LabelContainer", "Artwork"]:
+		var visual_layer := view.get_node_or_null(node_path) as Control
+		_expect(visual_layer != null, "card view exposes visual layer %s" % node_path)
+		if visual_layer != null:
+			_expect(visual_layer.mouse_filter == Control.MOUSE_FILTER_IGNORE, "%s does not capture card pointer input" % node_path)
 
 	view.free()
 	await process_frame
@@ -112,37 +131,33 @@ func _test_card_view_head_indicator_points_outward_and_rotates_with_card() -> vo
 	await process_frame
 
 
-func _test_scene_preview_artwork_overlays_placeholder() -> void:
+func _test_card_view_uses_the_new_panel_shell() -> void:
 	var view := CardViewScene.instantiate() as Control
 	root.add_child(view)
 	await process_frame
 
 	var artwork := view.get_node_or_null("Artwork") as TextureRect
-	var placeholder := view.get_node_or_null("ArtworkPlaceholder") as Control
-	_expect(artwork != null and placeholder != null and artwork.get_index() > placeholder.get_index(), "scene-preview artwork renders above the placeholder")
+	_expect(artwork != null, "panel card view keeps an artwork layer")
+	_expect(view.get_node_or_null("ArtworkPlaceholder") == null, "panel card view no longer depends on the removed artwork placeholder")
+	_expect(artwork != null and artwork.get_parent() == view, "artwork remains inside the panel card view")
 
 	view.free()
 	await process_frame
 
 
-func _test_card_view_shows_placeholder_without_artwork() -> void:
+func _test_card_view_hides_artwork_without_artwork_data() -> void:
 	var view := CardViewScene.instantiate() as Control
 	root.add_child(view)
 	await process_frame
 
 	var artwork := view.get_node_or_null("Artwork") as TextureRect
-	var placeholder := view.get_node_or_null("ArtworkPlaceholder") as Control
 	_expect(artwork != null, "card view exposes an artwork texture layer")
-	_expect(placeholder != null, "card view exposes a no-art placeholder")
 	if artwork != null:
 		_expect(not artwork.visible, "card view hides artwork when no image path exists")
 		_expect(artwork.texture == null, "card view clears artwork without an image path")
-	if placeholder != null:
-		_expect(placeholder.visible, "card view shows placeholder when no image path exists")
 
 	view.free()
 	await process_frame
-
 
 func _test_card_view_loads_artwork_from_data_path() -> void:
 	var data := CardData.new()
@@ -159,12 +174,9 @@ func _test_card_view_loads_artwork_from_data_path() -> void:
 	await process_frame
 
 	var artwork := view.get_node_or_null("Artwork") as TextureRect
-	var placeholder := view.get_node_or_null("ArtworkPlaceholder") as Control
-	var frame_host := view.get_node_or_null("FrameHost") as Control
 	_expect(artwork != null and artwork.visible, "card view shows artwork for a valid path")
 	_expect(artwork != null and artwork.texture != null, "card view loads the configured artwork texture")
-	_expect(placeholder != null and not placeholder.visible, "card view hides placeholder after artwork loads")
-	_expect(artwork != null and frame_host != null and artwork.get_index() < frame_host.get_index(), "card frame renders above artwork")
+	_expect(view.get_node_or_null("ArtworkPlaceholder") == null, "card view renders without the removed placeholder node")
 
 	view.free()
 	await process_frame
@@ -180,9 +192,8 @@ func _test_card_entity_loads_artwork_from_uid_path() -> void:
 	await process_frame
 
 	var artwork := card.get_node_or_null("CardView/Artwork") as TextureRect
-	var placeholder := card.get_node_or_null("CardView/ArtworkPlaceholder") as Control
 	_expect(artwork != null and artwork.visible and artwork.texture != null, "card entity renders artwork from an Inspector UID path")
-	_expect(placeholder != null and not placeholder.visible, "card entity hides the placeholder after a UID artwork loads")
+	_expect(card.get_node_or_null("CardView/ArtworkPlaceholder") == null, "card entity no longer expects an artwork placeholder")
 
 	card.free()
 	await process_frame
@@ -221,6 +232,34 @@ func _test_point_tag_stays_upright_below_rotated_card() -> void:
 		_expect(is_zero_approx(tag_anchor.get_global_transform_with_canvas().get_rotation()), "combat tags stay upright when their card rotates")
 
 	card.free()
+	await process_frame
+
+
+func _test_shadow_stays_screen_bottom_right_after_rotation() -> void:
+	var view := CardViewScene.instantiate() as Control
+	root.add_child(view)
+	await process_frame
+
+	var card := view.get_node_or_null("Card") as Control
+	var shadow := view.get_node_or_null("Shadow") as Control
+	_expect(card != null, "card view exposes the card face layer")
+	_expect(shadow != null, "card view exposes the shadow layer")
+	if card == null or shadow == null:
+		view.free()
+		await process_frame
+		return
+
+	view.shadow_screen_offset = Vector2(7.0, 5.0)
+	for card_rotation in [0.0, PI / 2.0, PI, PI * 1.5]:
+		view.rotation = card_rotation
+		await process_frame
+		var card_global_position := card.get_global_transform_with_canvas() * Vector2.ZERO
+		var shadow_global_position := shadow.get_global_transform_with_canvas() * Vector2.ZERO
+		var actual_offset := shadow_global_position - card_global_position
+		_expect(actual_offset.distance_to(view.shadow_screen_offset) < 0.1, "shadow stays at the configured screen bottom-right offset after rotation %.2f" % card_rotation)
+		_expect(shadow.size == card.size, "shadow keeps the same size as the card face")
+
+	view.free()
 	await process_frame
 
 

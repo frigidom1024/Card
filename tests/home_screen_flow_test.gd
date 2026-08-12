@@ -1,6 +1,6 @@
 extends SceneTree
 
-const MAIN_MENU_SCENE_PATH := "res://scenes/home/main_menu_screen.tscn"
+const MAIN_MENU_SCENE_PATH := "res://scenes/menu.tscn"
 const ROOT_SELECTION_SCENE_PATH := "res://scenes/home/root_selection_screen.tscn"
 const PROJECT_CONFIG_PATH := "res://project.godot"
 const RevivalDeck = preload("res://data/starting_decks/revival_starting_deck.tres")
@@ -30,79 +30,39 @@ func _test_main_menu_structure_and_single_start_request() -> void:
 	)
 
 	var packed_scene := load(MAIN_MENU_SCENE_PATH) as PackedScene
-	_expect(packed_scene != null, "main menu scene loads")
+	_expect(packed_scene != null, "new menu scene loads")
 	if packed_scene == null:
 		return
 
 	var menu := packed_scene.instantiate() as Control
-	_expect(menu != null, "main menu scene instantiates as Control")
+	_expect(menu != null, "new menu scene instantiates as Control")
 	if menu == null:
 		return
 
 	root.add_child(menu)
 	await process_frame
 
-	var logo := menu.get_node_or_null("SafeArea/Layout/LogoBlock/GameLogo") as Label
-	var subtitle := menu.get_node_or_null("SafeArea/Layout/LogoBlock/GameSubtitle") as Label
-	var action_panel := menu.get_node_or_null(
-		"SafeArea/Layout/ActionBlock/ActionPanel"
-	) as PanelContainer
-	var menu_list := menu.get_node_or_null(
-		"SafeArea/Layout/ActionBlock/ActionPanel/MenuList"
-	) as VBoxContainer
-	var start := menu.get_node_or_null(
-		"SafeArea/Layout/ActionBlock/ActionPanel/MenuList/StartGameButton"
-	) as Button
-	var version := menu.get_node_or_null("SafeArea/Layout/FooterBlock/VersionLabel") as Label
-	var top_gradient := menu.get_node_or_null("TopGradientOverlay") as TextureRect
-	_expect(logo != null and logo.text == "STACK//STRIKE", "menu exposes the STACK//STRIKE title")
-	_expect(subtitle != null and subtitle.text == "BUILD A DECK. BREAK THE BOARD.", "menu exposes the STACK//STRIKE subtitle")
-	_expect(
-		logo != null and logo.get_theme_color("font_color").is_equal_approx(Color(0.95, 0.69, 0.17, 1)),
-		"menu title uses bright antique gold"
-	)
-	_expect(
-		logo != null and logo.get_theme_color("font_outline_color").is_equal_approx(Color(0.16, 0.075, 0.018, 1)),
-		"menu title uses near-black brown outline"
-	)
-	_expect(logo != null and logo.get_theme_constant("outline_size") == 4, "menu title uses a substantial gold-foil outline")
-	_expect(
-		subtitle != null and subtitle.get_theme_color("font_color").is_equal_approx(Color(0.69, 0.50, 0.20, 1)),
-		"menu subtitle uses parchment gold"
-	)
-	_expect(subtitle != null and subtitle.get_theme_constant("outline_size") == 1, "menu subtitle keeps a fine outline")
-	_expect(
-		action_panel != null and action_panel.custom_minimum_size == Vector2(430, 150),
-		"menu centers its action within the approved translucent action panel"
-	)
-	_expect(menu_list != null and menu_list.get_child_count() == 1, "action panel contains only the primary menu action")
-	_expect(start != null and start.text == "BEGIN PILGRIMAGE", "menu exposes the pilgrimage action in English")
-	_expect(menu.get_node_or_null("AtmosphereOverlay") == null, "menu leaves the illustration free of a full-screen dark overlay")
-	_expect(
-		top_gradient != null and top_gradient.mouse_filter == Control.MOUSE_FILTER_IGNORE,
-		"menu has a non-interactive top readability gradient"
-	)
+	var title := menu.get_node_or_null("MarginContainer/Panel/Title2") as RichTextLabel
+	var subtitle := menu.get_node_or_null("MarginContainer/Panel/Title3") as RichTextLabel
+	var start := menu.get_node_or_null("MarginContainer/Panel/BtnStart") as Button
+	_expect(title != null and "STACK" in title.text and "STRIKE" in title.text, "menu exposes STACK//STRIKE branding")
+	_expect(subtitle != null and "BUILD A" in subtitle.text and "BREAK THE" in subtitle.text, "menu exposes menu tagline")
+	_expect(start != null and start.text == "START", "menu exposes start button")
 	_expect(
 		start != null and start.get_theme_stylebox("normal") != null
 			and start.get_theme_stylebox("hover") != null
-			and start.get_theme_stylebox("pressed") != null
-			and start.get_theme_stylebox("disabled") != null
-			and start.get_theme_stylebox("focus") != null,
-		"pilgrimage CTA exposes all interaction-state styles"
+			and start.get_theme_stylebox("pressed") != null,
+		"start button exposes normal, hover, and pressed styles"
 	)
-	_expect(start != null and start.get_theme_font_size("font_size") == 26, "pilgrimage CTA uses the approved restrained type scale")
-	_expect(logo != null and logo.get_theme_font_size("font_size") == 150, "menu preserves the configured title scale")
-	_expect(subtitle != null and subtitle.get_theme_font_size("font_size") == 60, "menu preserves the configured subtitle scale")
-	_expect(version != null and not version.text.is_empty(), "menu exposes version footer")
 
 	var calls := {"count": 0}
-	_expect(menu.has_signal("start_game_requested"), "main menu exposes start_game_requested signal")
+	_expect(menu.has_signal("start_game_requested"), "menu exposes start_game_requested signal")
 	if menu.has_signal("start_game_requested"):
 		menu.connect("start_game_requested", func() -> void: calls["count"] += 1)
 	if start != null:
 		start.emit_signal("pressed")
 		start.emit_signal("pressed")
-	_expect(calls["count"] == 1 and start.disabled, "start request is emitted once and disables button")
+	_expect(calls["count"] == 1 and start != null and start.disabled, "start request is emitted once and disables the button")
 
 	menu.queue_free()
 	await process_frame
@@ -295,7 +255,7 @@ func _test_debug_build_starts_configured_deck_directly() -> void:
 		game != null and game.starting_deck == RevivalDeck,
 		"debug boot uses the configured Revival starting deck"
 	)
-	_expect(main.get_node_or_null("ScreenLayer/MainMenuScreen") == null, "debug boot skips the main menu")
+	_expect(main.get_node_or_null("ScreenLayer/Menu") == null, "debug boot skips the main menu")
 	main.free()
 	await process_frame
 
@@ -305,11 +265,11 @@ func _test_main_routes_menu_selection_and_fresh_runs() -> void:
 	root.add_child(main)
 	await process_frame
 
-	var menu := main.get_node_or_null("ScreenLayer/MainMenuScreen") as Control
+	var menu := main.get_node_or_null("ScreenLayer/Menu") as Control
 	_expect(menu != null, "boot shows main menu")
 	_expect(main.get_node_or_null("GameManager") == null, "boot does not create a game manager")
 	if menu != null:
-		var first_start := menu.get_node_or_null("SafeArea/Layout/ActionBlock/ActionPanel/MenuList/StartGameButton") as Button
+		var first_start := menu.get_node_or_null("MarginContainer/Panel/BtnStart") as Button
 		if first_start != null:
 			first_start.emit_signal("pressed")
 	await process_frame
@@ -323,11 +283,11 @@ func _test_main_routes_menu_selection_and_fresh_runs() -> void:
 			back.emit_signal("pressed")
 	await process_frame
 
-	menu = main.get_node_or_null("ScreenLayer/MainMenuScreen") as Control
+	menu = main.get_node_or_null("ScreenLayer/Menu") as Control
 	_expect(menu != null, "returning from root selection restores the main menu")
 	_expect(main.get_node_or_null("GameManager") == null, "returning from root selection still has no game manager")
 	if menu != null:
-		var second_start := menu.get_node_or_null("SafeArea/Layout/ActionBlock/ActionPanel/MenuList/StartGameButton") as Button
+		var second_start := menu.get_node_or_null("MarginContainer/Panel/BtnStart") as Button
 		if second_start != null:
 			second_start.emit_signal("pressed")
 	await process_frame

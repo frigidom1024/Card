@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>STACK//STRIKE — Main Menu Directions</title>
+<style>
+:root { --ink:#09051f; --panel:#16103b; --violet:#6648f7; --cyan:#4df7e5; --pink:#ff4fa3; --yellow:#ffe84d; --red:#ff5e62; --paper:#fcf7ff; }
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; background:#08051c; color:var(--paper); font-family: "Courier New", monospace; image-rendering:pixelated; }
+body:before { content:""; position:fixed; inset:0; pointer-events:none; opacity:.3; background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 4px),radial-gradient(circle at 10% 20%,#342587 0 2px,transparent 2px 100%),radial-gradient(circle at 88% 76%,#392a8b 0 2px,transparent 2px 100%); background-size:auto,19px 19px,23px 23px; }
+header { position:relative; max-width:1440px; padding:32px 30px 12px; margin:auto; display:flex; justify-content:space-between; gap:20px; color:#d9d0ff; font-size:12px; letter-spacing:1.5px; }
+header b { color:var(--cyan); }
+main { position:relative; width:min(1440px, 100%); margin:auto; padding:8px 30px 44px; }
+.intro { max-width:760px; margin:0 auto 26px; text-align:center; }
+h1 { font-size:clamp(23px,3vw,40px); margin:0 0 10px; letter-spacing:-1.5px; color:var(--yellow); text-shadow:4px 4px 0 #6f2e95, 8px 8px 0 #120821; }
+.intro p { margin:0; color:#c6bee6; font-size:13px; line-height:1.6; }
+.grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:22px; }
+.option { display:flex; flex-direction:column; min-height:660px; border:3px solid #574690; background:#100a2b; box-shadow:9px 9px 0 #05030f; overflow:hidden; transition:transform .15s ease,border-color .15s ease,box-shadow .15s ease; }
+.option:hover { transform:translate(-3px,-3px); border-color:var(--cyan); box-shadow:12px 12px 0 #05030f,0 0 0 3px #684bf7; }
+.bar { display:flex; align-items:center; justify-content:space-between; padding:11px 13px; border-bottom:3px solid #574690; background:#211650; font-size:12px; letter-spacing:1px; }
+.letter { color:var(--yellow); background:#3e2e92; border:2px solid #977ffb; padding:3px 6px; }
+.mockup { padding:18px; flex:1; display:flex; align-items:stretch; min-height:510px; }
+.screen { position:relative; flex:1; overflow:hidden; border:3px solid #3e2d8f; background:linear-gradient(145deg,#1b1047,#09041d 65%); box-shadow:inset 0 0 0 3px #0a061c; }
+.screen:before { content:""; position:absolute; inset:0; opacity:.26; background:repeating-linear-gradient(0deg,transparent 0 3px,rgba(255,255,255,.08) 3px 4px); pointer-events:none; }
+.logo { font-weight:bold; letter-spacing:-1px; color:var(--yellow); text-shadow:3px 3px 0 #ed388d,6px 6px 0 #35117c; }
+.sub { color:var(--cyan); letter-spacing:1.2px; font-size:8px; }
+.cta { background:var(--pink); color:#22021c; font-weight:bold; border:3px solid #ffb2da; box-shadow:5px 5px 0 #4f146c; padding:12px 16px; text-align:center; font-size:12px; }
+.chip { display:inline-block; border:2px solid #5cece0; color:#65fff0; padding:4px 7px; background:#173e59; font-size:8px; }
+.card { width:70px; height:100px; border:3px solid #ffed75; background:linear-gradient(145deg,#662ab0,#182754); box-shadow:5px 5px 0 #060313; color:#fff49c; font-size:8px; padding:7px; display:flex; flex-direction:column; justify-content:space-between; }
+.card .n { font-size:24px; font-weight:bold; color:var(--yellow); text-shadow:2px 2px #e4358a; }
+.glow { position:absolute; width:180px; height:180px; border-radius:50%; background:radial-gradient(circle,rgba(72,247,229,.3),rgba(72,247,229,0) 68%); filter:blur(4px); }
+/* direction A */
+.layout-a { display:grid; grid-template-columns:1.2fr .8fr; gap:8px; padding:18px; }
+.layout-a .brand { display:flex; flex-direction:column; justify-content:center; gap:15px; min-height:355px; border-right:2px dashed #614fa4; padding:12px 25px 12px 5px; }
+.layout-a .brand .logo { font-size:37px; line-height:.85; }
+.layout-a .brand .sub { max-width:190px; line-height:1.7; }
+.layout-a .side { display:flex; flex-direction:column; justify-content:center; gap:15px; padding-left:10px; }
+.layout-a .side .card { align-self:center; transform:rotate(7deg); }
+.layout-a .coin { position:absolute; right:6px; top:13px; width:22px; height:22px; display:grid; place-items:center; background:var(--yellow); border:2px solid #fff6a5; color:#7d3410; font-weight:bold; font-size:9px; box-shadow:3px 3px #8c265a; }
+/* B */
+.layout-b { display:flex; min-height:470px; flex-direction:column; justify-content:space-between; align-items:center; padding:45px 25px 22px; text-align:center; }
+.layout-b .logo { font-size:42px; margin-top:20px; transform:skewX(-7deg); }
+.layout-b .sub { margin-top:13px; }
+.layout-b .cards { display:flex; margin-top:18px; }
+.layout-b .cards .card:nth-child(1){transform:rotate(-13deg) translate(13px,8px)} .layout-b .cards .card:nth-child(2){transform:translateY(-12px);z-index:2}.layout-b .cards .card:nth-child(3){transform:rotate(13deg) translate(-13px,8px)}
+.layout-b .cta { min-width:230px; margin-bottom:16px; }
+.layout-b .spark { position:absolute; color:var(--yellow); font-size:26px; }
+/* C */
+.layout-c { display:grid; grid-template-columns:1fr .9fr 1fr; gap:0; padding:14px; align-items:stretch; }
+.layout-c .zone { position:relative; padding:18px 10px; display:flex; min-height:430px; flex-direction:column; justify-content:center; align-items:center; border-right:2px dashed #5d4d99; text-align:center; gap:13px; }
+.layout-c .zone:last-child { border:none; }
+.layout-c .logo { font-size:22px; line-height:.91; }
+.layout-c .mid { background:#17103b; }
+.layout-c .mid .card { transform:rotate(-4deg); }
+.layout-c .score { color:var(--yellow); font-size:17px; text-shadow:2px 2px #ff4fa3; }
+.layout-c .cta { padding:10px 7px; font-size:10px; width:100%; }
+.copy { padding:0 17px 18px; color:#c8c0e5; font-family:system-ui,sans-serif; font-size:13px; line-height:1.55; }
+.copy strong { color:#fff; }
+.note { margin:28px auto 0; width:min(900px,100%); border:2px solid #4b3c86; padding:14px 17px; background:#110b2c; color:#bbb3d9; font-size:12px; line-height:1.6; }
+.note b { color:var(--cyan); }
+@media(max-width:900px){.grid{grid-template-columns:1fr}.option{min-height:0}.mockup{min-height:450px}.layout-a .brand .logo{font-size:45px}}
+</style>
+</head>
+<body>
+<header><span><b>STACK//STRIKE</b> / MAIN MENU VISUAL DIRECTIONS</span><span>NEON CASINO · PIXEL ARCADE</span></header>
+<main>
+<section class="intro"><h1>CHOOSE THE TABLE POSITION</h1><p>Three layouts for the same visual language: hard pixel edges, saturated neon chips, oversized card numerals, and one unmistakable way to start a run.</p></section>
+<section class="grid">
+<article class="option"><div class="bar"><span><span class="letter">A</span> TABLE-SIDE</span><span>RECOMMENDED</span></div><div class="mockup"><div class="screen layout-a"><i class="glow" style="left:-50px;top:0"></i><i class="coin">$</i><div class="brand"><div class="logo">STACK//<br>STRIKE</div><div class="sub">BUILD A DECK.<br>BREAK THE BOARD.</div><span class="chip">RUN STATUS: READY</span></div><div class="side"><div class="card"><span>RANK</span><span class="n">8</span><span>STRIKE</span></div><div class="cta">▶ START RUN</div></div></div></div><div class="copy"><strong>品牌在左，操作在右。</strong>最适合进入游戏前的“走到牌桌边”感；未来即使增加解锁、战绩，也可留在右侧操作列中扩展。</div></article>
+<article class="option"><div class="bar"><span><span class="letter">B</span> CENTER STAGE</span><span>DIRECT</span></div><div class="mockup"><div class="screen layout-b"><i class="glow" style="right:-55px;top:-20px"></i><i class="spark" style="top:20px;left:29px">✦</i><i class="spark" style="right:35px;top:100px;color:#4df7e5">✦</i><div><div class="logo">STACK//STRIKE</div><div class="sub">BUILD A DECK. BREAK THE BOARD.</div><div class="cards"><div class="card"><span>ARMOR</span><span class="n">3</span><span>HOLD</span></div><div class="card"><span>STRIKE</span><span class="n">8</span><span>WIN</span></div><div class="card"><span>JOLT</span><span class="n">5</span><span>CHAIN</span></div></div></div><div class="cta">▶ START RUN</div></div></div><div class="copy"><strong>中央海报式登场。</strong>阅读路径最直白：Logo → 卡牌 → 开始。它最像经典街机标题屏，但后续可容纳的信息最少。</div></article>
+<article class="option"><div class="bar"><span><span class="letter">C</span> ARCADE LOBBY</span><span>UTILITY</span></div><div class="mockup"><div class="screen layout-c"><i class="glow" style="left:35%;bottom:-90px"></i><div class="zone"><div class="logo">STACK//<br>STRIKE</div><div class="sub">BREAK<br>THE BOARD</div></div><div class="zone mid"><span class="chip">NEXT PLAY</span><div class="card"><span>CHAIN</span><span class="n">∞</span><span>READY</span></div><div class="score">HIGH 0</div></div><div class="zone"><div class="sub">INSERT<br>YOUR WILL</div><div class="cta">▶ START<br>RUN</div><span class="chip">V0.1</span></div></div></div><div class="copy"><strong>街机大厅式三栏。</strong>品牌、牌组预览、操作入口各自成区；系统感最强，适合以后扩展数据面板，但初次视觉冲击略弱。</div></article>
+</section>
+<div class="note"><b>推荐 A / TABLE-SIDE。</b> 它把游戏名与“开始一局”的按钮做成一张卡牌桌的两端：左边建立品牌，右边立刻行动。确认后，我会把它落实为可响应的 Godot 菜单，并保留现有 <code>start_game_requested</code> 流程。</div>
+</main>
+</body>
+</html>

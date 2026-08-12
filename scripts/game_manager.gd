@@ -345,7 +345,8 @@ func _configure_presentation() -> bool:
 		drag_layer,
 		_run_context.player_data,
 		_run_context.player_stats,
-		_faith_service
+		_faith_service,
+		_retraction_cost_service
 	):
 		return _fail_run_initialization("GameManager could not configure run presentation")
 	if not _presentation.bind(_run_flow, _event_modal_coordinator, _persistent_market_coordinator):
