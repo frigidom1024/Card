@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bf7txog0s0gli"]
+
+[ext_resource type="Script" uid="uid://cjfe4twj5e0k8" path="res://scenes/zone/back_ground.gd" id="1_oxe78"]
+
+[node name="BackGround" type="Node2D" unique_id=140895323]
+script = ExtResource("1_oxe78")

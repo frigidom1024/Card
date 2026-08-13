@@ -32,6 +32,7 @@ offset_left = 147.0
 offset_top = 291.0
 offset_right = 231.0
 offset_bottom = 445.0
+drag_stiffness = 210.0
 
 [node name="Card2" parent="Handzone" unique_id=1406742438 instance=ExtResource("4_eb1ss")]
 layout_mode = 1
@@ -39,6 +40,7 @@ offset_left = 338.518
 offset_top = 269.12
 offset_right = 422.518
 offset_bottom = 423.12
+drag_stiffness = 210.0
 
 [node name="Handzone2" parent="." unique_id=1242845083 instance=ExtResource("2_dngke")]
 anchors_preset = 0
@@ -62,9 +64,11 @@ offset_left = 343.0
 offset_top = -247.0
 offset_right = 427.0
 offset_bottom = -93.0
+drag_stiffness = 210.0
 
 [node name="Card" parent="." unique_id=1948667474 instance=ExtResource("4_eb1ss")]
 offset_left = 402.0
 offset_top = 455.0
 offset_right = 486.0
 offset_bottom = 609.0
+drag_stiffness = 210.0

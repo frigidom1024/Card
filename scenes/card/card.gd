@@ -98,17 +98,26 @@ func _handle_3D_effect(event:InputEvent)->void:
 	shader_material.set_shader_parameter("y_rot", rot_x)
 	
 
-func _start_drag(mousepostion:Vector2)->void:
-	dragging=true
-	z_index=100
-	drag_offset = get_global_mouse_position() - position
+func _start_drag(mouse_position: Vector2) -> void:
+	dragging = true
+	z_index = 100
+	drag_offset = get_global_mouse_position() - global_position
 	target_position = position
 	if drag_layer:
 		drag_layer.start_drag(self)
 
-	
-func _update_drag(mouse_postion:Vector2)->void:
-	target_position= get_global_mouse_position()-drag_offset
+
+func _update_drag(_mouse_position: Vector2) -> void:
+	var target_global_position := get_global_mouse_position() - drag_offset
+	var parent_canvas_item := get_parent() as CanvasItem
+	if parent_canvas_item != null:
+		# target_position 是 Control.position，必须使用父节点的本地坐标。
+		# 不能直接把 global_position 赋给它，否则会再次叠加父节点偏移。
+		target_position = parent_canvas_item.get_global_transform_with_canvas().affine_inverse() * target_global_position
+	else:
+		target_position = target_global_position
+	if drag_layer:
+		drag_layer.update_drag(self)
 
 func _end_drag()->void:
 	if not dragging:

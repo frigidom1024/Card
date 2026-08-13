@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://dxqav0xg4yyfc"]
+
+[ext_resource type="Script" uid="uid://djrwqiyyfds7p" path="res://scripts/zone/board_zone.gd" id="1_owa3l"]
+[ext_resource type="PackedScene" uid="uid://bf7txog0s0gli" path="res://scenes/zone/back_ground.tscn" id="2_j21cs"]
+
+[node name="BoardZone" type="Control" unique_id=1056622751]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 960.0
+offset_bottom = 768.0
+mouse_filter = 2
+script = ExtResource("1_owa3l")
+
+[node name="BackGround" parent="." unique_id=140895323 instance=ExtResource("2_j21cs")]
+position = Vector2(10, 10)

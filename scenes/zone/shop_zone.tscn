@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://cv8gd4mpryvt5"]
+
+[ext_resource type="Script" path="res://scripts/zone/shop_zone.gd" id="1_shop_zone"]
+[ext_resource type="PackedScene" uid="uid://df5d4pnr0do38" path="res://scenes/card/card.tscn" id="2_card"]
+
+[node name="ShopZone" type="Control" unique_id=1212533033]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 289.0
+offset_bottom = 163.0
+mouse_filter = 2
+script = ExtResource("1_shop_zone")
+
+[node name="Card3" parent="." unique_id=188510074 instance=ExtResource("2_card")]
+layout_mode = 0
+
+[node name="Card" parent="." unique_id=1116467201 instance=ExtResource("2_card")]
+layout_mode = 0
+
+[node name="Card2" parent="." unique_id=2124007288 instance=ExtResource("2_card")]
+layout_mode = 0

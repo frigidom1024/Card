@@ -1,0 +1,14 @@
+ERROR: Unrecognized UID: "uid://bsg12huaf1u5i".
+   at: get_id_path (core/io/resource_uid.cpp:214)
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Resource file not found: res:// (expected type: unknown)
+   at: _load (core/io/resource_loader.cpp:325)
+ERROR: Failed to instantiate an autoload, can't load from path: .
+   at: start (main/main.cpp:4529)
+ERROR: ShopZone must preserve the Card scene's original size
+   at: push_error (core/variant/variant_utility.cpp:1023)
+   GDScript backtrace (most recent call first):
+       [0] _fail (res://.tmp/shop_zone_layout_test.gd:6)
+       [1] _init (res://.tmp/shop_zone_layout_test.gd:30)
+shop_zone_layout_test: FAIL - ShopZone must preserve the Card scene's original size

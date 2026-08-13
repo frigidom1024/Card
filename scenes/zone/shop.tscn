@@ -1,0 +1,55 @@
+[gd_scene format=3 uid="uid://bycj0468jvuyd"]
+
+[ext_resource type="StyleBox" uid="uid://d26o07b1e6h87" path="res://assert/ui/info_panel.tres" id="1_dlaha"]
+[ext_resource type="PackedScene" uid="uid://cv8gd4mpryvt5" path="res://scenes/zone/shop_zone.tscn" id="2_ukpqw"]
+
+[node name="Panel" type="Panel" unique_id=1350690558]
+offset_right = 300.0
+offset_bottom = 323.0
+theme_override_styles/panel = ExtResource("1_dlaha")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=639470385]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1983444353]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1277121317]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1671765052]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "Shop"
+
+[node name="Control" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=805220795]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RefreshButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=844993244]
+layout_mode = 2
+text = "刷新商店"
+
+[node name="CoinNumber" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1292140501]
+layout_mode = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+text = "10"
+
+[node name="IconCoin" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1829312071]
+layout_mode = 2
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer" unique_id=1212569673]
+layout_mode = 2
+
+[node name="ShopZone" parent="MarginContainer/VBoxContainer" unique_id=1212533033 instance=ExtResource("2_ukpqw")]
+custom_minimum_size = Vector2(200, 100)
+layout_mode = 2

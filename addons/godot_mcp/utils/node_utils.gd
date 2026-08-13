@@ -1,82 +1,58 @@
 @tool
-class_name NodeUtils
 extends RefCounted
 
-# Get all nodes of a certain type in the scene tree
-static func get_nodes_by_type(root_node: Node, type_name: String) -> Array[Node]:
-	var result: Array[Node] = []
-	
-	if root_node.get_class() == type_name:
-		result.push_back(root_node)
-	
-	for child in root_node.get_children():
-		result.append_array(get_nodes_by_type(child, type_name))
-	
-	return result
+const PropertyParser := preload("res://addons/godot_mcp/utils/property_parser.gd")
 
-# Get a node by its path, or null if not found
-static func find_node_by_path(root_node: Node, path: String) -> Node:
-	if path.is_empty():
-		return null
-	
-	if path.begins_with("/"):
-		path = path.substr(1)
-	
-	var path_parts = path.split("/")
-	var current_node = root_node
-	
-	for part in path_parts:
-		var found = false
-		for child in current_node.get_children():
-			if child.name == part:
-				current_node = child
-				found = true
-				break
-		
-		if not found:
-			return null
-	
-	return current_node
-
-# Convert a node to a JSON-compatible dictionary
-static func node_to_dict(node: Node) -> Dictionary:
-	var result = {
-		"name": node.name,
-		"type": node.get_class(),
-		"path": str(node.get_path()),
-		"properties": {}
-	}
-	
-	# Get properties
-	var properties = {}
-	var property_list = node.get_property_list()
-	
-	for prop in property_list:
-		var name = prop["name"]
-		if not name.begins_with("_"): # Skip internal properties
-			result["properties"][name] = node.get(name)
-	
-	# Get children
-	var children = []
+## Reparent owners so a code-added/duplicated/moved subtree is saved with the
+## scene. Each child becomes owned by `owner`, but recursion STOPS at instanced
+## sub-scenes (nodes with a scene_file_path): their internals belong to the
+## instance, and re-owning them would flatten the instance into duplicated local
+## nodes that clash on reload.
+static func set_owner_recursive(node: Node, owner: Node) -> void:
 	for child in node.get_children():
-		children.append({
-			"name": child.name,
-			"type": child.get_class(),
-			"path": str(child.get_path())
-		})
-	
-	result["children"] = children
-	
+		child.owner = owner
+		if child.scene_file_path.is_empty():
+			set_owner_recursive(child, owner)
+
+
+## Build a serializable tree for a subtree. `path` is relative to `root` (".",
+## "Player", "UI/Score") so it can be passed straight back as a node_path.
+## When root is null, node is treated as the root.
+static func get_node_tree(node: Node, root: Node = null, max_depth: int = -1, depth: int = 0) -> Dictionary:
+	if root == null:
+		root = node
+	var result := {
+		"name": String(node.name),
+		"type": node.get_class(),
+		"path": "." if node == root else str(root.get_path_to(node)),
+	}
+	var script: Script = node.get_script()
+	if script != null:
+		result["script"] = script.resource_path
+	if max_depth == -1 or depth < max_depth:
+		var children: Array = []
+		for child in node.get_children():
+			children.append(get_node_tree(child, root, max_depth, depth + 1))
+		if not children.is_empty():
+			result["children"] = children
 	return result
 
-# Create a screenshot of a node (only works for CanvasItem nodes)
-static func take_node_screenshot(node: CanvasItem) -> Image:
-	if not node is CanvasItem:
-		push_error("Can only take screenshots of CanvasItem nodes")
-		return null
-	
-	var viewport = node.get_viewport()
-	if not viewport:
-		return null
-	
-	return viewport.get_texture().get_image()
+
+## Editor-visible properties of a node as a JSON-safe dictionary.
+static func get_node_properties_dict(node: Node) -> Dictionary:
+	var result: Dictionary = {}
+	for prop_info in node.get_property_list():
+		var prop_name: String = prop_info["name"]
+		var usage: int = prop_info["usage"]
+		if not (usage & PROPERTY_USAGE_EDITOR):
+			continue
+		if prop_name.begins_with("_"):
+			continue
+		if prop_name == "script":
+			# Report the script as its resource path (the raw value is a Script
+			# object). Skipping it entirely hid attached scripts from node.get.
+			var scr: Script = node.get_script()
+			result["script"] = scr.resource_path if scr != null else null
+			continue
+		result[prop_name] = PropertyParser.serialize_value(node.get(prop_name))
+	return result
