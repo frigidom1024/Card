@@ -10,6 +10,19 @@ var tween_rot: Tween
 var tween_hover: Tween
 
 
+@export_category("Drag")
+# 弹簧强度
+@export var drag_stiffness: float = 180.0
+# 阻尼
+@export var drag_damping: float = 18.0
+# 是否允许拖拽
+@export var draggable: bool = true
+var dragging:bool
+var target_position:Vector2
+var drag_offset:Vector2
+var velocity:Vector2 = Vector2.ZERO
+
+
 func _ready() -> void:
 	# 每个卡牌实例拥有独立材质；否则一个实例的鼠标倾斜会影响其它卡牌。
 	var shader_material := card_texture.material as ShaderMaterial
@@ -19,9 +32,22 @@ func _ready() -> void:
 	_sync_hover_pivot()
 	if not resized.is_connected(_sync_hover_pivot):
 		resized.connect(_sync_hover_pivot)
+		
+	target_position  = position
 
 func _process(delta: float) -> void:
 	refresh_shadow(delta)
+
+
+	var displacement:Vector2 = target_position - position
+	
+	var force:Vector2 = displacement * drag_stiffness
+	
+	velocity +=force * delta
+	
+	velocity *= exp(-drag_damping * delta)
+	position += velocity * delta
+	
 
 func _sync_hover_pivot() -> void:
 	# Control 的默认 pivot_offset 是左上角，缩放时会让卡牌向右下角展开。
@@ -37,23 +63,57 @@ func refresh_shadow(delta:float)->void:
 	
 
 func _on_gui_input(event: InputEvent) -> void:
-	if not event is InputEventMouseMotion:
-		return
+	if event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
+			if event.pressed:
+				_start_drag(event.position)
+			
+			else:
+				_end_drag()
+	
+	
+	if event is InputEventMouseMotion:
+		if dragging:
+			_update_drag(event.position)
+		else:
+			_handle_3D_effect(event)
+		
+		
 
+func _handle_3D_effect(event:InputEvent)->void:
 	var lerp_val_x := clampf(event.position.x / maxf(size.x, 1.0), 0.0, 1.0)
 	var lerp_val_y := clampf(event.position.y / maxf(size.y, 1.0), 0.0, 1.0)
-	var rot_x := lerpf(-absf(angle_x_max), absf(angle_x_max), lerp_val_y)
-	var rot_y := lerpf(absf(angle_y_max), -absf(angle_y_max), lerp_val_x)
+	var rot_x := lerpf(-absf(angle_x_max), absf(angle_x_max), lerp_val_x)
+	var rot_y := lerpf(absf(angle_y_max), -absf(angle_y_max), lerp_val_y)
 
 	var shader_material := card_texture.material as ShaderMaterial
 	if shader_material == null:
 		return
 
-	shader_material.set_shader_parameter("x_rot", rot_x)
-	shader_material.set_shader_parameter("y_rot", rot_y)
+	shader_material.set_shader_parameter("x_rot", rot_y)
+	shader_material.set_shader_parameter("y_rot", rot_x)
+	
 
+func _start_drag(mousepostion:Vector2)->void:
+	dragging=true
+	
+	drag_offset = mousepostion
+	
+	target_position = position
+	
+func _update_drag(mouse_postion:Vector2)->void:
+	target_position= get_global_mouse_position()-drag_offset
+
+func _end_drag()->void:
+	if not dragging:
+		return
+		
+	dragging = false
+	
 
 func _on_mouse_exited() -> void:
+	if dragging:
+		return 
 	if tween_rot and tween_rot.is_running():
 		tween_rot.kill()
 
@@ -70,6 +130,8 @@ func _on_mouse_exited() -> void:
 
 
 func _on_mouse_entered() -> void:
+	if dragging:
+		return 
 	if tween_hover and tween_hover.is_running():
 		tween_hover.kill()
 	tween_hover = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_ELASTIC)

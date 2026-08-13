@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://df5d4pnr0do38"]
 
-[ext_resource type="StyleBox" uid="uid://c0l8l7veu2ay1" path="res://assert/card_frame/card_shadow.tres" id="1_6jo1p"]
-[ext_resource type="Script" uid="uid://bivw50ivjpld6" path="res://scenes/card/card.gd" id="1_rd7lm"]
-[ext_resource type="StyleBox" uid="uid://1rpvisr7bhri" path="res://assert/card_frame/card_frame.tres" id="2_ekuku"]
-[ext_resource type="Shader" uid="uid://dgadlxh1ukewp" path="res://shaders/card_perspective.gdshader" id="2_rd7lm"]
-[ext_resource type="Texture2D" uid="uid://0lvd6foamt4r" path="res://assert/card/ribwood_guardian_root.png" id="3_rd7lm"]
+[ext_resource type="Script" uid="uid://bivw50ivjpld6" path="res://scenes/card/card.gd" id="1_kaf1t"]
+[ext_resource type="StyleBox" uid="uid://c0l8l7veu2ay1" path="res://assert/card_frame/card_shadow.tres" id="1_shadow"]
+[ext_resource type="Shader" uid="uid://dgadlxh1ukewp" path="res://shaders/card_perspective.gdshader" id="2_shader"]
+[ext_resource type="StyleBox" uid="uid://1rpvisr7bhri" path="res://assert/card_frame/card_frame.tres" id="4_frame"]
+[ext_resource type="Texture2D" uid="uid://0lvd6foamt4r" path="res://assert/card/ribwood_guardian_root.png" id="5_artwork"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hdy3g"]
 
@@ -17,7 +17,7 @@
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ekuku"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_6jo1p"]
-shader = ExtResource("2_rd7lm")
+shader = ExtResource("2_shader")
 shader_parameter/fov = 40.7450018878875
 shader_parameter/cull_back = true
 shader_parameter/y_rot = 0.0
@@ -26,22 +26,22 @@ shader_parameter/inset = 0.18
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ee5lm"]
 
-[node name="Card2" type="Button" unique_id=188510074]
+[node name="Card" type="Button" unique_id=188510074]
 anchors_preset = -1
 anchor_left = 0.192
 anchor_top = 0.16900001
 anchor_right = 0.192
 anchor_bottom = 0.16900001
-offset_left = -0.64001465
-offset_top = -0.52001953
-offset_right = 83.359985
-offset_bottom = 153.47998
+offset_left = 1259.36
+offset_top = 481.47998
+offset_right = 1343.36
+offset_bottom = 635.48
 theme_override_styles/normal = SubResource("StyleBoxEmpty_hdy3g")
 theme_override_styles/pressed = SubResource("StyleBoxEmpty_qmeae")
 theme_override_styles/hover = SubResource("StyleBoxEmpty_ridm3")
 theme_override_styles/disabled = SubResource("StyleBoxEmpty_6jo1p")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_ekuku")
-script = ExtResource("1_rd7lm")
+script = ExtResource("1_kaf1t")
 
 [node name="Shadow" type="Panel" parent="." unique_id=1153363669]
 modulate = Color(0.30446225, 0.30446225, 0.30446216, 1)
@@ -53,7 +53,7 @@ offset_top = 0.021992683
 offset_right = 84.0
 offset_bottom = 154.02199
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("1_6jo1p")
+theme_override_styles/panel = ExtResource("1_shadow")
 
 [node name="CardTexture" type="SubViewportContainer" parent="." unique_id=1170321168]
 material = SubResource("ShaderMaterial_6jo1p")
@@ -73,7 +73,7 @@ material = SubResource("ShaderMaterial_ee5lm")
 offset_right = 84.0
 offset_bottom = 154.0
 mouse_filter = 2
-theme_override_styles/panel = ExtResource("2_ekuku")
+theme_override_styles/panel = ExtResource("4_frame")
 
 [node name="Artwork" type="TextureRect" parent="CardTexture/SubViewport" unique_id=2021746234]
 texture_filter = 1
@@ -87,7 +87,7 @@ offset_top = -1.0040007
 offset_right = -0.004005432
 offset_bottom = -0.9960022
 mouse_filter = 2
-texture = ExtResource("3_rd7lm")
+texture = ExtResource("5_artwork")
 expand_mode = 1
 stretch_mode = 6
 
