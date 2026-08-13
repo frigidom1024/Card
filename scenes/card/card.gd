@@ -1,10 +1,11 @@
 extends Button
-
+class_name Card
 @onready var card_texture: Control = $CardTexture
 @onready var shadow:Control = $Shadow
 @export var angle_x_max: float = 8.0
 @export var angle_y_max: float = 8.0
 @export var max_offset_shadow:float=6.0
+
 
 var tween_rot: Tween
 var tween_hover: Tween
@@ -21,6 +22,9 @@ var dragging:bool
 var target_position:Vector2
 var drag_offset:Vector2
 var velocity:Vector2 = Vector2.ZERO
+
+var drag_layer:DraggerLayer
+var cur_zone:CardZone
 
 
 func _ready() -> void:
@@ -96,10 +100,12 @@ func _handle_3D_effect(event:InputEvent)->void:
 
 func _start_drag(mousepostion:Vector2)->void:
 	dragging=true
-	
-	drag_offset = mousepostion
-	
+	z_index=100
+	drag_offset = get_global_mouse_position() - position
 	target_position = position
+	if drag_layer:
+		drag_layer.start_drag(self)
+
 	
 func _update_drag(mouse_postion:Vector2)->void:
 	target_position= get_global_mouse_position()-drag_offset
@@ -109,14 +115,15 @@ func _end_drag()->void:
 		return
 		
 	dragging = false
-	
+	z_index = 0
+	if drag_layer:
+		drag_layer.end_drag(self)
 
 func _on_mouse_exited() -> void:
 	if dragging:
 		return 
 	if tween_rot and tween_rot.is_running():
 		tween_rot.kill()
-
 	var shader_material := card_texture.material as ShaderMaterial
 	if shader_material != null:
 		tween_rot = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK).set_parallel(true)
@@ -136,3 +143,6 @@ func _on_mouse_entered() -> void:
 		tween_hover.kill()
 	tween_hover = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_ELASTIC)
 	tween_hover.tween_property(self, "scale", Vector2(1.2, 1.2), 0.5)
+	
+func bind_drag_layer(drag_layer:DraggerLayer)->void:
+	self.drag_layer=drag_layer

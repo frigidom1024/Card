@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://l6y5b6xdcyha"]
+
+[ext_resource type="Script" uid="uid://d3ftaprw16eiy" path="res://scripts/game/drag_layer/dragger_layer.gd" id="1_dragger"]
+
+[node name="DraggerLayer" type="Node" unique_id=1128574065]
+script = ExtResource("1_dragger")

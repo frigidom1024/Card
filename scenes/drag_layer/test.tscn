@@ -1,0 +1,70 @@
+[gd_scene format=3 uid="uid://btevdh1ljri4"]
+
+[ext_resource type="Script" uid="uid://c0y2xy3ivit2e" path="res://scenes/drag_layer/test.gd" id="1_wlhed"]
+[ext_resource type="PackedScene" uid="uid://l6y5b6xdcyha" path="res://scenes/drag_layer/dragger_layer.tscn" id="1_yiji6"]
+[ext_resource type="PackedScene" uid="uid://cmx2eoh6dx87s" path="res://scenes/zone/handzone.tscn" id="2_dngke"]
+[ext_resource type="PackedScene" uid="uid://df5d4pnr0do38" path="res://scenes/card/card.tscn" id="4_eb1ss"]
+
+[node name="Test" type="Node2D" unique_id=280158251]
+script = ExtResource("1_wlhed")
+
+[node name="DraggerLayer" parent="." unique_id=1128574065 instance=ExtResource("1_yiji6")]
+
+[node name="Handzone" parent="." unique_id=278593251 instance=ExtResource("2_dngke")]
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 383.0
+offset_top = 166.0
+offset_right = 1509.0
+offset_bottom = 384.0
+grow_horizontal = 1
+grow_vertical = 1
+
+[node name="Card" parent="Handzone" unique_id=188510074 instance=ExtResource("4_eb1ss")]
+layout_mode = 0
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 147.0
+offset_top = 291.0
+offset_right = 231.0
+offset_bottom = 445.0
+
+[node name="Card2" parent="Handzone" unique_id=1406742438 instance=ExtResource("4_eb1ss")]
+layout_mode = 1
+offset_left = 338.518
+offset_top = 269.12
+offset_right = 422.518
+offset_bottom = 423.12
+
+[node name="Handzone2" parent="." unique_id=1242845083 instance=ExtResource("2_dngke")]
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 337.0
+offset_top = 718.0
+offset_right = 1463.0
+offset_bottom = 936.0
+grow_horizontal = 1
+grow_vertical = 1
+
+[node name="Card" parent="Handzone2" unique_id=95504080 instance=ExtResource("4_eb1ss")]
+layout_mode = 0
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 343.0
+offset_top = -247.0
+offset_right = 427.0
+offset_bottom = -93.0
+
+[node name="Card" parent="." unique_id=1948667474 instance=ExtResource("4_eb1ss")]
+offset_left = 402.0
+offset_top = 455.0
+offset_right = 486.0
+offset_bottom = 609.0
