@@ -1,0 +1,50 @@
+ERROR: Failed to open 'D:/project/MonoCard/mono-card/addons/godot-git-plugin/windows/~libgit_plugin.windows.editor.x86_64.dll'.
+   at: copy (core/io/dir_access.cpp:429)
+ERROR: Error copying library: D:/project/MonoCard/mono-card/addons/godot-git-plugin/windows/libgit_plugin.windows.editor.x86_64.dll
+   at: open_dynamic_library (platform/windows/os_windows.cpp:502)
+ERROR: Can't open GDExtension dynamic library: 'res://addons/godot-git-plugin/git_plugin.gdextension'.
+   at: open_library (core/extension/gdextension.cpp:811)
+ERROR: Error loading extension: 'res://addons/godot-git-plugin/git_plugin.gdextension'.
+   at: load_extensions (core/extension/gdextension_manager.cpp:333)
+ERROR: Unrecognized UID: "uid://bsg12huaf1u5i".
+   at: get_id_path (core/io/resource_uid.cpp:214)
+Godot Engine v4.7.stable.official.5b4e0cb0f - https://godotengine.org
+
+ERROR: Unrecognized UID: "uid://bsg12huaf1u5i".
+   at: get_id_path (core/io/resource_uid.cpp:214)
+ERROR: Cannot get class 'GitPlugin'.
+   at: _instantiate_internal (core/object/class_db.cpp:587)
+ERROR: Received a nullptr VCS extension instance during construction.
+   at: _load_plugin (editor/version_control/version_control_editor_plugin.cpp:188)
+[   0% ] [90m[1mfirst_scan_filesystem[22m | Started 项目初始化 (5 steps)[39m[0m
+[  16% ] [90m[1mfirst_scan_filesystem[22m | 正在加载全局类名……[39m[0m
+[  33% ] [90m[1mfirst_scan_filesystem[22m | 正在校验 GDExtension……[39m[0m
+[  50% ] [90m[1mfirst_scan_filesystem[22m | 正在创建自动加载脚本……[39m[0m
+ERROR: Unrecognized UID: "uid://bsg12huaf1u5i".
+   at: get_id_path (core/io/resource_uid.cpp:214)
+ERROR: Resource file not found: res:// (expected type: unknown)
+   at: _load (core/io/resource_loader.cpp:325)
+ERROR: Failed to create an autoload, can't load from UID or path: .
+   at: _create_autoload (editor/settings/editor_autoload_settings.cpp:336)
+[  66% ] [90m[1mfirst_scan_filesystem[22m | 正在初始化插件……[39m[0m
+[MCP-HTTP] MCP endpoint listening on http://127.0.0.1:9101/mcp
+[MCP] Server listening on ws://127.0.0.1:9082
+[MCP] Registered 330 commands
+[  83% ] [90m[1mfirst_scan_filesystem[22m | 正在启动文件扫描……[39m[0m
+[92m[ DONE ][39m [1mfirst_scan_filesystem[22m
+[0m
+[   0% ] [90m[1mloading_editor_layout[22m | Started 正在加载编辑器 (5 steps)[39m[0m
+[   0% ] [90m[1mloading_editor_layout[22m | 正在加载编辑器布局……[39m[0m
+[  16% ] [90m[1mloading_editor_layout[22m | 正在加载停靠面板……[39m[0m
+[  33% ] [90m[1mloading_editor_layout[22m | 正在重新打开场景……[39m[0m
+[  50% ] [90m[1mloading_editor_layout[22m | 正在加载中央编辑器布局……[39m[0m
+[  66% ] [90m[1mloading_editor_layout[22m | 正在加载插件窗口布局……[39m[0m
+[  83% ] [90m[1mloading_editor_layout[22m | 编辑器布局就绪。[39m[0m
+[92m[ DONE ][39m [1mloading_editor_layout[22m
+[0m
+[MCP-HTTP] MCP endpoint stopped
+[MCP] Server stopped
+WARNING: 4 ObjectDB instances were leaked at exit (run with `--verbose` for details).
+   at: cleanup (core/object/object.cpp:2535)
+ERROR: 1 resources still in use at exit (run with --verbose for details).
+   at: clear (core/io/resource.cpp:822)

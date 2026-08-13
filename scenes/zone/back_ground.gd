@@ -1,5 +1,5 @@
 extends Node2D
-
+class_name BoardZoneBG
 @export var board_padding: Vector2 = Vector2(14.0, 14.0)
 @export var board_panel_color: Color = Color(0.35, 0.39, 0.44, 0.14)
 @export var grid_line_color: Color = Color(0.35, 0.39, 0.44, 0.36)
@@ -8,9 +8,9 @@ extends Node2D
 @export var grid_gap_length: float = 5.0
 
 var board_size: Vector2 = Vector2.ZERO
-var cell_size: float = 0.0
-var grid_width: int = 0
-var grid_height: int = 0
+@export var cell_size: float = 0.0
+@export var grid_width: int = 0
+@export var grid_height: int = 0
 
 
 func configure(new_board_size: Vector2, new_cell_size: float, width: int, height: int) -> void:
