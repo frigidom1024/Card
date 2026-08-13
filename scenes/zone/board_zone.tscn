@@ -14,5 +14,11 @@ script = ExtResource("1_owa3l")
 [node name="BackGround" parent="." unique_id=140895323 instance=ExtResource("2_j21cs")]
 position = Vector2(10, 10)
 cell_size = 84.0
-grid_width = 9
-grid_height = 7
+
+[node name="Panel" type="Panel" parent="." unique_id=224024843]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

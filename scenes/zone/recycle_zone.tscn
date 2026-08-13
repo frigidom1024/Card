@@ -1,9 +1,0 @@
-[gd_scene format=3 uid="uid://cwvl505omdlu5"]
-
-[ext_resource type="Script" uid="uid://b2ajlm3n4sepk" path="res://scripts/zone/card_zone.gd" id="1_ldsju"]
-
-[node name="RecycleZone" type="Control" unique_id=2046008507]
-layout_mode = 3
-anchors_preset = 0
-script = ExtResource("1_ldsju")
-metadata/_custom_type_script = "uid://b2ajlm3n4sepk"

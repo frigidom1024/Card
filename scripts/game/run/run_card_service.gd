@@ -181,6 +181,30 @@ func register_existing_instance(card_inst: CardInstance, card: Card) -> bool:
 	return true
 
 
+func can_destroy_existing_instance(card_inst: CardInstance, card: Card) -> bool:
+	return (
+		card_inst != null
+		and card != null
+		and is_instance_valid(card)
+		and card_inst in _instances
+		and card in _card_views
+		and card.get_card_inst() == card_inst
+	)
+
+
+func destroy_existing_instance(card_inst: CardInstance, card: Card) -> bool:
+	if not can_destroy_existing_instance(card_inst, card):
+		return false
+
+	_instances.erase(card_inst)
+	_card_views.erase(card)
+	card_inst.cur_zone = CardInstance.ZONE.DISCARD
+	card.cur_zone = null
+	card.bind_drag_layer(null)
+	card.queue_free()
+	return true
+
+
 func _add_new_instance_to_hand(instance: CardInstance) -> bool:
 	if instance == null or hand_area.is_full():
 		return false

@@ -104,4 +104,4 @@ func end_drag(card: Card) -> void:
 
 
 func _get_card_center(card: Card) -> Vector2:
-	return card.global_position + card.size * 0.5
+	return card.get_global_transform_with_canvas() * (card.size * 0.5)

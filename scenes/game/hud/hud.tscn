@@ -1,6 +1,9 @@
 [gd_scene format=3 uid="uid://p6343o8pk8kq"]
 
-[ext_resource type="PackedScene" uid="uid://txjxkqmuwx5" path="res://scenes/game/hud/game_info.tscn" id="1_222sb"]
+[ext_resource type="PackedScene" uid="uid://dxqav0xg4yyfc" path="res://scenes/zone/board_zone.tscn" id="1_4h4qe"]
+[ext_resource type="PackedScene" uid="uid://cmx2eoh6dx87s" path="res://scenes/zone/handzone.tscn" id="2_7lo7q"]
+[ext_resource type="PackedScene" path="res://scenes/zone/reclaim_zone.tscn" id="3_etamk"]
+[ext_resource type="PackedScene" uid="uid://bycj0468jvuyd" path="res://scenes/zone/shop.tscn" id="4_spx7p"]
 
 [node name="Hud" type="Control" unique_id=1402589845]
 layout_mode = 3
@@ -10,91 +13,30 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="GameInfo" parent="." unique_id=1925670509 instance=ExtResource("1_222sb")]
+[node name="BoardZone" parent="." unique_id=1056622751 instance=ExtResource("1_4h4qe")]
 layout_mode = 0
-offset_left = 1451.0
-offset_top = 340.0
-offset_right = 1902.0
-offset_bottom = 820.0
+offset_left = 93.0
+offset_top = 58.0
+offset_right = 1509.0
+offset_bottom = 702.0
 
-[node name="MarginContainer" type="MarginContainer" parent="GameInfo" unique_id=1685446160]
+[node name="Handzone" parent="." unique_id=278593251 instance=ExtResource("2_7lo7q")]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
+offset_left = 359.0
+offset_top = 761.0
+offset_right = -822.0
+offset_bottom = -135.0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="GameInfo/MarginContainer" unique_id=157806028]
-layout_mode = 2
-
-[node name="HBoxContainer" type="HBoxContainer" parent="GameInfo/MarginContainer/VBoxContainer" unique_id=1601836534]
-layout_mode = 2
-
-[node name="GameInfo2" parent="." unique_id=808812186 instance=ExtResource("1_222sb")]
+[node name="ReclaimZone" parent="." unique_id=2127958039 instance=ExtResource("3_etamk")]
 layout_mode = 0
-offset_left = 1450.0
-offset_top = 36.0
-offset_right = 1893.0
-offset_bottom = 318.0
+offset_left = 1615.0
+offset_top = 758.0
+offset_right = 1835.0
+offset_bottom = 878.0
 
-[node name="MarginContainer" type="MarginContainer" parent="GameInfo2" unique_id=1335888650]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
-
-[node name="VBoxContainer" type="VBoxContainer" parent="GameInfo2/MarginContainer" unique_id=1493110102]
-layout_mode = 2
-
-[node name="HBoxContainer" type="HBoxContainer" parent="GameInfo2/MarginContainer/VBoxContainer" unique_id=1332568255]
-layout_mode = 2
-
-[node name="GameInfo3" parent="." unique_id=893251096 instance=ExtResource("1_222sb")]
+[node name="Panel" parent="." unique_id=1350690558 instance=ExtResource("4_spx7p")]
 layout_mode = 0
-offset_left = 99.0
-offset_top = 883.0
-offset_right = 191.0
-offset_bottom = 1039.0
-
-[node name="MarginContainer" type="MarginContainer" parent="GameInfo3" unique_id=988188701]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 20
-theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 20
-
-[node name="VBoxContainer" type="VBoxContainer" parent="GameInfo3/MarginContainer" unique_id=933628585]
-layout_mode = 2
-
-[node name="HBoxContainer" type="HBoxContainer" parent="GameInfo3/MarginContainer/VBoxContainer" unique_id=1692423399]
-layout_mode = 2
-
-[node name="Panel" type="Panel" parent="." unique_id=140381478]
-layout_mode = 0
-offset_left = 49.0
-offset_top = 28.0
-offset_right = 1376.0
-offset_bottom = 856.0
-
-[node name="Panel2" type="Panel" parent="." unique_id=1311652315]
-layout_mode = 0
-offset_left = 58.0
-offset_top = 870.0
-offset_right = 1379.0
-offset_bottom = 1052.0
+offset_left = 1550.0
+offset_top = 265.0
+offset_right = 1850.0
+offset_bottom = 588.0

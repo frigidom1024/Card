@@ -111,6 +111,7 @@ func update_drag(card: Card) -> void:
 
 	var base_indices := _build_indices_without(card)
 	var insert_index := _get_preview_insert_index(card, base_indices.size() + 1)
+	insert_index = clampi(insert_index, 0, base_indices.size())
 	base_indices.insert(insert_index, -1)
 	virtual_preview = base_indices
 	refresh_hand()
