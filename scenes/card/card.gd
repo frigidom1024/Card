@@ -2,6 +2,9 @@ extends Button
 class_name Card
 @onready var card_texture: Control = $CardTexture
 @onready var shadow:Control = $Shadow
+@onready var artwork: TextureRect = $CardTexture/SubViewport/Artwork
+@onready var attack_label: Label = $CardTexture/SubViewport/AttackLabel/Label
+@onready var defense_label: Label = $CardTexture/SubViewport/DefenseLabel/Label
 @export var angle_x_max: float = 8.0
 @export var angle_y_max: float = 8.0
 @export var max_offset_shadow:float=6.0
@@ -25,6 +28,7 @@ var velocity:Vector2 = Vector2.ZERO
 
 var drag_layer:DraggerLayer
 var cur_zone:CardZone
+var card_inst: CardInstance
 
 
 func _ready() -> void:
@@ -38,6 +42,7 @@ func _ready() -> void:
 		resized.connect(_sync_hover_pivot)
 		
 	target_position  = position
+	refresh_display()
 
 func _process(delta: float) -> void:
 	refresh_shadow(delta)
@@ -109,6 +114,8 @@ func _start_drag(mouse_position: Vector2) -> void:
 	
 func _update_drag(mouse_postion:Vector2)->void:
 	target_position= get_global_mouse_position()-drag_offset
+	if drag_layer:
+		drag_layer.update_drag(self)
 
 func _end_drag()->void:
 	if not dragging:
@@ -146,3 +153,39 @@ func _on_mouse_entered() -> void:
 	
 func bind_drag_layer(drag_layer:DraggerLayer)->void:
 	self.drag_layer=drag_layer
+
+
+func bind_card_inst(value: CardInstance) -> void:
+	card_inst = value
+	if is_node_ready():
+		refresh_display()
+
+
+func get_card_inst() -> CardInstance:
+	return card_inst
+
+
+func refresh_display() -> void:
+	if not is_node_ready():
+		return
+
+	attack_label.text = str(card_inst.current_points) if card_inst != null else "0"
+	defense_label.text = str(card_inst.current_armor) if card_inst != null else "0"
+	_update_artwork()
+
+
+func _update_artwork() -> void:
+	artwork.texture = null
+	artwork.visible = false
+	if card_inst == null or card_inst.card_data == null:
+		return
+
+	var artwork_path := card_inst.card_data.artwork_path
+	if artwork_path.is_empty() or not ResourceLoader.exists(artwork_path, "Texture2D"):
+		return
+
+	var loaded_texture := ResourceLoader.load(artwork_path, "Texture2D") as Texture2D
+	if loaded_texture == null:
+		return
+	artwork.texture = loaded_texture
+	artwork.visible = true

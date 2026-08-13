@@ -5,6 +5,8 @@
 [ext_resource type="Shader" uid="uid://dgadlxh1ukewp" path="res://shaders/card_perspective.gdshader" id="2_shader"]
 [ext_resource type="StyleBox" uid="uid://1rpvisr7bhri" path="res://assert/card_frame/card_frame.tres" id="4_frame"]
 [ext_resource type="Texture2D" uid="uid://0lvd6foamt4r" path="res://assert/card/ribwood_guardian_root.png" id="5_artwork"]
+[ext_resource type="Texture2D" uid="uid://fcec5kjiuf4e" path="res://assert/card_frame/card_label_attack.png" id="6_b2sko"]
+[ext_resource type="Texture2D" uid="uid://bm1pln3d3yxl3" path="res://assert/card_frame/card_label_defense.png" id="8_v07qs"]
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_hdy3g"]
 
@@ -34,8 +36,8 @@ anchor_right = 0.10700001
 anchor_bottom = 0.16000001
 offset_left = -0.4400177
 offset_top = 0.19998169
-offset_right = 83.55998
-offset_bottom = 154.19998
+offset_right = 91.55998
+offset_bottom = 164.19998
 theme_override_styles/normal = SubResource("StyleBoxEmpty_hdy3g")
 theme_override_styles/pressed = SubResource("StyleBoxEmpty_qmeae")
 theme_override_styles/hover = SubResource("StyleBoxEmpty_ridm3")
@@ -47,50 +49,130 @@ drag_stiffness = 210.0
 [node name="Shadow" type="Panel" parent="." unique_id=1153363669]
 modulate = Color(0.30446225, 0.30446225, 0.30446216, 1)
 layout_mode = 1
-anchors_preset = -1
-anchor_top = 0.049000002
-anchor_bottom = 0.049000002
-offset_top = 0.021992683
-offset_right = 84.0
-offset_bottom = 154.02199
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 4.0
+offset_bottom = 4.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("1_shadow")
 
 [node name="CardTexture" type="SubViewportContainer" parent="." unique_id=1170321168]
 material = SubResource("ShaderMaterial_6jo1p")
 layout_mode = 1
-offset_right = 84.0
-offset_bottom = 154.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 
 [node name="SubViewport" type="SubViewport" parent="CardTexture" unique_id=1726947309]
 transparent_bg = true
 handle_input_locally = false
-size = Vector2i(84, 154)
+size = Vector2i(92, 164)
 render_target_update_mode = 4
 
 [node name="Card" type="Panel" parent="CardTexture/SubViewport" unique_id=1466109767]
 material = SubResource("ShaderMaterial_ee5lm")
-offset_right = 84.0
-offset_bottom = 154.0
+anchors_preset = -1
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 theme_override_styles/panel = ExtResource("4_frame")
 
 [node name="Artwork" type="TextureRect" parent="CardTexture/SubViewport" unique_id=2021746234]
+visible = false
 texture_filter = 1
 anchors_preset = -1
 anchor_left = 0.119
 anchor_top = 0.082
 anchor_right = 0.88100004
 anchor_bottom = 0.91800004
-offset_left = 0.00399971
-offset_top = -1.0040007
-offset_right = -0.004005432
-offset_bottom = -0.9960022
+offset_left = 3.0520039
+offset_top = 10.552
+offset_right = -3.052002
+offset_bottom = -30.552002
 mouse_filter = 2
 texture = ExtResource("5_artwork")
 expand_mode = 1
 stretch_mode = 6
+
+[node name="AttackLabel" type="Control" parent="CardTexture/SubViewport" unique_id=1118370127]
+layout_mode = 3
+anchor_left = 0.007
+anchor_top = 0.044000003
+anchor_right = 0.007
+anchor_bottom = 0.044000003
+offset_left = 53.356003
+offset_top = 110.784
+offset_right = 85.356
+offset_bottom = 142.784
+
+[node name="TextureRect" type="TextureRect" parent="CardTexture/SubViewport/AttackLabel" unique_id=2135152970]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("6_b2sko")
+
+[node name="Label" type="Label" parent="CardTexture/SubViewport/AttackLabel" unique_id=1203999582]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 20
+text = "12"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="DefenseLabel" type="Control" parent="CardTexture/SubViewport" unique_id=301038908]
+layout_mode = 3
+anchor_left = 0.007
+anchor_top = 0.044000003
+anchor_right = 0.007
+anchor_bottom = 0.044000003
+offset_left = 5.3560038
+offset_top = 110.784
+offset_right = 37.356
+offset_bottom = 142.784
+
+[node name="TextureRect" type="TextureRect" parent="CardTexture/SubViewport/DefenseLabel" unique_id=1033969887]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("8_v07qs")
+
+[node name="Label" type="Label" parent="CardTexture/SubViewport/DefenseLabel" unique_id=1683780209]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 20
+text = "12"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1729534648]
+layout_mode = 0
+offset_left = -40.0
+offset_top = -54.0
+offset_bottom = -14.0
 
 [connection signal="gui_input" from="." to="." method="_on_gui_input"]
 [connection signal="mouse_entered" from="." to="." method="_on_mouse_entered"]

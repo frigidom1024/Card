@@ -12,10 +12,10 @@ grow_vertical = 2
 
 [node name="GameInfo" parent="." unique_id=1925670509 instance=ExtResource("1_222sb")]
 layout_mode = 0
-offset_left = 66.0
-offset_top = 88.0
-offset_right = 466.0
-offset_bottom = 288.0
+offset_left = 1451.0
+offset_top = 340.0
+offset_right = 1902.0
+offset_bottom = 820.0
 
 [node name="MarginContainer" type="MarginContainer" parent="GameInfo" unique_id=1685446160]
 layout_mode = 1
@@ -34,3 +34,67 @@ layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="GameInfo/MarginContainer/VBoxContainer" unique_id=1601836534]
 layout_mode = 2
+
+[node name="GameInfo2" parent="." unique_id=808812186 instance=ExtResource("1_222sb")]
+layout_mode = 0
+offset_left = 1450.0
+offset_top = 36.0
+offset_right = 1893.0
+offset_bottom = 318.0
+
+[node name="MarginContainer" type="MarginContainer" parent="GameInfo2" unique_id=1335888650]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameInfo2/MarginContainer" unique_id=1493110102]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GameInfo2/MarginContainer/VBoxContainer" unique_id=1332568255]
+layout_mode = 2
+
+[node name="GameInfo3" parent="." unique_id=893251096 instance=ExtResource("1_222sb")]
+layout_mode = 0
+offset_left = 99.0
+offset_top = 883.0
+offset_right = 191.0
+offset_bottom = 1039.0
+
+[node name="MarginContainer" type="MarginContainer" parent="GameInfo3" unique_id=988188701]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="GameInfo3/MarginContainer" unique_id=933628585]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="GameInfo3/MarginContainer/VBoxContainer" unique_id=1692423399]
+layout_mode = 2
+
+[node name="Panel" type="Panel" parent="." unique_id=140381478]
+layout_mode = 0
+offset_left = 49.0
+offset_top = 28.0
+offset_right = 1376.0
+offset_bottom = 856.0
+
+[node name="Panel2" type="Panel" parent="." unique_id=1311652315]
+layout_mode = 0
+offset_left = 58.0
+offset_top = 870.0
+offset_right = 1379.0
+offset_bottom = 1052.0

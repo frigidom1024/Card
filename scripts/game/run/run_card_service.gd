@@ -13,6 +13,7 @@ var drag_layer: Node2D
 
 var _instances: Array[CardInstance] = []
 var _entities: Array[CardEntity] = []
+var _card_views: Array[Card] = []
 
 
 func configure(
@@ -136,6 +137,7 @@ func clear() -> void:
 			hand_area.remove_card(entity, false)
 		entity.queue_free()
 	_entities.clear()
+	_card_views.clear()
 	_instances.clear()
 
 
@@ -145,6 +147,38 @@ func get_instances() -> Array[CardInstance]:
 
 func get_entities() -> Array[CardEntity]:
 	return _entities
+
+
+func get_card_views() -> Array[Card]:
+	return _card_views.duplicate()
+
+
+func can_register_existing_instance(card_inst: CardInstance, card: Card) -> bool:
+	if (
+		card_inst == null
+		or card_inst.card_data == null
+		or card == null
+		or not is_instance_valid(card)
+		or card.get_card_inst() != card_inst
+	):
+		return false
+
+	var instance_registered := card_inst in _instances
+	var view_registered := card in _card_views
+	if instance_registered or view_registered:
+		return instance_registered and view_registered
+	return true
+
+
+func register_existing_instance(card_inst: CardInstance, card: Card) -> bool:
+	if not can_register_existing_instance(card_inst, card):
+		return false
+	if card_inst not in _instances:
+		_instances.append(card_inst)
+	if card not in _card_views:
+		_card_views.append(card)
+	card_inst.cur_zone = CardInstance.ZONE.HAND
+	return true
 
 
 func _add_new_instance_to_hand(instance: CardInstance) -> bool:

@@ -4,3 +4,6 @@
 
 [node name="BackGround" type="Node2D" unique_id=140895323]
 script = ExtResource("1_oxe78")
+cell_size = 92.0
+grid_width = 9
+grid_height = 7

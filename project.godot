@@ -17,7 +17,8 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-MCPRuntimeProbe="*uid://bsg12huaf1u5i"
+MCPGameInspector="*res://addons/godot_mcp/services/game_inspector.gd"
+MCPGameInput="*res://addons/godot_mcp/services/game_input.gd"
 
 [display]
 
