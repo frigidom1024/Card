@@ -1,6 +1,7 @@
 # Board / BoardZone / BoardEventZone 重构设计
 
 **日期：** 2026-08-13
+**最近修订：** 2026-08-14
 **状态：** 待用户复审
 
 ## 1. 背景
@@ -65,7 +66,8 @@ GamePage
 ```text
 GamePage
 ├── 将 DraggerLayer 注入 HandZone / BoardZone / ShopZone / ReclaimZone
-├── 连接 Board.card_return_requested 到 HandZone
+├── 连接 Board.card_return_requested 到唯一回手处理器
+├── 回手处理器统一调用 HandZone.add_card(card, true)
 └── 将 Board 业务信号连接到现有运行流程
 
 DraggerLayer
@@ -255,7 +257,7 @@ source.drag_end_source(card, true)
 
 - 丢弃原成员快照；
 - 完成来源特有结算，例如商店购买信号；
-- 完成 Board 链段后继卡回手；
+- 完成 Board 牌桌侧链段分离并发布待回手后继卡清单；
 - 清理来源预览与事务状态。
 
 取消来源提交：
@@ -279,15 +281,16 @@ source.drag_end_source(card, false)
 - 拖拽预览；
 - 卡牌放置、移动与取消；
 - GUIDE 引起的牌链空间移动；
-- 玩家把棋盘牌拖回手牌时的链段空间迁移；
-- 更新受影响 `CardInstance` 的 `cur_zone`、`battlefield_pos` 和 `direction`；
+- 玩家把棋盘牌拖回手牌时，从牌桌成员和网格中分离对应链段，并生成待回手后继卡清单；
+- 更新仍属于牌桌的受影响 `CardInstance` 的 `cur_zone`、`battlefield_pos` 和 `direction`；
 - 提供战斗牌链查询。
 
 `BoardZone` 不负责：
 
 - 探索计数；
 - 事件结算；
-- GUIDE 回手业务请求；
+- GUIDE 或链段后继卡的回手业务请求；
+- 直接查找、调用或写入 `HandZone`；
 - 链回手费用；
 - 商店购买或回收收益；
 - 最终 `BoardPlacementResult` 或 `ChainRetractionTransaction` 的发布。
@@ -336,7 +339,7 @@ class_name BoardCardRetraction
 extends RefCounted
 
 var removed_card: Card
-var returned_followers: Array[Card]
+var followers_to_return: Array[Card]
 var original_chain_size: int
 ```
 
@@ -344,10 +347,10 @@ var original_chain_size: int
 
 ```gdscript
 signal placement_applied(operation: BoardCardPlacement)
-signal chain_segment_returned(operation: BoardCardRetraction)
+signal chain_segment_detached(operation: BoardCardRetraction)
 ```
 
-这些信号只说明空间事务已经完成，不代表探索、事件、回手费用或其他业务已经结算。
+这些信号只说明牌桌侧空间事务已经完成，不代表探索、事件、回手费用或其他业务已经结算。`chain_segment_detached` 发出时，`followers_to_return` 已离开牌桌稳定成员和网格，但尚未保证已进入手牌。
 
 `BoardZone` 不发布：
 
@@ -387,14 +390,16 @@ chain_retraction_confirmed
 
 若目标是 `HandZone`：
 
-1. 目标先接收被拖卡；
-2. `BoardZone.drag_end_source(card, true)` 从当前卡牌祖先解析已提交的 `HandZone`；
-3. 将后继卡按原顺序加入同一 `HandZone`；
-4. 所有返回卡写入 `HAND`、清空 `battlefield_pos` 并重置逻辑方向；
-5. 构造并发布 `BoardCardRetraction`；
-6. 清理原牌桌来源事务。
+1. `HandZone.drag_end_target(card)` 先通过正常目标提交接收被拖卡，并内部复用统一的 `add_card()` 成员接收逻辑；
+2. `BoardZone.drag_end_source(card, true)` 只提交原牌桌来源事务，从牌桌稳定成员和网格中永久释放被拖卡及其后继段；
+3. 被拖卡已由目标提交处理，不加入 `followers_to_return`，避免 `Board` 重复请求回手；
+4. 后继卡按原牌链顺序写入 `BoardCardRetraction.followers_to_return`；
+5. `BoardZone` 可清除后继卡已经失效的 `battlefield_pos`，但不得直接写入 `cur_zone = HAND`、重置最终手牌方向或重新父子化到 `HandZone`；
+6. 发布 `chain_segment_detached`，再清理原牌桌来源事务。
 
-若目标是同一个 `BoardZone`，目标提交建立新的牌链成员资格和占格；随后的来源提交只能丢弃旧快照，不得删除新放置。
+`chain_segment_detached` 的同步监听链由 `Board` 负责把每张后继卡交给统一回手处理器。同步事务内部允许卡牌短暂处于“已从 Board 分离、尚未由 Hand 接收”的过渡状态；信号处理返回后，每张后继卡必须由 `HandZone.add_card()` 写入 `cur_zone = HAND`、`battlefield_pos = (-1, -1)`、`direction = 0` 并建立稳定手牌成员资格。
+
+若目标是同一个 `BoardZone`，目标提交建立新的牌链成员资格和占格；随后的来源提交只能丢弃旧快照，不得删除新放置，也不得发布 `chain_segment_detached`。
 
 `ReclaimZone` 只接受 `CardInstance.cur_zone == HAND` 的卡，因此棋盘卡不能绕过先回手的规则直接回收。
 
@@ -427,6 +432,9 @@ Board
 ├── 构造 GUIDE_RESOLVED
 ├── placement_committed
 └── card_return_requested
+
+GamePage/运行流程
+└── 唯一回手处理器调用 HandZone.add_card(card, true)
 ```
 
 ### 9.3 同步原子顺序
@@ -440,12 +448,15 @@ BoardZone.drag_end_target
   → BoardZone.placement_applied(GUIDE_SHIFTED)
     → Board 构造 BoardPlacementResult
     → Board.placement_committed
-    → Board.card_return_requested
-      → GamePage/运行流程把 GUIDE 加入 HandZone
+    → Board.card_return_requested(GUIDE)
+      → GamePage/运行流程调用 HandZone.add_card(GUIDE, true)
+      → Board 验证 GUIDE 的 CardInstance.cur_zone == HAND
   → BoardZone.drag_end_target 返回 true
 DraggerLayer
   → 原来源 drag_end_source(card, true)
 ```
+
+GUIDE 与牌链拆除产生的后继卡共享同一个 `card_return_requested` 监听器和同一个 `HandZone.add_card()` 接收入口。两者的最终 `HAND` 状态、无效棋盘坐标清理、逻辑方向重置、父子关系和手牌布局刷新都由 `HandZone` 统一完成。
 
 来源事务规则解决两种情况：
 
@@ -454,7 +465,7 @@ DraggerLayer
 
 目标信号监听器是同步的。`BoardZone` 发出 `placement_applied` 后不得继续假定 GUIDE 的父节点仍是 `BoardZone`。
 
-若 `card_return_requested` 没有有效监听器，这是场景装配错误；不得让 `BoardZone` 静默把 GUIDE 留为牌链成员。
+若 `card_return_requested` 没有有效监听器，或同步处理返回后 GUIDE 仍未进入 `HAND`，这是场景装配或内部一致性错误；不得让 `BoardZone` 静默把 GUIDE 留为牌链成员。
 
 ## 10. BoardEventZone
 
@@ -549,9 +560,10 @@ extends Node
 - 监听 `BoardZone.placement_applied`；
 - 构造 `BoardPlacementResult`；
 - 通过 `BoardEventZone` 查询放置覆盖的事件；
-- 保留 GUIDE 业务语义和回手请求；
-- 监听 `BoardZone.chain_segment_returned`；
-- 构造 `ChainRetractionTransaction`；
+- 保留 GUIDE 业务语义并发布统一回手请求；
+- 监听 `BoardZone.chain_segment_detached`；
+- 按原牌链顺序为后继卡发布统一回手请求；
+- 在所有后继卡同步进入手牌后构造 `ChainRetractionTransaction`；
 - 对事件节点生命周期发布最终业务信号。
 
 `Board` 不负责：
@@ -667,14 +679,24 @@ var original_chain_size: int
 流程：
 
 ```text
-BoardZone 完成棋盘到 HandZone 的链段空间迁移
-→ BoardZone.chain_segment_returned(BoardCardRetraction)
-→ Board 构造 ChainRetractionTransaction
-→ Board.chain_retraction_confirmed
-→ 外部 CardRetractionCostService 等业务消费者处理费用
+HandZone.drag_end_target(removed_card)
+→ 被玩家拖动的卡通过正常目标提交进入 HandZone
+
+BoardZone.drag_end_source(removed_card, true)
+→ 完成原牌桌成员与网格清理
+→ 构造 BoardCardRetraction(followers_to_return)
+→ BoardZone.chain_segment_detached
+  → Board 按原牌链顺序逐张发出 card_return_requested(follower)
+    → GamePage/运行流程调用 HandZone.add_card(follower, true)
+  → Board 验证每张 follower 的 CardInstance.cur_zone == HAND
+  → Board 构造 ChainRetractionTransaction(returned_followers)
+  → Board.chain_retraction_confirmed
+  → 外部 CardRetractionCostService 等业务消费者处理费用
 ```
 
-`Board` 不计算或扣除费用。GUIDE 自动回手不进入此流程。
+被玩家直接拖动的 `removed_card` 不再由 `Board` 发出 `card_return_requested`，避免重复加入手牌或覆盖目标提交确定的手牌位置。它与后继卡最终都必须经过 `HandZone` 的统一成员接收实现：前者由标准拖拽目标提交调用，后者由统一回手处理器调用。
+
+`Board` 对全部 `followers_to_return` 发出同步回手请求后，只有每张卡都已进入 `HAND`，才把同一批卡写入兼容字段 `ChainRetractionTransaction.returned_followers` 并发布 `chain_retraction_confirmed`。`Board` 不计算或扣除费用。GUIDE 自动回手使用相同的 `card_return_requested` 通道，但不构造链回手事务、不发布 `chain_retraction_confirmed`。
 
 原先监听旧 `DragLayer.chain_retraction_confirmed` 的新页面业务接线迁移到 `Board.chain_retraction_confirmed`。旧 `DragLayer` 保持在旧页面迁移边界内，直至旧组件退出。
 
@@ -725,11 +747,13 @@ BoardZone.placement_applied
 5. 创建常驻 `ReclaimZone`；
 6. 将同一个 `DraggerLayer` 注入并注册所有可交互 `CardZone`；
 7. 将各区域现有卡牌绑定同一个 `DraggerLayer`；
-8. 连接 `Board.card_return_requested` 到运行流程的回手处理；
+8. 连接 `Board.card_return_requested` 到唯一同步回手处理器，该处理器只调用 `HandZone.add_card(card, true)`；
 9. 连接 `Board.placement_committed` 到 `PlacementPipelineCoordinator`；
 10. 连接 `Board.chain_retraction_confirmed` 到链回手费用服务；
 11. 连接事件添加/删除信号到需要的界面或运行流程；
 12. 最后生成初始手牌、商店库存、ROOT 和事件，避免生成时区域尚未完成接线。
+
+`Board.card_return_requested → HandZone.add_card(card, true)` 是 GUIDE 和牌链后继卡自动回手的唯一页面接线。页面不得分别实现 GUIDE 专用回手和链段专用回手，也不得让 `BoardZone` 获取 `HandZone` 引用。
 
 `HUD` 只保留展示职责，不再直接拥有独立 `BoardZone`。`Board` 场景是 `BoardZone` 与 `BoardEventZone` 的唯一牌桌组合入口。
 
@@ -747,8 +771,10 @@ BoardZone.placement_applied
 8. `BoardZone` 的网格索引与牌链成员集合一致。
 9. `BoardEventZone` 的事件索引与事件节点集合一致。
 10. `BoardPlacementResult` 只在完整空间提交后发布。
-11. `ChainRetractionTransaction` 只在链段已进入手牌后发布。
-12. 购买、回收、放置和回手继续使用同一个 `CardInstance`，不得复制实例。
+11. `ChainRetractionTransaction` 只在全部待回手后继卡已进入手牌后发布。
+12. GUIDE 和链段后继卡的自动回手只经过 `Board.card_return_requested → HandZone.add_card()`。
+13. 被玩家直接拖动的棋盘卡只由 `HandZone` 目标提交接收一次，不再由 `Board` 重复请求回手。
+14. 购买、回收、放置和回手继续使用同一个 `CardInstance`，不得复制实例。
 
 ### 15.2 失败处理
 
@@ -757,7 +783,8 @@ BoardZone.placement_applied
 - 缺少 `CardInstance`：区域拒绝卡牌。
 - 缺少 `BoardZone`、`BoardEventZone` 或共享网格：`Board` 报告场景装配错误，不静默创建替代状态。
 - 目标提交在通过预校验后仍失败：报告内部一致性错误，并执行现有取消通知；不引入新回滚协议。
-- GUIDE 回手信号无人处理：报告装配错误；不得把 GUIDE 加入稳定牌链。
+- 统一回手信号无人处理：报告场景装配错误；GUIDE 和链段后继卡都不得退回到牌桌稳定成员。
+- 同步回手请求结束后 `CardInstance.cur_zone != HAND`：报告内部一致性错误；链回手不得发布 `chain_retraction_confirmed`，但不新增回滚协议。
 - 事件添加或移动失败：不得留下部分网格占用、错误父节点或错误 `origin`。
 
 ## 16. 迁移范围
@@ -842,8 +869,9 @@ scripts/game/placement/placement_pipeline_coordinator.gd
 - 取消拖拽恢复牌链、占格、方向和坐标；
 - 成功放置更新唯一 `CardInstance` 状态；
 - GUIDE 正确移动牌链且不进入成员集合；
-- 链段回手按原顺序移动全部后继卡；
-- `placement_applied` 和 `chain_segment_returned` 各只发出一次。
+- 链段拆除按原顺序产出全部 `followers_to_return`；
+- `BoardZone` 不依赖、查找或调用 `HandZone`；
+- `placement_applied` 和 `chain_segment_detached` 各只发出一次。
 
 ### 17.5 BoardEventZone
 
@@ -858,7 +886,10 @@ scripts/game/placement/placement_pipeline_coordinator.gd
 - GUIDE 空间结果转换为 `GUIDE_RESOLVED`；
 - `overlapped_event` 正确写入结果；
 - GUIDE 信号顺序为 `placement_committed` 后 `card_return_requested`；
-- 链回手空间完成后才发布 `chain_retraction_confirmed`；
+- GUIDE 与链段后继卡使用同一个同步回手处理器；
+- 后继卡按原牌链顺序逐张请求回手，每张只加入 `HandZone` 一次；
+- 被玩家直接拖动的卡不会被 `Board` 重复请求回手；
+- 全部后继卡进入 `HAND` 后才发布 `chain_retraction_confirmed`；
 - `event_attached` / `event_removed` 只在区域成功后发出；
 - 卡牌放置不直接重复发出 `event_triggered`。
 
@@ -879,8 +910,9 @@ scripts/game/placement/placement_pipeline_coordinator.gd
 3. `BoardZone` 和 `BoardEventZone` 可以独立测试。
 4. `Card.cur_zone` 已从新体系删除，状态只保存在 `CardInstance`。
 5. GUIDE 从 Hand 和 Shop 出发都能同步回手，且来源提交不误删卡牌。
-6. 普通商店购买、回收、牌桌放置和链回手继续使用精确实例。
-7. 卡牌实例更新后数值标签和图片正确刷新。
-8. 现有业务信号名称保持兼容，重复的 `card_placed` 除外。
-9. 不新增拖拽 finalize、deferred 或回滚协议。
-10. 所有迁移后的单元与集成测试通过。
+6. GUIDE 与链段自动返回的后继卡统一经 `Board.card_return_requested → HandZone.add_card()` 回手，`BoardZone` 不直接依赖 `HandZone`。
+7. 普通商店购买、回收、牌桌放置和链回手继续使用精确实例。
+8. 卡牌实例更新后数值标签和图片正确刷新。
+9. 现有业务信号名称保持兼容，重复的 `card_placed` 除外；`chain_segment_detached` 是新的内部空间信号。
+10. 不新增拖拽 finalize、deferred 或回滚协议。
+11. 所有迁移后的单元与集成测试通过。
