@@ -1,3 +1,28 @@
+## 常驻商店管理组件
+##
+## 负责管理商店的配置、商品实例、价格结算、刷新与购买后补货。
+## 包括：
+## - 注入卡牌库、玩家数据、卡牌服务和定价服务
+## - 创建并维护 ShopZone 中的精确 CardInstance/Card 映射
+## - 处理刷新按钮、购买验证、金币扣除和替代商品生成
+## - 接收传入的 DraggerLayer 并注册 ShopZone、绑定商品卡牌
+##
+## 不负责：
+## - 商品卡牌的空间命中和拖拽提交顺序
+## - 跨区域卡牌移动的来源解析
+## - 手牌、牌桌或回收区的成员管理
+## - 卡牌视图本身的绘制与输入细节
+##
+## 使用方式：
+## 通过 configure() 注入商店依赖，再通过 set_drag_layer() 接入当前页面唯一的
+## DraggerLayer；商品购买成功后由 ShopZone 的 product_purchased 信号驱动补货。
+##
+## 依赖：
+## ShopZone：管理商品槽位和购买拖拽事务。
+## CardInstance/Card：建立精确实例与视图绑定。
+## RunCardService：注册购买成功的卡牌实例。
+## MarketPricingService：提供购买和刷新价格。
+
 class_name Shop
 extends Panel
 

@@ -1,45 +1,61 @@
 extends SceneTree
 
-const BoardScene = preload("res://scenes/game/board.tscn")
-const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
+const BOARD_ZONE_SCENE := preload("res://scenes/zone/board_zone.tscn")
+const CARD_SCENE := preload("res://scenes/card/card.tscn")
 
-var _failure_count := 0
+var _failures := 0
 
 
 func _init() -> void:
-	call_deferred("_run_tests")
+	call_deferred("_run")
 
 
-func _run_tests() -> void:
-	var board := BoardScene.instantiate() as Board
+func _run() -> void:
+	var board := BOARD_ZONE_SCENE.instantiate() as BoardZone
 	root.add_child(board)
+	await process_frame
 
-	var tail := CardEntityScene.instantiate() as CardEntity
-	board.add_child(tail)
-	tail.position = Vector2(520, 364)
-	tail.rotation_degrees = -90.0
-	board.cards.append(tail)
+	var root_card := _make_card(CardData.CardType.ROOT, 3)
+	root.add_child(root_card)
+	await process_frame
+	_move_card_to_anchor(board, root_card, Vector2i(4, 3), 3)
+	_expect(board.add_card(root_card), "a left-facing ROOT can be placed")
+	_expect(board.get_placement_cell(root_card) == Vector2i(3, 3), "direction 3 exposes the left connection cell")
 
-	var candidate := CardEntityScene.instantiate() as CardEntity
-	board.add_child(candidate)
-	candidate.position = Vector2(364, 312)
-	candidate.rotation_degrees = 0.0
+	var candidate := _make_card(CardData.CardType.NORMAL, 0)
+	root.add_child(candidate)
+	await process_frame
+	_move_card_to_anchor(board, candidate, Vector2i(3, 2), 0)
+	_expect(board.can_place_card(candidate), "a candidate covering the left connection cell can extend the chain")
+	_expect(board.add_card(candidate), "the left-connected candidate commits")
+	_expect(candidate.get_card_inst().direction == 0, "committed direction remains in CardInstance")
 
-	var candidate_cells := board.get_card_cells(candidate.global_position, candidate.rotation_degrees)
-	_expect(
-		board.get_placement_cell(tail) == Vector2i(3, 3),
-		"a -90 degree tail exposes its left-side connection cell"
-	)
-	_expect(
-		board.can_place_card(candidate_cells, candidate),
-		"a card covering the left-side connection cell can be placed after a -90 degree tail"
-	)
+	board.free()
+	quit(1 if _failures > 0 else 0)
 
-	board.queue_free()
-	quit(1 if _failure_count > 0 else 0)
+
+func _make_card(card_type: CardData.CardType, direction: int) -> Card:
+	var data := CardData.new()
+	data.card_type = card_type
+	var instance := CardInstance.new(data)
+	instance.direction = direction
+	var card := CARD_SCENE.instantiate() as Card
+	card.bind_card_inst(instance)
+	return card
+
+
+func _move_card_to_anchor(board: BoardZone, card: Card, anchor: Vector2i, direction: int) -> void:
+	var background := board.back_ground
+	var cell_size := background.cell_size
+	var local_center := Vector2((float(anchor.x) + 0.5) * cell_size, (float(anchor.y) + 1.0) * cell_size)
+	if posmod(direction, 4) % 2 == 1:
+		local_center = Vector2((float(anchor.x) + 1.0) * cell_size, (float(anchor.y) + 0.5) * cell_size)
+	card.global_position = background.to_global(local_center) - card.size * 0.5
+	card.target_position = card.position
+	card.get_card_inst().direction = direction
 
 
 func _expect(condition: bool, message: String) -> void:
 	if not condition:
-		_failure_count += 1
+		_failures += 1
 		push_error(message)

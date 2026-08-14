@@ -1,3 +1,28 @@
+## 商店商品交互区域组件
+##
+## 负责管理商店商品槽位与购买拖拽事务。
+## 包括：
+## - 商品卡牌的稳定槽位与所有权查询
+## - 购买前验证委托与商品拖拽快照
+## - 购买成功后的槽位清空和 product_purchased 通知
+## - 商品卡牌的 SHOP 区域状态同步与显示布局
+##
+## 不负责：
+## - 商品价格、金币扣除或替代商品生成
+## - 商店刷新随机算法
+## - 玩家卡牌实例的持久化注册
+## - 跨区域拖拽来源解析与目标提交顺序
+##
+## 使用方式：
+## 由 Shop 注入购买验证器、商品卡牌和 DraggerLayer；拖拽流程由 DraggerLayer
+## 调用本区域协议，购买成功后由 Shop 监听 product_purchased。
+##
+## 依赖：
+## CardZone：提供区域基础拖拽协议。
+## Card：提供商品卡牌视图。
+## CardInstance：保存商品的 SHOP 状态。
+## DraggerLayer：协调商品卡牌跨区域拖拽。
+
 class_name ShopZone
 extends CardZone
 
@@ -37,8 +62,9 @@ func set_products(cards: Array[Card]) -> void:
 		accepted.append(card)
 
 	for current in _products:
-		if is_instance_valid(current) and current not in accepted and current.cur_zone == self:
-			current.cur_zone = null
+		if is_instance_valid(current) and current not in accepted and current.get_card_inst() != null and current.get_card_inst().cur_zone == CardInstance.ZONE.SHOP:
+			current.get_card_inst().cur_zone = CardInstance.ZONE.DISCARD
+			current.refresh_display()
 
 	_products.clear()
 	for index in range(max_products):
@@ -54,8 +80,9 @@ func replace_product(slot_index: int, card: Card, keep_global_position: bool = f
 	if slot_index < 0 or slot_index >= max_products or not _is_valid_bound_card(card):
 		return false
 	var existing := _products[slot_index]
-	if is_instance_valid(existing) and existing != card and existing.cur_zone == self:
-		existing.cur_zone = null
+	if is_instance_valid(existing) and existing != card and existing.get_card_inst() != null and existing.get_card_inst().cur_zone == CardInstance.ZONE.SHOP:
+		existing.get_card_inst().cur_zone = CardInstance.ZONE.DISCARD
+		existing.refresh_display()
 	_products[slot_index] = card
 	_adopt_product(card, keep_global_position)
 	_schedule_layout()
@@ -66,8 +93,9 @@ func clear_products(queue_free_cards: bool = false) -> void:
 	for card in _products:
 		if not is_instance_valid(card):
 			continue
-		if card.cur_zone == self:
-			card.cur_zone = null
+		if card.get_card_inst() != null and card.get_card_inst().cur_zone == CardInstance.ZONE.SHOP:
+			card.get_card_inst().cur_zone = CardInstance.ZONE.DISCARD
+			card.refresh_display()
 		if queue_free_cards:
 			card.queue_free()
 		else:
@@ -96,8 +124,9 @@ func remove_card(card: Card) -> bool:
 	if slot_index == -1:
 		return false
 	_products[slot_index] = null
-	if card.cur_zone == self:
-		card.cur_zone = null
+	if card.get_card_inst() != null and card.get_card_inst().cur_zone == CardInstance.ZONE.SHOP:
+		card.get_card_inst().cur_zone = CardInstance.ZONE.DISCARD
+		card.refresh_display()
 	_schedule_layout()
 	return true
 
@@ -133,6 +162,10 @@ func has_product(card: Card) -> bool:
 	return get_product_slot(card) != -1
 
 
+func owns_card(card: Card) -> bool:
+	return card != null and _products.has(card)
+
+
 func has_active_product_drag() -> bool:
 	return is_instance_valid(_dragging_product)
 
@@ -159,6 +192,8 @@ func start_drag(card: Card) -> void:
 	_dragging_product = card
 	_drag_slot = slot_index
 	_drag_original_target = card.target_position
+	_products[slot_index] = null
+	_schedule_layout()
 
 
 func drag_end_source(card: Card, ok: bool) -> bool:
@@ -167,13 +202,14 @@ func drag_end_source(card: Card, ok: bool) -> bool:
 	var slot_index := _drag_slot
 	var card_inst := card.get_card_inst()
 	if ok:
-		if slot_index < _products.size() and _products[slot_index] == card:
-			_products[slot_index] = null
 		_clear_drag_state()
 		product_purchased.emit(card, card_inst, slot_index)
 		return true
 
 	card.target_position = _drag_original_target
+	if slot_index < _products.size() and _products[slot_index] == null:
+		_products[slot_index] = card
+	_set_shop_state(card)
 	_clear_drag_state()
 	_schedule_layout()
 	return true
@@ -184,7 +220,7 @@ func _collect_initial_products() -> void:
 	for child in get_children():
 		if child is Card and _products.size() < max_products:
 			_products.append(child as Card)
-			(child as Card).cur_zone = self
+			_set_shop_state(child as Card)
 	_ensure_slots()
 
 
@@ -193,12 +229,23 @@ func _adopt_product(card: Card, keep_global_position: bool) -> void:
 		add_child(card)
 	elif card.get_parent() != self:
 		card.reparent(self, keep_global_position)
-	card.cur_zone = self
+	_set_shop_state(card)
 	card.show()
 
 
 func _is_valid_bound_card(card: Card) -> bool:
 	return card != null and is_instance_valid(card) and card.get_card_inst() != null
+
+
+func _set_shop_state(card: Card) -> void:
+	if card == null or card.get_card_inst() == null:
+		return
+	var card_inst := card.get_card_inst()
+	card_inst.cur_zone = CardInstance.ZONE.SHOP
+	card_inst.battlefield_pos = Vector2i(-1, -1)
+	card_inst.direction = 0
+	card.rotation = 0.0
+	card.refresh_display()
 
 
 func _ensure_slots() -> void:
@@ -256,6 +303,6 @@ func _layout_products() -> void:
 	for index in range(visible_cards.size()):
 		var card := visible_cards[index]
 		var target := Vector2(cursor_x, (size.y - maxf(card.size.y, fallback_card_size.y if card.size.y <= 0.0 else card.size.y)) * 0.5)
-		card.position = target
+		target.y+=20
 		card.target_position = target
 		cursor_x += widths[index] + gap

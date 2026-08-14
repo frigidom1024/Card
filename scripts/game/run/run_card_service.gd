@@ -1,28 +1,50 @@
+## 运行卡牌服务组件
+##
+## 负责管理当前游戏流程拥有的 CardInstance 与可见 Card 的精确一一对应关系。
+## 包括：
+## - 从初始牌组或奖励数据创建运行期 CardInstance
+## - 创建、绑定并跟踪对应的 Card 视图
+## - 将新卡或已有卡放入 HandZone
+## - 注销、销毁和清理当前流程拥有的卡牌
+## - 在精确运行卡集合变化后发出同步通知
+##
+## 不负责：
+## - 手牌容量、布局或拖拽合法性规则
+## - 商店定价、金币结算或牌桌业务判断
+## - CardInstance 的跨局持久化
+##
+## 使用方式：
+## 先通过 configure() 注入 Card 场景、HandZone 和唯一 DraggerLayer，
+## 再调用 initialize_starting_deck()、grant_to_hand() 或精确实例登记接口。
+##
+## 依赖：
+## Card：提供运行期卡牌视图与显示刷新。
+## CardInstance：保存卡牌唯一业务状态。
+## HandZone：接收和管理手牌成员。
+## DraggerLayer：协调页面内所有卡牌区域的同步拖拽。
+
 class_name RunCardService
 extends RefCounted
 
-## Owns the cards a player has acquired during the current run.
-##
-## This service creates runtime CardInstance/CardEntity pairs and moves owned cards
-## back to the hand. It deliberately does not know why a card is granted, sold,
-## or returned: events, markets, the board, and exploration remain its callers.
+signal cards_changed
 
-var card_manager: Node2D
-var hand_area: HandArea
-var drag_layer: Node2D
+var card_scene: PackedScene
+var hand_zone: HandZone
+var drag_layer: DraggerLayer
 
 var _instances: Array[CardInstance] = []
-var _entities: Array[CardEntity] = []
 var _card_views: Array[Card] = []
 
 
 func configure(
-	next_card_manager: Node2D, next_hand_area: HandArea, next_drag_layer: Node2D
+	next_card_scene: PackedScene,
+	next_hand_zone: HandZone,
+	next_drag_layer: DraggerLayer
 ) -> bool:
-	if next_card_manager == null or next_hand_area == null or next_drag_layer == null:
+	if next_card_scene == null or next_hand_zone == null or next_drag_layer == null:
 		return false
-	card_manager = next_card_manager
-	hand_area = next_hand_area
+	card_scene = next_card_scene
+	hand_zone = next_hand_zone
 	drag_layer = next_drag_layer
 	return true
 
@@ -32,121 +54,81 @@ func initialize_starting_deck(starting_deck: StartingDeckData) -> bool:
 		return false
 	clear()
 
-	var starter_instances: Array[CardInstance] = card_manager.create_starting_instances(
-		starting_deck
-	)
-	if starter_instances.size() != starting_deck.starter_cards.size():
-		return false
-	for instance in starter_instances:
-		if not _add_new_instance_to_hand(instance):
+	for card_data in starting_deck.starter_cards:
+		if card_data == null or not _add_new_instance_to_hand(CardInstance.new(card_data)):
 			clear()
 			return false
 	return true
 
 
 func grant_to_hand(card_data: CardData) -> bool:
-	if not _is_configured() or card_data == null or hand_area.is_full():
-		return false
-	var instance := CardInstance.new(card_data)
-	instance.cur_zone = CardInstance.ZONE.HAND
-	return _add_new_instance_to_hand(instance)
-
-
-## Grants a newly earned card without permanently changing the normal hand limit.
-## Encounter drops use this so a full hand never destroys an already won reward.
-func grant_to_hand_temporarily(card_data: CardData) -> bool:
 	if not _is_configured() or card_data == null:
 		return false
-	var previous_max_hand_size := hand_area.max_hand_size
-	var used_temporary_overflow := hand_area.is_full()
-	if used_temporary_overflow:
-		hand_area.max_hand_size = hand_area.cards.size() + 1
-	var granted := grant_to_hand(card_data)
-	if used_temporary_overflow:
-		hand_area.max_hand_size = previous_max_hand_size
-		hand_area.hand_count_changed.emit(hand_area.cards.size(), hand_area.max_hand_size)
-	return granted
+	return _add_new_instance_to_hand(CardInstance.new(card_data))
 
 
-## Adds an already existing card to hand. GUIDE cards use allow_overflow so they
-## cannot be lost solely because the hand reached its normal size limit.
-func return_existing_to_hand(card: CardEntity, allow_overflow := false) -> bool:
+## 兼容遭遇奖励流程；HandZone 本身不实现容量限制，因此无需临时扩容。
+func grant_to_hand_temporarily(card_data: CardData) -> bool:
+	return grant_to_hand(card_data)
+
+
+## 将服务已跟踪的 Card 精确实例重新交给 HandZone。
+## allow_overflow 仅保留旧业务接口兼容性，HandZone 当前没有容量规则。
+func return_existing_to_hand(card: Card, _allow_overflow := false) -> bool:
 	if (
 		not _is_configured()
 		or card == null
 		or not is_instance_valid(card)
-		or card in hand_area.cards
+		or hand_zone.owns_card(card)
+		or card not in _card_views
 	):
 		return false
-	if hand_area.is_full():
-		if not allow_overflow:
-			return false
-		hand_area.max_hand_size = hand_area.cards.size() + 1
-	if not hand_area.add_card(card):
+	return hand_zone.add_card(card)
+
+
+## 兼容战斗撤退流程；当前语义与普通回手一致。
+func return_existing_to_hand_temporarily(card: Card) -> bool:
+	return return_existing_to_hand(card, true)
+
+
+## 仅解除运行服务的精确实例跟踪，不删除 Card，也不修改区域成员关系。
+func forget_card(card: Card) -> bool:
+	var index := _card_views.find(card)
+	if index == -1:
 		return false
-	if card.card_instance != null:
-		card.card_instance.cur_zone = CardInstance.ZONE.HAND
+	_card_views.remove_at(index)
+	_instances.remove_at(index)
+	_notify_cards_changed()
 	return true
 
 
-## Returns a combat RETREAT tail without permanently changing the normal hand limit.
-func return_existing_to_hand_temporarily(card: CardEntity) -> bool:
-	if not _is_configured():
+## 兼容旧调用名称，销毁 Card 当前绑定且由本服务跟踪的精确实例。
+func destroy_existing_card(card: Card) -> bool:
+	if card == null:
 		return false
-	var previous_max_hand_size := hand_area.max_hand_size
-	var used_temporary_overflow := hand_area.is_full()
-	var returned := return_existing_to_hand(card, true)
-	if used_temporary_overflow:
-		hand_area.max_hand_size = previous_max_hand_size
-		hand_area.hand_count_changed.emit(hand_area.cards.size(), hand_area.max_hand_size)
-	return returned
-
-
-## Stops tracking a sold card. The drag interaction owns its eventual queue_free.
-func forget_card(card: CardEntity) -> bool:
-	if card == null or card not in _entities:
-		return false
-	_entities.erase(card)
-	if card.card_instance != null:
-		_instances.erase(card.card_instance)
-	return true
-
-
-## Permanently removes an owned card after its combat points are exhausted.
-## Callers remove it from the board first; this method also tolerates a card
-## still being in hand so it can be reused by other discard effects.
-func destroy_existing_card(card: CardEntity) -> bool:
-	if card == null or card not in _entities:
-		return false
-	if hand_area != null and card in hand_area.cards:
-		hand_area.remove_card(card, false)
-	if not forget_card(card):
-		return false
-	if card.card_instance != null:
-		card.card_instance.cur_zone = CardInstance.ZONE.DISCARD
-	if is_instance_valid(card):
-		card.queue_free()
-	return true
+	return destroy_existing_instance(card.get_card_inst(), card)
 
 
 func clear() -> void:
-	for entity in _entities:
-		if not is_instance_valid(entity):
+	for card in _card_views.duplicate():
+		if card == null or not is_instance_valid(card):
 			continue
-		if hand_area != null and entity in hand_area.cards:
-			hand_area.remove_card(entity, false)
-		entity.queue_free()
-	_entities.clear()
+		if hand_zone != null and is_instance_valid(hand_zone) and hand_zone.owns_card(card):
+			hand_zone.remove_card(card)
+		card.bind_drag_layer(null)
+		card.queue_free()
 	_card_views.clear()
 	_instances.clear()
+	_notify_cards_changed()
 
 
 func get_instances() -> Array[CardInstance]:
-	return _instances
+	return _instances.duplicate()
 
 
-func get_entities() -> Array[CardEntity]:
-	return _entities
+## 兼容旧业务接口；新流程返回 Card，而不是 CardEntity。
+func get_entities() -> Array[Card]:
+	return get_card_views()
 
 
 func get_card_views() -> Array[Card]:
@@ -163,62 +145,93 @@ func can_register_existing_instance(card_inst: CardInstance, card: Card) -> bool
 	):
 		return false
 
-	var instance_registered := card_inst in _instances
-	var view_registered := card in _card_views
-	if instance_registered or view_registered:
-		return instance_registered and view_registered
+	var instance_index := _instances.find(card_inst)
+	var card_index := _card_views.find(card)
+	if instance_index != -1 or card_index != -1:
+		return (
+			instance_index != -1
+			and card_index != -1
+			and instance_index == card_index
+		)
 	return true
 
 
 func register_existing_instance(card_inst: CardInstance, card: Card) -> bool:
 	if not can_register_existing_instance(card_inst, card):
 		return false
-	if card_inst not in _instances:
-		_instances.append(card_inst)
-	if card not in _card_views:
-		_card_views.append(card)
+	if card_inst in _instances:
+		return true
+	_instances.append(card_inst)
+	_card_views.append(card)
 	card_inst.cur_zone = CardInstance.ZONE.HAND
+	card.refresh_display()
+	_notify_cards_changed()
 	return true
 
 
 func can_destroy_existing_instance(card_inst: CardInstance, card: Card) -> bool:
-	return (
-		card_inst != null
-		and card != null
-		and is_instance_valid(card)
-		and card_inst in _instances
-		and card in _card_views
-		and card.get_card_inst() == card_inst
-	)
+	if (
+		card_inst == null
+		or card == null
+		or not is_instance_valid(card)
+		or card.get_card_inst() != card_inst
+	):
+		return false
+	var instance_index := _instances.find(card_inst)
+	var card_index := _card_views.find(card)
+	return instance_index != -1 and instance_index == card_index
 
 
 func destroy_existing_instance(card_inst: CardInstance, card: Card) -> bool:
 	if not can_destroy_existing_instance(card_inst, card):
 		return false
 
-	_instances.erase(card_inst)
-	_card_views.erase(card)
+	if hand_zone != null and is_instance_valid(hand_zone) and hand_zone.owns_card(card):
+		hand_zone.remove_card(card)
+	var index := _instances.find(card_inst)
+	_instances.remove_at(index)
+	_card_views.remove_at(index)
 	card_inst.cur_zone = CardInstance.ZONE.DISCARD
-	card.cur_zone = null
+	card_inst.battlefield_pos = Vector2i(-1, -1)
+	card_inst.direction = 0
+	card.refresh_display()
 	card.bind_drag_layer(null)
 	card.queue_free()
+	_notify_cards_changed()
 	return true
 
 
 func _add_new_instance_to_hand(instance: CardInstance) -> bool:
-	if instance == null or hand_area.is_full():
+	if instance == null:
 		return false
-	var entity: CardEntity = card_manager.create_card_entity(instance)
-	if entity == null:
+	var card := _create_view(instance)
+	if card == null:
 		return false
-	entity.drag_layer = drag_layer
-	if not hand_area.add_card(entity):
-		entity.queue_free()
+	if not hand_zone.add_card(card):
+		card.queue_free()
 		return false
 	_instances.append(instance)
-	_entities.append(entity)
+	_card_views.append(card)
+	_notify_cards_changed()
 	return true
 
 
+func _notify_cards_changed() -> void:
+	cards_changed.emit()
+
+
+func _create_view(instance: CardInstance) -> Card:
+	if card_scene == null or instance == null:
+		return null
+	var created_node := card_scene.instantiate()
+	var card := created_node as Card
+	if card == null:
+		created_node.free()
+		return null
+	card.bind_card_inst(instance)
+	card.bind_drag_layer(drag_layer)
+	return card
+
+
 func _is_configured() -> bool:
-	return card_manager != null and hand_area != null and drag_layer != null
+	return card_scene != null and hand_zone != null and drag_layer != null

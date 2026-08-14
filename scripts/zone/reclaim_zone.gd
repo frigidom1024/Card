@@ -1,3 +1,26 @@
+## 卡牌回收区域组件
+##
+## 负责处理将手牌卡牌回收为弃牌并结算回收收益。
+## 包括：
+## - 手牌实例的回收资格预览与校验
+## - 回收成功后的金币奖励与实例销毁
+## - 回收区域的拖拽目标反馈
+##
+## 不负责：
+## - 持有稳定卡牌成员或注册卡牌所有权
+## - 商店补货、牌桌布局或跨区来源解析
+## - 卡牌实例的创建与长期持久化
+##
+## 使用方式：
+## 注入 PlayerData、RunCardService 和 MarketPricingService 后，将本区域注册到
+## DraggerLayer；手牌卡牌拖入本区域即可触发回收。
+##
+## 依赖：
+## CardZone：提供目标区域拖拽协议。
+## CardInstance：提供唯一的当前区域状态。
+## RunCardService：执行现有卡牌实例销毁。
+## MarketPricingService：计算回收收益。
+
 class_name ReclaimZone
 extends CardZone
 
@@ -52,12 +75,13 @@ func can_reclaim(card: Card) -> bool:
 		or _pricing == null
 		or card == null
 		or not is_instance_valid(card)
-		or not (card.cur_zone is HandZone)
 	):
 		return false
 
 	var card_inst := card.get_card_inst()
 	if card_inst == null or card_inst.card_data == null:
+		return false
+	if card_inst.cur_zone != CardInstance.ZONE.HAND:
 		return false
 	if not _card_service.can_destroy_existing_instance(card_inst, card):
 		return false
@@ -83,6 +107,10 @@ func refresh_display() -> void:
 		reclaim_value_label.text = "回收 +%d" % preview_price
 	else:
 		reclaim_value_label.text = "拖入手牌以回收"
+
+
+func owns_card(_card: Card) -> bool:
+	return false
 
 
 func add_card(_card: Card, _keep_global_position: bool = true) -> bool:

@@ -2,7 +2,7 @@ extends SceneTree
 
 const GameManagerScene = preload("res://scenes/game/game_manager.tscn")
 const EventScene = preload("res://scenes/game/event.tscn")
-const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
+const CardScene = preload("res://scenes/card/card.tscn")
 const RevivalDeck = preload("res://data/starting_decks/revival_starting_deck.tres")
 
 var _failure_count := 0
@@ -34,8 +34,8 @@ func _test_game_manager_delegates_combat_settlement_to_run_flow() -> void:
 		"GameManager does not apply combat settlements"
 	)
 	_expect(
-		source.contains("_run_flow.handle_card_return_requested(card)"),
-		"GameManager guide-return compatibility entry delegates to RunFlowCoordinator"
+		source.contains("hand_zone.add_card(card, true)"),
+		"GameManager owns the single GUIDE return-to-hand handler"
 	)
 
 
@@ -234,6 +234,8 @@ func _test_retreat_persists_echo_damage_and_settles_only_depleted_cards() -> voi
 		1
 	)
 	_expect(root_card != null and middle != null and tail != null, "retreat setup places a three-card chain")
+	var middle_instance := middle.get_card_inst() if middle != null else null
+	var tail_instance := tail.get_card_inst() if tail != null else null
 
 	var runtime_state := event_node.event_instance.runtime_state as EncounterRuntimeState
 	var combat_view := _combat_view(manager)
@@ -242,7 +244,7 @@ func _test_retreat_persists_echo_damage_and_settles_only_depleted_cards() -> voi
 	_expect(outcomes.is_empty(), "retreat does not emit combat result before confirmation")
 	_expect(manager.player_stats.hp == 10, "retreat does not apply player state before confirmation")
 	_expect(runtime_state.mob_instance.stats.hp == 20, "retreat does not persist echo damage before confirmation")
-	_expect(board.cards.size() == 3, "retreat keeps every card on the board before confirmation")
+	_expect(board.board_zone.get_cards().size() == 3, "retreat keeps every card on the board before confirmation")
 	_expect(manager.drag_layer.is_interaction_locked(), "retreat keeps exploration locked before confirmation")
 
 	_confirm_combat_settlement(manager)
@@ -262,13 +264,13 @@ func _test_retreat_persists_echo_damage_and_settles_only_depleted_cards() -> voi
 	_expect(runtime_state.mob_instance.stats.defense == 0, "confirmed retreat clears monster encounter defense")
 	_expect(runtime_state.mob_instance.action_index == 0, "basic point clashes do not advance echo actions")
 	_expect(runtime_state.mob_instance.enhancement_stacks == 1, "confirmed retreat adds one enhancement stack")
-	_expect(board.cards.is_empty(), "all depleted cards leave the board")
-	_expect(root_card in manager.hand_area.cards, "a depleted root returns to hand")
-	_expect(root_card.card_instance.current_points == 2, "returned root resets its points")
-	_expect(tail not in manager.hand_area.cards, "a depleted normal tail is not returned to hand")
-	_expect(middle not in manager.hand_area.cards, "a depleted normal middle card is not returned to hand")
-	_expect(tail.card_instance not in manager.cards_inst, "destroyed tail instance leaves the run card registry")
-	_expect(middle.card_instance not in manager.cards_inst, "destroyed middle instance leaves the run card registry")
+	_expect(board.board_zone.get_cards().is_empty(), "all depleted cards leave the board")
+	_expect(root_card in manager.hand_zone.get_cards(), "a depleted root returns to hand")
+	_expect(root_card.get_card_inst().current_points == 2, "returned root resets its points")
+	_expect(tail not in manager.hand_zone.get_cards(), "a depleted normal tail is not returned to hand")
+	_expect(middle not in manager.hand_zone.get_cards(), "a depleted normal middle card is not returned to hand")
+	_expect(tail_instance not in manager.cards_inst, "destroyed tail instance leaves the run card registry")
+	_expect(middle_instance not in manager.cards_inst, "destroyed middle instance leaves the run card registry")
 	_expect(not manager.drag_layer.is_interaction_locked(), "confirmed retreat unlocks exploration for another challenge")
 	_cleanup_manager(manager)
 
@@ -334,14 +336,13 @@ func _test_nonlethal_point_clash_retreats_without_player_defeat() -> void:
 func _test_shop_event_routes_purchase_and_close() -> void:
 	var manager := await _make_game_manager()
 	manager.player_data.gold = 10
-	manager.hand_area.max_hand_size = manager.hand_area.cards.size() + 1
 	var shop_content := ShopEventContent.new()
 	shop_content.items = [_shop_item(_make_card_data(2), 5)]
 	var event_node := _attach_event(
 		manager.board, EventData.EventType.SHOP, Vector2i(1, 0), shop_content
 	)
 	var event_instance := event_node.event_instance
-	var hand_before: int = manager.hand_area.cards.size()
+	var hand_before: int = manager.hand_zone.get_card_count()
 
 	_expect(
 		(
@@ -383,7 +384,7 @@ func _test_shop_event_routes_purchase_and_close() -> void:
 	if buy_button != null:
 		buy_button.pressed.emit()
 		await process_frame
-	_expect(manager.player_data.gold == 5, "shop purchase deducts the item price")
+	_expect(manager.player_data.gold == 8, "shop purchase deducts the common rarity price")
 	var shop_state := event_node.event_instance.runtime_state as ShopRuntimeState
 	_expect(
 		shop_state != null and shop_state.sold_flags.size() > 0 and shop_state.sold_flags[0],
@@ -394,7 +395,7 @@ func _test_shop_event_routes_purchase_and_close() -> void:
 		"shop purchase grants a persistent card instance"
 	)
 	_expect(
-		manager.hand_area.cards.size() == hand_before + 1, "shop purchase adds the card to hand"
+		manager.hand_zone.get_card_count() == hand_before + 1, "shop purchase adds the card to hand"
 	)
 	_expect(
 		buy_button != null and buy_button.disabled and buy_button.text == "SOLD OUT",
@@ -419,7 +420,6 @@ func _test_shop_event_routes_purchase_and_close() -> void:
 
 func _test_treasure_event_routes_claim_and_resolves() -> void:
 	var manager := await _make_game_manager()
-	manager.hand_area.max_hand_size = manager.hand_area.cards.size() + 1
 	var treasure_content := TreasureEventContent.new()
 	treasure_content.card_rewards = [_make_card_data(3), _make_card_data(4)]
 	treasure_content.gold_range = Vector2i(7, 7)
@@ -427,7 +427,7 @@ func _test_treasure_event_routes_claim_and_resolves() -> void:
 		manager.board, EventData.EventType.TREASURE, Vector2i(1, 0), treasure_content
 	)
 	var event_instance := event_node.event_instance
-	var hand_before: int = manager.hand_area.cards.size()
+	var hand_before: int = manager.hand_zone.get_card_count()
 
 	_expect(
 		(
@@ -487,7 +487,7 @@ func _test_treasure_event_routes_claim_and_resolves() -> void:
 		"treasure card reward grants a persistent card instance"
 	)
 	_expect(
-		manager.hand_area.cards.size() == hand_before + 1,
+		manager.hand_zone.get_card_count() == hand_before + 1,
 		"treasure card reward adds the card to hand"
 	)
 	_expect(not treasure_view.visible, "claiming treasure hides the modal")
@@ -530,7 +530,7 @@ func _make_game_manager() -> Node:
 	_expect(manager.configure_run(RevivalDeck), "combat routing setup configures a starting deck")
 	root.add_child(manager)
 	await process_frame
-	for event_node in manager.board.events.duplicate():
+	for event_node in manager.board.event_zone.get_events():
 		manager.board.remove_event(event_node)
 	return manager
 
@@ -576,16 +576,18 @@ func _attach_event(
 	var instance := data.create_instance()
 	instance.origin = origin
 	var event_node := EventScene.instantiate() as BoardEvent
-	event_node.setup(instance, board.cell_size)
+	event_node.setup(instance, board.board_zone.back_ground.cell_size)
 	_expect(board.attach_event(event_node), "routing test event attaches to board")
 	return event_node
 
 
 func _horizontal_card_center(board: Board, left_cell: Vector2i) -> Vector2:
-	var right_cell := left_cell + Vector2i.RIGHT
-	return board.to_local(
-		(board.grid_to_world_center(left_cell) + board.grid_to_world_center(right_cell)) / 2.0
+	var background := board.board_zone.back_ground
+	var center_local := Vector2(
+		(float(left_cell.x) + 1.0) * background.cell_size,
+		(float(left_cell.y) + 0.5) * background.cell_size
 	)
+	return board.to_local(background.to_global(center_local))
 
 
 func _place_card(
@@ -594,21 +596,26 @@ func _place_card(
 	rotation: float,
 	card_type: CardData.CardType,
 	points: int
-) -> CardEntity:
+) -> Card:
 	var data := CardData.new()
 	data.card_type = card_type
 	data.max_points = points
 	var instance := CardInstance.new(data)
-	var card := CardEntityScene.instantiate() as CardEntity
-	card.bind_instance(instance)
-	card.drag_layer = manager.drag_layer
+	var card := CardScene.instantiate() as Card
+	card.bind_card_inst(instance)
+	card.bind_drag_layer(manager.drag_layer)
 	root.add_child(card)
-	card.global_position = manager.board.to_global(local_position)
+	var card_service := manager.get_run_context().card_service as RunCardService
+	if not card_service.register_existing_instance(instance, card):
+		_expect(false, "test card registers in RunCardService")
+		return card
+	instance.direction = posmod(roundi(rotation / 90.0), 4)
+	card.global_position = manager.board.to_global(local_position) - card.size * 0.5
+	card.target_position = card.position
 	card.rotation_degrees = rotation
-	manager.cards_inst.append(instance)
-	manager.card_entities.append(card)
-	if not manager.board.add_card(card):
-		_expect(false, "test card can be added to Board")
+	card.refresh_display()
+	if not manager.board.board_zone.add_card(card):
+		_expect(false, "test card can be added to BoardZone")
 	return card
 
 
@@ -655,7 +662,7 @@ func _action(type: MobAction.Type, value: int) -> MobAction:
 func _board_contains_event_instance(board: Board, instance: EventInstance) -> bool:
 	if board == null or instance == null:
 		return false
-	for candidate in board.events:
+	for candidate in board.event_zone.get_events():
 		if candidate != null and candidate.event_instance == instance:
 			return true
 	return false

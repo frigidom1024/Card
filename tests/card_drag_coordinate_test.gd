@@ -22,8 +22,15 @@ func _run() -> void:
 	zone.add_child(card)
 	await process_frame
 
+	var card_data := CardData.new()
+	card_data.max_points = 1
+	card_data.armor = 0
+	var card_inst := CardInstance.new(card_data)
+	card.bind_card_inst(card_inst)
+	_expect(card.get_card_inst() == card_inst, "drag tests bind the exact CardInstance")
+
 	var initial_pointer := card.global_position + Vector2(20.0, 40.0)
-	card.drag_offset = card.global_position - initial_pointer
+	card.drag_offset = initial_pointer - card.global_position
 	_expect(card.has_method("update_drag_target_from_global_pointer"), "Card converts a global drag pointer into its parent-local target position")
 
 	if card.has_method("update_drag_target_from_global_pointer"):
@@ -32,7 +39,7 @@ func _run() -> void:
 
 		var moved_pointer := initial_pointer + Vector2(120.0, -36.0)
 		card.update_drag_target_from_global_pointer(moved_pointer)
-		var expected_target: Vector2 = zone.get_global_transform().affine_inverse() * (moved_pointer + card.drag_offset)
+		var expected_target: Vector2 = zone.get_global_transform().affine_inverse() * (moved_pointer - card.drag_offset)
 		_expect(card.target_position.distance_to(expected_target) <= TOLERANCE, "drag target remains parent-local after moving HandZone away from the origin")
 
 	card.free()

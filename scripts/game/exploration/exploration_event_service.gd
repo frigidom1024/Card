@@ -168,7 +168,7 @@ func _create_and_place(candidate: EventSpawnCandidate) -> bool:
 
 func _count_unresolved_events() -> int:
 	var count := 0
-	for event_node in _board.events:
+	for event_node: BoardEvent in _board.event_zone.get_events():
 		if event_node != null and event_node.event_instance != null and not event_node.event_instance.is_resolved:
 			count += 1
 	return count
@@ -176,10 +176,10 @@ func _count_unresolved_events() -> int:
 
 func _get_unresolved_templates() -> Array[EventData]:
 	var templates: Array[EventData] = []
-	for event_node in _board.events:
+	for event_node: BoardEvent in _board.event_zone.get_events():
 		if event_node == null or event_node.event_instance == null:
 			continue
-		var instance := event_node.event_instance
+		var instance: EventInstance = event_node.event_instance
 		if not instance.is_resolved and instance.template != null and instance.template not in templates:
 			templates.append(instance.template)
 	return templates
@@ -188,11 +188,15 @@ func _get_unresolved_templates() -> Array[EventData]:
 func _is_guide_result(result: BoardPlacementResult) -> bool:
 	if result.kind == BoardPlacementResult.Kind.GUIDE_RESOLVED:
 		return true
-	var source_card := result.source_card
-	return source_card != null \
-		and source_card.card_instance != null \
-		and source_card.card_instance.card_data != null \
-		and source_card.card_instance.card_data.card_type == CardData.CardType.GUIDE
+	var source_card: Card = result.source_card
+	var source_inst: CardInstance = (
+		source_card.get_card_inst() if source_card != null else null
+	)
+	return (
+		source_inst != null
+		and source_inst.card_data != null
+		and source_inst.card_data.card_type == CardData.CardType.GUIDE
+	)
 
 
 func _is_configured() -> bool:
@@ -200,7 +204,7 @@ func _is_configured() -> bool:
 
 
 func _find_event_node(instance: EventInstance) -> BoardEvent:
-	for event_node in _board.events:
+	for event_node: BoardEvent in _board.event_zone.get_events():
 		if event_node != null and event_node.event_instance == instance:
 			return event_node
 	return null

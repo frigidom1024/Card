@@ -51,6 +51,7 @@ func _run() -> void:
 	await process_frame
 	_expect(card_service.register_existing_instance(card_inst, card), "fixture registers the owned Card pair")
 	_expect(hand_zone.add_card(card), "fixture places the owned Card in hand")
+	_expect(not reclaim_zone.owns_card(card), "ReclaimZone is never a stable Card owner")
 	_expect(reclaim_zone.call("can_reclaim", card), "ReclaimZone accepts an owned HandZone Card")
 	_expect(reclaim_zone.call("get_reclaim_price", card) == 1, "ReclaimZone uses the minimum reclaim price")
 
@@ -69,7 +70,7 @@ func _run() -> void:
 	var shop_zone := ShopZone.new()
 	root.add_child(shop_zone)
 	root.add_child(shop_card)
-	shop_card.cur_zone = shop_zone
+	shop_inst.cur_zone = CardInstance.ZONE.SHOP
 	_expect(not reclaim_zone.call("can_reclaim", shop_card), "ReclaimZone rejects ShopZone products")
 	shop_card.free()
 	shop_zone.free()
@@ -83,6 +84,8 @@ func _run() -> void:
 	_expect(not card_service.get_instances().has(card_inst), "successful reclaim removes the exact CardInstance")
 	_expect(not card_service.get_card_views().has(card), "successful reclaim removes the exact Card view")
 	_expect(card_inst.cur_zone == CardInstance.ZONE.DISCARD, "successful reclaim marks the instance discarded")
+	_expect(card_inst.battlefield_pos == Vector2i(-1, -1), "successful reclaim clears the battlefield position")
+	_expect(card_inst.direction == 0, "successful reclaim resets the direction")
 	_expect(not hand_zone.get_cards().has(card), "successful reclaim removes the Card from HandZone")
 	await process_frame
 	_expect(not is_instance_valid(card), "successful reclaim frees the Card view")

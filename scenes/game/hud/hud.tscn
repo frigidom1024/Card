@@ -1,49 +1,38 @@
 [gd_scene format=3 uid="uid://p6343o8pk8kq"]
 
-[ext_resource type="PackedScene" uid="uid://dxqav0xg4yyfc" path="res://scenes/zone/board_zone.tscn" id="1_4h4qe"]
-[ext_resource type="PackedScene" uid="uid://cmx2eoh6dx87s" path="res://scenes/zone/handzone.tscn" id="2_7lo7q"]
-[ext_resource type="PackedScene" path="res://scenes/zone/reclaim_zone.tscn" id="3_etamk"]
-[ext_resource type="PackedScene" uid="uid://bycj0468jvuyd" path="res://scenes/zone/shop.tscn" id="4_spx7p"]
-[ext_resource type="PackedScene" uid="uid://df5d4pnr0do38" path="res://scenes/card/card.tscn" id="5_7lo7q"]
+[ext_resource type="PackedScene" path="res://scenes/game/board.tscn" id="1_board"]
+[ext_resource type="PackedScene" uid="uid://cmx2eoh6dx87s" path="res://scenes/zone/handzone.tscn" id="2_hand"]
+[ext_resource type="PackedScene" path="res://scenes/zone/reclaim_zone.tscn" id="3_reclaim"]
+[ext_resource type="PackedScene" uid="uid://bycj0468jvuyd" path="res://scenes/zone/shop.tscn" id="4_shop"]
 
 [node name="Hud" type="Control" unique_id=1402589845]
+editor_description = "常驻玩法区域组合根：装配 Board、HandZone、Shop 与 ReclaimZone；各区域由 GameManager 接入页面唯一 DraggerLayer。"
 layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="BoardZone" parent="." unique_id=1056622751 instance=ExtResource("1_4h4qe")]
-layout_mode = 0
-offset_left = 173.0
-offset_top = 18.0
-offset_right = 1199.0
-offset_bottom = 802.0
+[node name="Board" parent="." unique_id=792758027 instance=ExtResource("1_board")]
+position = Vector2(237, 16)
 
-[node name="Handzone" parent="." unique_id=278593251 instance=ExtResource("2_7lo7q")]
+[node name="HandZone" parent="." unique_id=278593251 instance=ExtResource("2_hand")]
 layout_mode = 1
 offset_left = 305.0
 offset_top = 841.0
-offset_right = -876.0
+offset_right = -436.0
 offset_bottom = -15.0
 
-[node name="Card" parent="Handzone" unique_id=188510074 instance=ExtResource("5_7lo7q")]
-layout_mode = 1
-offset_left = 18.927002
-offset_top = -26.840004
-offset_right = 122.926994
-offset_bottom = 158.15997
-
-[node name="ReclaimZone" parent="." unique_id=2127958039 instance=ExtResource("3_etamk")]
+[node name="ReclaimZone" parent="." unique_id=2127958039 instance=ExtResource("3_reclaim")]
 layout_mode = 0
-offset_left = 1615.0
-offset_top = 758.0
-offset_right = 1835.0
-offset_bottom = 878.0
+offset_left = 1432.0
+offset_top = 622.0
+offset_right = 1813.0
+offset_bottom = 828.0
 
-[node name="Panel" parent="." unique_id=1350690558 instance=ExtResource("4_spx7p")]
+[node name="Shop" parent="." unique_id=1350690558 instance=ExtResource("4_shop")]
 layout_mode = 0
 offset_left = 1425.0
 offset_top = 249.0

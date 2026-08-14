@@ -3,16 +3,6 @@ extends SceneTree
 const PresentationPath := "res://scripts/game/run/run_presentation_coordinator.gd"
 
 
-class RecordingHandTray:
-	extends HandTray
-	var last_count := -1
-	var last_max_count := -1
-
-	func set_hand_count(current_count: int, max_count: int) -> void:
-		last_count = current_count
-		last_max_count = max_count
-
-
 class RecordingCrest:
 	extends PilgrimCrestHud
 	var last_hp := -1
@@ -32,12 +22,7 @@ class RecordingCrest:
 
 
 class RecordingDragLayer:
-	extends DragLayer
-	var lock_requests: Array[bool] = []
-
-	func set_interaction_locked(locked: bool) -> void:
-		lock_requests.append(locked)
-		interaction_locked = locked
+	extends DraggerLayer
 
 
 var _failure_count := 0
@@ -50,7 +35,6 @@ func _init() -> void:
 func _run_tests() -> void:
 	_test_unconfigured_bind_is_rejected()
 	_test_duplicate_bind_is_rejected()
-	_test_hand_count_updates_tray()
 	_test_player_state_sync_updates_crest()
 	_test_retraction_cost_updates_gold_display()
 	_test_modal_lock_request_reaches_drag_layer()
@@ -67,7 +51,7 @@ func _test_unconfigured_bind_is_rejected() -> void:
 		return
 	var fixture := _make_fixture()
 	_expect(
-		not presentation.bind(fixture.flow, fixture.modal, fixture.market),
+		not presentation.bind(fixture.flow, fixture.modal),
 		"bind rejects an unconfigured presentation coordinator"
 	)
 	_cleanup_fixture(fixture)
@@ -80,8 +64,6 @@ func _test_duplicate_bind_is_rejected() -> void:
 	var fixture := _make_fixture()
 	_expect(
 		presentation.configure(
-			fixture.hand,
-			fixture.hand_tray,
 			fixture.crest,
 			fixture.drag_layer,
 			fixture.player,
@@ -90,28 +72,11 @@ func _test_duplicate_bind_is_rejected() -> void:
 		),
 		"configure accepts all required presentation dependencies"
 	)
-	_expect(presentation.bind(fixture.flow, fixture.modal, fixture.market), "first bind succeeds")
+	_expect(presentation.bind(fixture.flow, fixture.modal), "first bind succeeds")
 	_expect(
-		not presentation.bind(fixture.flow, fixture.modal, fixture.market),
+		not presentation.bind(fixture.flow, fixture.modal),
 		"duplicate bind is rejected"
 	)
-	_cleanup_fixture(fixture)
-
-
-func _test_hand_count_updates_tray() -> void:
-	var presentation = _new_presentation()
-	if presentation == null:
-		return
-	var fixture := _make_fixture()
-	fixture.hand.cards.resize(4)
-	fixture.hand.max_hand_size = 9
-	_expect(_configure(presentation, fixture), "hand-count fixture configures")
-	presentation.sync_all()
-	_expect(fixture.hand_tray.last_count == 4, "sync_all synchronizes the current hand count")
-	_expect(fixture.hand_tray.last_max_count == 9, "sync_all synchronizes the hand capacity")
-	fixture.hand.cards.resize(6)
-	fixture.hand.hand_count_changed.emit(6, 9)
-	_expect(fixture.hand_tray.last_count == 6, "hand-count changes reach HandTray")
 	_cleanup_fixture(fixture)
 
 
@@ -137,10 +102,10 @@ func _test_player_state_sync_updates_crest() -> void:
 	fixture.player.faith = 2
 	fixture.stats.hp = 11
 	fixture.faith.faith_changed.emit(2)
-	fixture.market.player_state_changed.emit()
+	presentation.sync_all()
 	_expect(fixture.crest.last_faith == 2, "faith changes synchronize the crest")
-	_expect(fixture.crest.last_gold == 91, "market player-state changes synchronize gold")
-	_expect(fixture.crest.last_hp == 11, "player-state changes synchronize vitality")
+	_expect(fixture.crest.last_gold == 91, "explicit presentation sync updates gold")
+	_expect(fixture.crest.last_hp == 11, "explicit presentation sync updates vitality")
 	_cleanup_fixture(fixture)
 
 
@@ -153,8 +118,6 @@ func _test_retraction_cost_updates_gold_display() -> void:
 	fixture.retraction.configure(fixture.player)
 	_expect(
 		presentation.configure(
-			fixture.hand,
-			fixture.hand_tray,
 			fixture.crest,
 			fixture.drag_layer,
 			fixture.player,
@@ -215,6 +178,8 @@ func _test_flow_terminal_signals_keep_input_locked() -> void:
 	finished_fixture.flow.run_finished.emit()
 	finished_presentation.apply_lock_request(false)
 	_expect(finished_presentation.is_input_locked(), "run-finished signal keeps input locked")
+	_cleanup_fixture(fixture)
+	_cleanup_fixture(finished_fixture)
 
 
 func _test_finished_flow_cannot_unlock_input() -> void:
@@ -230,7 +195,7 @@ func _test_finished_flow_cannot_unlock_input() -> void:
 
 
 func _cleanup_fixture(fixture: Dictionary) -> void:
-	for key in ["hand", "hand_tray", "crest", "drag_layer"]:
+	for key in ["crest", "drag_layer"]:
 		var node = fixture.get(key)
 		if node != null and is_instance_valid(node):
 			node.free()
@@ -247,8 +212,6 @@ func _configure(presentation, fixture: Dictionary) -> bool:
 	if presentation == null:
 		return false
 	return presentation.configure(
-		fixture.hand,
-		fixture.hand_tray,
 		fixture.crest,
 		fixture.drag_layer,
 		fixture.player,
@@ -261,13 +224,11 @@ func _configure(presentation, fixture: Dictionary) -> bool:
 func _bind(presentation, fixture: Dictionary) -> bool:
 	return (
 		_configure(presentation, fixture)
-		and presentation.bind(fixture.flow, fixture.modal, fixture.market)
+		and presentation.bind(fixture.flow, fixture.modal)
 	)
 
 
 func _make_fixture() -> Dictionary:
-	var hand := HandArea.new()
-	var hand_tray := RecordingHandTray.new()
 	var crest := RecordingCrest.new()
 	var drag_layer := RecordingDragLayer.new()
 	var player := PlayerData.new()
@@ -278,11 +239,8 @@ func _make_fixture() -> Dictionary:
 	faith.configure(player)
 	var flow := RunFlowCoordinator.new()
 	var modal := EventModalCoordinator.new()
-	var market := PersistentMarketCoordinator.new()
 	var retraction := CardRetractionCostService.new()
 	return {
-		"hand": hand,
-		"hand_tray": hand_tray,
 		"crest": crest,
 		"drag_layer": drag_layer,
 		"player": player,
@@ -290,7 +248,6 @@ func _make_fixture() -> Dictionary:
 		"faith": faith,
 		"flow": flow,
 		"modal": modal,
-		"market": market,
 		"retraction": retraction,
 	}
 

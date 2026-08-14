@@ -2,6 +2,7 @@ extends SceneTree
 
 const SHOP_ZONE_SCENE := preload("res://scenes/zone/shop_zone.tscn")
 const CARD_SCENE := preload("res://scenes/card/card.tscn")
+const HAND_ZONE_SCENE := preload("res://scenes/zone/handzone.tscn")
 const TOLERANCE := 0.01
 
 var _failures := 0
@@ -36,7 +37,8 @@ func _run() -> void:
 	_expect(zone.get_product(0) == first and zone.get_product(2) == third, "ShopZone preserves slot order")
 	_expect(zone.get_product_slot(second) == 1, "ShopZone finds a product slot")
 	_expect(zone.has_product(third), "ShopZone reports product membership")
-	_expect(first.cur_zone == zone and first.get_parent() == zone, "ShopZone owns stocked Cards as their source zone")
+	_expect(zone.owns_card(first) and first.get_card_inst().cur_zone == CardInstance.ZONE.SHOP and first.get_parent() == zone, "ShopZone owns stocked Cards and marks their instances SHOP")
+	_expect(first.get_card_inst().battlefield_pos == Vector2i(-1, -1) and first.get_card_inst().direction == 0, "ShopZone normalizes product spatial state")
 	_expect(first.position.x < second.position.x and second.position.x < third.position.x, "ShopZone lays products out from left to right")
 
 	_expect(zone.can_trans_from_source(second), "bound affordable product can leave ShopZone")
@@ -60,13 +62,13 @@ func _run() -> void:
 
 	zone.product_purchased.connect(_on_product_purchased)
 	zone.start_drag(second)
-	var target_zone := CardZone.new()
+	var target_zone := HAND_ZONE_SCENE.instantiate() as HandZone
 	root.add_child(target_zone)
-	second.reparent(target_zone, true)
-	second.cur_zone = target_zone
+	await process_frame
+	_expect(target_zone.add_card(second), "target HandZone commits the product before source completion")
 	_expect(zone.drag_end_source(second, true), "ShopZone handles a committed source drag")
 	_expect(zone.get_product_slot(second) == -1, "committed purchase removes only the internal product reference")
-	_expect(second.get_parent() == target_zone and second.cur_zone == target_zone, "ShopZone preserves the target's committed Card ownership")
+	_expect(second.get_parent() == target_zone and target_zone.owns_card(second) and second.get_card_inst().cur_zone == CardInstance.ZONE.HAND, "ShopZone preserves the target's committed Card ownership")
 	_expect(_purchased_card == second and _purchased_inst == second.get_card_inst(), "purchase signal carries exact Card and CardInstance")
 	_expect(_purchased_slot == 1, "purchase signal carries the vacated slot")
 
@@ -74,7 +76,7 @@ func _run() -> void:
 	_expect(zone.replace_product(1, replacement), "ShopZone can restock a vacated slot")
 	await process_frame
 	_expect(zone.get_product(1) == replacement, "replacement occupies the requested slot")
-	_expect(replacement.cur_zone == zone and replacement.get_parent() == zone, "replacement becomes a ShopZone product")
+	_expect(zone.owns_card(replacement) and replacement.get_card_inst().cur_zone == CardInstance.ZONE.SHOP and replacement.get_parent() == zone, "replacement becomes a ShopZone product")
 
 	zone.clear_products(true)
 	await process_frame

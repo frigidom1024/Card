@@ -1,6 +1,8 @@
 extends SceneTree
 
 const CARD_SCENE := preload("res://scenes/card/card.tscn")
+const HAND_SCENE := preload("res://scenes/zone/handzone.tscn")
+const DRAGGER_SCENE := preload("res://scenes/drag_layer/dragger_layer.tscn")
 
 var _failures := 0
 
@@ -10,38 +12,40 @@ func _init() -> void:
 
 
 func _run() -> void:
+	var host := Node.new()
+	root.add_child(host)
+	var hand_zone := HAND_SCENE.instantiate() as HandZone
+	var drag_layer := DRAGGER_SCENE.instantiate() as DraggerLayer
+	host.add_child(hand_zone)
+	host.add_child(drag_layer)
 	var service := RunCardService.new()
+	_expect(service.configure(CARD_SCENE, hand_zone, drag_layer), "service configures before destruction")
+
 	var card := CARD_SCENE.instantiate() as Card
-	root.add_child(card)
-	await process_frame
 	var card_inst := CardInstance.new(CardData.new())
 	card.bind_card_inst(card_inst)
-	_expect(service.register_existing_instance(card_inst, card), "fixture registers the exact CardInstance/Card pair")
+	card.bind_drag_layer(drag_layer)
+	_expect(hand_zone.add_card(card), "fixture adds Card to HandZone")
+	_expect(service.register_existing_instance(card_inst, card), "fixture registers the exact pair")
 
-	_expect(service.has_method("can_destroy_existing_instance"), "RunCardService exposes exact-instance destruction prevalidation")
-	_expect(service.has_method("destroy_existing_instance"), "RunCardService exposes exact-instance destruction")
-	if service.has_method("can_destroy_existing_instance") and service.has_method("destroy_existing_instance"):
-		var other_card := CARD_SCENE.instantiate() as Card
-		root.add_child(other_card)
-		other_card.bind_card_inst(card_inst)
-		_expect(not service.can_destroy_existing_instance(card_inst, other_card), "prevalidation rejects a different Card view for the same instance")
-		_expect(not service.destroy_existing_instance(card_inst, other_card), "destruction rejects a mismatched Card view")
-		_expect(service.get_instances().has(card_inst) and service.get_card_views().has(card), "failed destruction keeps exact ownership")
-		other_card.free()
+	var other_card := CARD_SCENE.instantiate() as Card
+	host.add_child(other_card)
+	other_card.bind_card_inst(card_inst)
+	_expect(not service.can_destroy_existing_instance(card_inst, other_card), "prevalidation rejects another view for the same instance")
+	_expect(not service.destroy_existing_instance(card_inst, other_card), "destruction rejects a mismatched Card view")
+	other_card.queue_free()
 
-		_expect(service.can_destroy_existing_instance(card_inst, card), "prevalidation accepts the registered exact pair")
-		_expect(service.destroy_existing_instance(card_inst, card), "destruction removes the registered exact pair")
-		_expect(not service.get_instances().has(card_inst), "destruction removes the exact CardInstance")
-		_expect(not service.get_card_views().has(card), "destruction removes the exact Card view")
-		_expect(card_inst.cur_zone == CardInstance.ZONE.DISCARD, "destroyed CardInstance is marked discarded")
-		_expect(card.cur_zone == null, "destroyed Card clears its zone reference")
-		_expect(card.drag_layer == null, "destroyed Card clears its drag layer reference")
-		_expect(not service.destroy_existing_instance(card_inst, card), "destroying the same pair twice is rejected")
-		await process_frame
-		_expect(not is_instance_valid(card), "destroyed Card view is freed at frame end")
+	_expect(service.can_destroy_existing_instance(card_inst, card), "prevalidation accepts the registered exact pair")
+	_expect(service.destroy_existing_instance(card_inst, card), "destruction removes the registered exact pair")
+	_expect(not service.get_instances().has(card_inst) and not service.get_card_views().has(card), "destruction removes exact tracking")
+	_expect(card_inst.cur_zone == CardInstance.ZONE.DISCARD, "destroyed CardInstance is marked discarded")
+	_expect(card_inst.battlefield_pos == Vector2i(-1, -1) and card_inst.direction == 0, "destruction clears board state on CardInstance")
+	_expect(card.drag_layer == null, "destroyed Card clears its drag layer binding")
+	await process_frame
+	_expect(not is_instance_valid(card), "destroyed Card is freed at frame end")
 
-	if is_instance_valid(card):
-		card.free()
+	host.queue_free()
+	await process_frame
 	quit(1 if _failures > 0 else 0)
 
 

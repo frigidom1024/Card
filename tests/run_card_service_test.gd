@@ -1,263 +1,101 @@
 extends SceneTree
 
-const RunCardServicePath := "res://scripts/game/run/run_card_service.gd"
-const CardManagerScript = preload("res://scripts/game/card_manager.gd")
-const HandScene = preload("res://scenes/game/hand.tscn")
-const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
-const RevivalDeck = preload("res://data/starting_decks/revival_starting_deck.tres")
+const CARD_SCENE := preload("res://scenes/card/card.tscn")
+const HAND_SCENE := preload("res://scenes/zone/handzone.tscn")
+const DRAGGER_SCENE := preload("res://scenes/drag_layer/dragger_layer.tscn")
+const REVIVAL_DECK := preload("res://data/starting_decks/revival_starting_deck.tres")
 
-var _failure_count := 0
+var _failures := 0
 
 
 func _init() -> void:
-	call_deferred("_run_tests")
+	call_deferred("_run")
 
 
-func _run_tests() -> void:
-	await _test_starting_deck_cards_are_owned_and_added_to_hand()
-	await _test_granted_card_is_tracked_only_after_it_enters_hand()
-	await _test_existing_card_can_return_to_a_full_hand_without_duplication()
-	await _test_existing_card_can_return_with_temporary_overflow()
-	await _test_new_card_can_grant_with_temporary_overflow()
-	await _test_reclaimed_card_is_forgotten_without_being_freed()
-	quit(1 if _failure_count > 0 else 0)
+func _run() -> void:
+	await _test_starting_deck_creates_exact_card_views()
+	await _test_grant_and_return_use_hand_zone_without_capacity_rules()
+	await _test_forget_untracks_without_freeing()
+	quit(1 if _failures > 0 else 0)
 
 
-func _test_starting_deck_cards_are_owned_and_added_to_hand() -> void:
-	var service: Variant = _create_service()
-	if service == null:
-		return
-	var result: bool = service.initialize_starting_deck(RevivalDeck)
-	_expect(result, "runtime card service accepts a valid starting deck")
-	_expect(
-		service.get_instances().size() == RevivalDeck.starter_cards.size(),
-		"runtime card service tracks every starter instance"
-	)
-	_expect(
-		service.get_entities().size() == RevivalDeck.starter_cards.size(),
-		"runtime card service tracks every starter entity"
-	)
+func _test_starting_deck_creates_exact_card_views() -> void:
+	var fixture := _create_fixture()
+	var service: RunCardService = fixture.service
+	_expect(service.initialize_starting_deck(REVIVAL_DECK), "service initializes the configured starting deck")
+	await process_frame
 
-	for index in range(RevivalDeck.starter_cards.size()):
-		var entity: CardEntity = service.get_entities()[index]
-		_expect(
-			service.get_instances()[index].card_data == RevivalDeck.starter_cards[index],
-			"runtime card service preserves starter card order at index %d" % index
-		)
-		_expect(
-			entity in service.hand_area.cards,
-			"runtime card service places starter card %d in hand" % index
-		)
-		_expect(
-			entity.drag_layer == service.drag_layer,
-			"runtime card service assigns drag layer to starter card %d" % index
-		)
+	var cards := service.get_card_views()
+	_expect(cards.size() == REVIVAL_DECK.starter_cards.size(), "service creates one Card view per starter card")
+	_expect(service.get_instances().size() == cards.size(), "service tracks one exact instance per Card view")
+	for index in range(cards.size()):
+		var card := cards[index]
+		var instance := service.get_instances()[index]
+		_expect(card is Card, "starter view is the new Card type")
+		_expect(card.get_card_inst() == instance, "starter Card keeps the exact tracked CardInstance")
+		_expect(card.get_parent() == fixture.hand_zone, "starter Card is parented to HandZone")
+		_expect(card.drag_layer == fixture.drag_layer, "starter Card binds the configured DraggerLayer")
+		_expect(instance.cur_zone == CardInstance.ZONE.HAND, "starter CardInstance is normalized to HAND")
 
-	await _free_service_fixture(service)
+	if not cards.is_empty():
+		var first := cards[0]
+		first.get_card_inst().current_points = 37
+		first.refresh_display()
+		_expect(first.attack_label.text == "37", "refresh_display updates the visible point label after instance mutation")
+
+	await _free_fixture(fixture)
 
 
-func _test_granted_card_is_tracked_only_after_it_enters_hand() -> void:
-	var service: Variant = _create_service()
-	if service == null:
-		return
-	var card_data: CardData = RevivalDeck.starter_cards[0]
-	service.hand_area.max_hand_size = 0
-	_expect(
-		not service.grant_to_hand(card_data),
-		"runtime card service rejects reward card when hand is full"
-	)
-	_expect(service.get_instances().is_empty(), "failed reward grant does not retain an instance")
-	_expect(service.get_entities().is_empty(), "failed reward grant does not retain an entity")
-
-	service.hand_area.max_hand_size = 1
-	_expect(
-		service.grant_to_hand(card_data), "runtime card service grants card when hand has space"
-	)
-	_expect(service.get_instances().size() == 1, "successful reward grant tracks its instance")
-	_expect(
-		service.get_instances()[0].cur_zone == CardInstance.ZONE.HAND,
-		"successful reward grant marks its instance as in hand"
-	)
-	_expect(
-		service.get_entities()[0] in service.hand_area.cards,
-		"successful reward grant adds its entity to hand"
-	)
-
-	await _free_service_fixture(service)
+func _test_grant_and_return_use_hand_zone_without_capacity_rules() -> void:
+	var fixture := _create_fixture()
+	var service: RunCardService = fixture.service
+	var data: CardData = REVIVAL_DECK.starter_cards[0]
+	_expect(service.grant_to_hand(data), "grant_to_hand creates an acquired Card")
+	_expect(service.grant_to_hand_temporarily(data), "temporary grant remains a compatibility alias without hand capacity mutation")
+	var granted := service.get_card_views()[0]
+	_expect(fixture.hand_zone.remove_card(granted), "fixture removes an owned Card from HandZone")
+	_expect(service.return_existing_to_hand(granted, true), "return_existing_to_hand restores the exact Card to HandZone")
+	_expect(fixture.hand_zone.owns_card(granted), "returned Card is owned by HandZone")
+	_expect(not service.return_existing_to_hand(granted, true), "returning a Card already in HandZone is rejected")
+	await _free_fixture(fixture)
 
 
-func _test_existing_card_can_return_to_a_full_hand_without_duplication() -> void:
-	var service: Variant = _create_service()
-	if service == null:
-		return
-	_expect(
-		service.initialize_starting_deck(RevivalDeck),
-		"fixture starter deck initializes before guide return"
-	)
-	var existing_count: int = service.get_entities().size()
-	service.hand_area.max_hand_size = service.hand_area.cards.size()
-	var guide := CardEntityScene.instantiate() as CardEntity
-	guide.bind_instance(CardInstance.new(RevivalDeck.starter_cards[0]))
-	service.drag_layer.add_child(guide)
-
-	_expect(
-		service.return_existing_to_hand(guide, true),
-		"runtime card service returns an existing guide card despite a full hand"
-	)
-	_expect(guide in service.hand_area.cards, "returned guide card enters hand")
-	_expect(
-		service.hand_area.max_hand_size >= service.hand_area.cards.size(),
-		"guide return expands hand capacity only as needed"
-	)
-	_expect(
-		service.get_entities().size() == existing_count,
-		"returning an untracked guide card does not duplicate player ownership"
-	)
-	_expect(
-		service.return_existing_to_hand(guide, true) == false,
-		"runtime card service rejects returning a card already in hand"
-	)
-
-	await _free_service_fixture(service)
+func _test_forget_untracks_without_freeing() -> void:
+	var fixture := _create_fixture()
+	var service: RunCardService = fixture.service
+	_expect(service.grant_to_hand(REVIVAL_DECK.starter_cards[0]), "fixture grants a Card before forgetting it")
+	var card := service.get_card_views()[0]
+	_expect(service.forget_card(card), "forget_card removes Card ownership tracking")
+	_expect(service.get_card_views().is_empty() and service.get_instances().is_empty(), "forget_card removes both exact references")
+	_expect(is_instance_valid(card), "forget_card leaves the Card node alive for zone-owned completion")
+	card.queue_free()
+	await _free_fixture(fixture)
 
 
-func _test_existing_card_can_return_with_temporary_overflow() -> void:
-	var service: Variant = _create_service()
-	if service == null:
-		return
-	_expect(
-		service.initialize_starting_deck(RevivalDeck),
-		"fixture starter deck initializes before temporary return"
-	)
-	var returned_card: CardEntity = service.get_entities()[0]
-	_expect(
-		service.hand_area.remove_card(returned_card),
-		"fixture removes the owned tail card from hand before retreat"
-	)
-	service.hand_area.max_hand_size = service.hand_area.cards.size()
-	var original_max_hand_size: int = service.hand_area.max_hand_size
-
-	if not service.has_method("return_existing_to_hand_temporarily"):
-		_expect(false, "runtime card service exposes a temporary-overflow return for retreat tails")
-		await _free_service_fixture(service)
-		return
-	_expect(
-		service.call("return_existing_to_hand_temporarily", returned_card),
-		"runtime card service can return a retreat tail with temporary hand overflow"
-	)
-	_expect(returned_card in service.hand_area.cards, "temporarily returned tail card enters hand")
-	_expect(
-		service.hand_area.max_hand_size == original_max_hand_size,
-		"temporary retreat overflow restores the previous hand capacity"
-	)
-	_expect(
-		returned_card in service.get_entities(),
-		"temporary return preserves existing entity ownership"
-	)
-	_expect(
-		returned_card.card_instance in service.get_instances(),
-		"temporary return preserves existing instance ownership"
-	)
-
-	await _free_service_fixture(service)
+func _create_fixture() -> Dictionary:
+	var host := Node.new()
+	root.add_child(host)
+	var hand_zone := HAND_SCENE.instantiate() as HandZone
+	var drag_layer := DRAGGER_SCENE.instantiate() as DraggerLayer
+	host.add_child(hand_zone)
+	host.add_child(drag_layer)
+	var service := RunCardService.new()
+	_expect(service.configure(CARD_SCENE, hand_zone, drag_layer), "RunCardService accepts Card/HandZone/DraggerLayer dependencies")
+	return {"host": host, "hand_zone": hand_zone, "drag_layer": drag_layer, "service": service}
 
 
-func _test_new_card_can_grant_with_temporary_overflow() -> void:
-	var service: Variant = _create_service()
-	if service == null:
-		return
-	_expect(
-		service.initialize_starting_deck(RevivalDeck),
-		"fixture starter deck initializes before reward overflow"
-	)
-	var existing_count: int = service.get_entities().size()
-	service.hand_area.max_hand_size = service.hand_area.cards.size()
-	var original_max_hand_size: int = service.hand_area.max_hand_size
-
-	_expect(
-		service.has_method("grant_to_hand_temporarily"),
-		"runtime card service exposes an overflow-safe encounter reward grant"
-	)
-	if service.has_method("grant_to_hand_temporarily"):
-		_expect(
-			service.call("grant_to_hand_temporarily", RevivalDeck.starter_cards[0]),
-			"reward grant accepts a card when the normal hand is full"
-		)
-		_expect(
-			service.get_entities().size() == existing_count + 1, "reward grant owns the new card"
-		)
-		_expect(
-			service.get_entities().back() in service.hand_area.cards,
-			"reward grant keeps the new card in hand"
-		)
-		_expect(
-			service.hand_area.max_hand_size == original_max_hand_size,
-			"reward grant restores the configured hand limit"
-		)
-
-	await _free_service_fixture(service)
-
-
-func _test_reclaimed_card_is_forgotten_without_being_freed() -> void:
-	var service: Variant = _create_service()
-	if service == null:
-		return
-	_expect(
-		service.initialize_starting_deck(RevivalDeck),
-		"fixture starter deck initializes before market reclaim"
-	)
-	var card: CardEntity = service.get_entities()[0]
-	_expect(service.forget_card(card), "runtime card service forgets a tracked reclaimed card")
-	_expect(
-		card not in service.get_entities(),
-		"forgotten reclaimed card no longer has entity ownership"
-	)
-	_expect(
-		card.card_instance not in service.get_instances(),
-		"forgotten reclaimed card no longer has instance ownership"
-	)
-	_expect(
-		is_instance_valid(card),
-		"runtime card service leaves reclaimed entity alive for DragLayer cleanup"
-	)
-	_expect(not service.forget_card(card), "runtime card service ignores an already-forgotten card")
-
-	await _free_service_fixture(service)
-
-
-func _create_service():
-	var service_script = ResourceLoader.load(RunCardServicePath)
-	if service_script == null:
-		_expect(
-			false,
-			"runtime card service script exists so GameManager can delegate card lifecycle ownership"
-		)
-		return null
-	var card_manager := CardManagerScript.new()
-	card_manager.card_scene = CardEntityScene
-	var hand := HandScene.instantiate() as HandArea
-	root.add_child(hand)
-	var drag_layer := Node2D.new()
-	root.add_child(drag_layer)
-	var service = service_script.new()
-	_expect(
-		service.configure(card_manager, hand, drag_layer),
-		"runtime card service configures real card, hand, and drag dependencies"
-	)
-	return service
-
-
-func _free_service_fixture(service) -> void:
+func _free_fixture(fixture: Dictionary) -> void:
+	var service: RunCardService = fixture.service
 	service.clear()
-	if is_instance_valid(service.hand_area):
-		service.hand_area.queue_free()
-	if is_instance_valid(service.drag_layer):
-		service.drag_layer.queue_free()
+	await process_frame
+	var host: Node = fixture.host
+	if is_instance_valid(host):
+		host.queue_free()
 	await process_frame
 
 
 func _expect(condition: bool, message: String) -> void:
 	if condition:
 		return
-	_failure_count += 1
+	_failures += 1
 	push_error(message)

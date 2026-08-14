@@ -1,3 +1,26 @@
+## 游戏页面组合根组件
+##
+## 负责装配一次运行所需的页面级服务、常驻卡牌区域与唯一拖拽协调器。
+## 包括：
+## - 创建隔离的运行上下文并连接探索、事件、战斗与展示协调器
+## - 配置常驻 Board、HandZone、Shop 与 ReclaimZone
+## - 将四个卡牌区域注册到页面唯一 DraggerLayer
+## - 同步处理 Board 发出的 GUIDE 与拆链后继卡牌回手请求
+##
+## 不负责：
+## - 各区域内部的空间判断、成员布局与拖拽事务规则
+## - CardInstance 的数据持久化或 Card 的显示绘制
+## - 商店补货、回收价格或牌桌格子计算
+##
+## 使用方式：
+## 在节点进入场景树前调用 configure_run() 注入有效 StartingDeckData；
+## 场景就绪后本组件自动完成运行上下文、常驻区域和页面协调器装配。
+##
+## 依赖：
+## Board/HandZone/Shop/ReclaimZone：提供常驻玩法区域。
+## DraggerLayer：协调页面内所有 CardZone 的同步原子拖拽。
+## RunSetupCoordinator/RunFlowCoordinator：创建并推进一次运行。
+
 extends Node
 
 const ExplorationCoordinatorScript := preload(
@@ -11,9 +34,8 @@ const FaithServiceScript := preload("res://scripts/player/faith_service.gd")
 const CardRetractionCostServiceScript := preload("res://scripts/game/run/card_retraction_cost_service.gd")
 const MarketPricingServiceScript := preload("res://scripts/game/market/market_pricing_service.gd")
 const RunSetupCoordinatorScript := preload("res://scripts/game/run/run_setup_coordinator.gd")
-const PersistentMarketCoordinatorScript := preload(
-	"res://scripts/game/market/persistent_market_coordinator.gd"
-)
+const MarketPriceContextScript := preload("res://scripts/game/market/market_price_context.gd")
+const CARD_SCENE := preload("res://scenes/card/card.tscn")
 const EventModalCoordinatorScript := preload("res://scripts/game/event/event_modal_coordinator.gd")
 const PlacementPipelineCoordinatorScript := preload(
 	"res://scripts/game/placement/placement_pipeline_coordinator.gd"
@@ -34,13 +56,13 @@ signal run_finished
 signal faith_changed(current_faith: int)
 
 @onready var gameplay_canvas: GameplayCanvas = $GameplayCanvas
-@onready var board: Board = $GameplayCanvas/Board
-@onready var card_manager: Node2D = $GameplayCanvas/CardManager
-@onready var hand_area: HandArea = $GameplayCanvas/HandManager
-@onready var hand_tray: HandTray = $GameplayCanvas/HandTray
+@onready var hud: Control = $GameplayCanvas/Hud
+@onready var board: Board = $GameplayCanvas/Hud/Board
+@onready var hand_zone: HandZone = $GameplayCanvas/Hud/HandZone
+@onready var shop: Shop = $GameplayCanvas/Hud/Shop
+@onready var reclaim_zone: ReclaimZone = $GameplayCanvas/Hud/ReclaimZone
 @onready var pilgrim_crest_hud: PilgrimCrestHud = $GameplayCanvas/PilgrimCrestHud
-@onready var drag_layer: DragLayer = $GameplayCanvas/DragLayer
-@onready var persistent_market = $GameplayCanvas/PersistentMarket
+@onready var drag_layer: DraggerLayer = $GameplayCanvas/DragLayer
 @onready var shop_event_view = $EventModalLayer/ShopEventView
 @onready var treasure_event_view = $EventModalLayer/TreasureEventView
 @onready var combat_event_view: CombatEventView = $EventModalLayer/CombatEventView
@@ -48,6 +70,7 @@ signal faith_changed(current_faith: int)
 
 ## Static base data supplied by the scene. It is duplicated before a run starts.
 @export var player_data: PlayerData
+@export var card_library: CardLibrary
 @export var event_lib: EventLib
 @export var exploration_config: ExplorationConfig
 var starting_deck: StartingDeckData
@@ -58,7 +81,6 @@ var _card_chain_coordinator: CardChainCoordinator
 var _event_interaction_controller: EventInteractionController
 var _encounter_resolution: EncounterResolutionCoordinator
 var _market_pricing := MarketPricingServiceScript.new()
-var _persistent_market_coordinator: PersistentMarketCoordinator
 var _event_modal_coordinator: EventModalCoordinator
 var _event_hover_preview_coordinator: EventHoverPreviewCoordinator
 ## Legacy faith service remains declared for scene/API compatibility but is disabled for runs.
@@ -76,19 +98,16 @@ var _initialization_failure_emitted := false
 
 # 所有玩家相关卡牌数据引用
 var cards_inst: Array[CardInstance]
-var card_entities: Array[CardEntity]
+var card_entities: Array[Card]
 
 
 ## Must be called before the manager enters the scene tree.
 func configure_run(preset: StartingDeckData) -> bool:
 	if _run_configured:
-		push_error("GameManager.configure_run may only be called once")
 		return false
 	if is_node_ready():
-		push_error("GameManager.configure_run must be called before _ready")
 		return false
 	if preset == null or not preset.validate().is_empty():
-		push_error("GameManager received an invalid StartingDeckData")
 		return false
 	starting_deck = preset
 	_run_configured = true
@@ -107,9 +126,13 @@ func _ready() -> void:
 	if _run_initialization_attempted:
 		return
 	_run_initialization_attempted = true
+	if not _configure_persistent_zones():
+		return
 	if not _initialize_run_state():
 		return
-	if not _configure_persistent_market():
+	if not _configure_shop():
+		return
+	if not _configure_reclaim_zone():
 		return
 	if not _configure_event_modal():
 		return
@@ -141,7 +164,14 @@ func _initialize_run_state() -> bool:
 
 	_run_setup = RunSetupCoordinatorScript.new()
 	var progression_config: RunProgressionConfig = exploration_config.progression_config if exploration_config != null else null
-	if not _run_setup.configure(player_data, starting_deck, card_manager, hand_area, drag_layer, progression_config):
+	if not _run_setup.configure(
+		player_data,
+		starting_deck,
+		CARD_SCENE,
+		hand_zone,
+		drag_layer,
+		progression_config
+	):
 		return _fail_run_initialization("GameManager could not configure run setup")
 	if not _run_setup.initialize():
 		return _fail_run_initialization(_run_setup.get_failure_reason())
@@ -153,15 +183,23 @@ func _initialize_run_state() -> bool:
 	player_stats = _run_context.player_stats
 	_run_card_service = _run_context.card_service
 	_event_interaction_controller = _run_context.event_interaction_controller
-	cards_inst = _run_card_service.get_instances()
-	card_entities = _run_card_service.get_entities()
+	if not _run_card_service.cards_changed.is_connected(_sync_runtime_cards):
+		_run_card_service.cards_changed.connect(_sync_runtime_cards)
+	_sync_runtime_cards()
 	_faith_service = null # Faith progression is paused; keep the legacy field for compatibility.
 	_retraction_cost_service = CardRetractionCostServiceScript.new()
 	if not _retraction_cost_service.configure(_run_context.player_data):
 		return _fail_run_initialization("GameManager could not configure card retraction cost")
-	drag_layer.board = board
-	drag_layer.hand_area = hand_area
 	return true
+
+
+func _sync_runtime_cards() -> void:
+	if _run_card_service == null:
+		cards_inst.clear()
+		card_entities.clear()
+		return
+	cards_inst = _run_card_service.get_instances()
+	card_entities = _run_card_service.get_entities()
 
 
 func _fail_run_initialization(reason: String) -> bool:
@@ -187,7 +225,6 @@ func _clear_runtime_references() -> void:
 	_exploration_coordinator = null
 	_card_chain_coordinator = null
 	_encounter_resolution = null
-	_persistent_market_coordinator = null
 	_event_modal_coordinator = null
 	_event_hover_preview_coordinator = null
 	_placement_pipeline = null
@@ -201,27 +238,53 @@ func _emit_run_initialization_failed(reason: String) -> void:
 	run_initialization_failed.emit(reason)
 
 
-func _configure_persistent_market() -> bool:
+func _configure_persistent_zones() -> bool:
 	if (
-		persistent_market == null
-		or card_manager == null
-		or card_manager.card_lib == null
-		or _run_context == null
+		drag_layer == null
+		or hand_zone == null
+		or board == null
+		or board.board_zone == null
+		or shop == null
+		or reclaim_zone == null
 	):
-		return _fail_run_initialization("GameManager could not configure persistent market")
-	_persistent_market_coordinator = PersistentMarketCoordinatorScript.new()
-	if not _persistent_market_coordinator.configure(
-		persistent_market,
-		card_manager.card_lib,
+		return _fail_run_initialization(
+			"GameManager could not configure persistent card zones"
+		)
+	drag_layer.register_zone(hand_zone)
+	board.board_zone.set_drag_layer(drag_layer)
+	shop.set_drag_layer(drag_layer)
+	reclaim_zone.set_drag_layer(drag_layer)
+	return true
+
+
+func _configure_shop() -> bool:
+	if card_library == null or shop == null or _run_context == null:
+		return _fail_run_initialization("GameManager could not configure persistent shop")
+	if not shop.configure(
+		card_library,
 		_run_context.player_data,
-		hand_area,
 		_run_context.card_service,
 		_market_pricing,
 		_run_context.random.market_rng(),
 		_run_context.progression
 	):
-		return _fail_run_initialization("GameManager could not configure persistent market")
-	_persistent_market_coordinator.connect_drag_layer(drag_layer, hand_tray)
+		return _fail_run_initialization("GameManager could not configure persistent shop")
+	return true
+
+
+func _configure_reclaim_zone() -> bool:
+	if reclaim_zone == null or _run_context == null:
+		return _fail_run_initialization("GameManager could not configure ReclaimZone")
+	var price_context := MarketPriceContextScript.new()
+	price_context.player = _run_context.player_data
+	price_context.market_state = shop
+	if not reclaim_zone.configure(
+		_run_context.player_data,
+		_run_context.card_service,
+		_market_pricing,
+		price_context
+	):
+		return _fail_run_initialization("GameManager could not configure ReclaimZone")
 	return true
 
 
@@ -232,7 +295,7 @@ func _configure_event_modal() -> bool:
 	if not _event_modal_coordinator.configure(
 		_run_context.event_interaction_controller,
 		drag_layer,
-		hand_area,
+		hand_zone,
 		_run_context.card_service,
 		_run_context.player_data,
 		shop_event_view,
@@ -325,10 +388,10 @@ func _configure_run_flow() -> bool:
 		_run_flow.exploration_failed.connect(_forward_exploration_failed)
 	if not _run_flow.run_finished.is_connected(_forward_run_finished):
 		_run_flow.run_finished.connect(_forward_run_finished)
-	if _retraction_cost_service != null and not drag_layer.chain_retraction_confirmed.is_connected(
+	if _retraction_cost_service != null and not board.chain_retraction_confirmed.is_connected(
 		_retraction_cost_service.resolve_confirmed_chain_retraction
 	):
-		drag_layer.chain_retraction_confirmed.connect(
+		board.chain_retraction_confirmed.connect(
 			_retraction_cost_service.resolve_confirmed_chain_retraction
 		)
 	if not _run_flow.start():
@@ -339,8 +402,6 @@ func _configure_run_flow() -> bool:
 func _configure_presentation() -> bool:
 	_presentation = RunPresentationCoordinatorScript.new()
 	if not _presentation.configure(
-		hand_area,
-		hand_tray,
 		pilgrim_crest_hud,
 		drag_layer,
 		_run_context.player_data,
@@ -349,22 +410,23 @@ func _configure_presentation() -> bool:
 		_retraction_cost_service
 	):
 		return _fail_run_initialization("GameManager could not configure run presentation")
-	if not _presentation.bind(_run_flow, _event_modal_coordinator, _persistent_market_coordinator):
+	if not _presentation.bind(_run_flow, _event_modal_coordinator):
 		return _fail_run_initialization("GameManager could not bind run presentation")
 	_presentation.sync_all()
 	return true
 
 
 func _configure_card_return_routing() -> bool:
-	if _run_flow == null or board == null:
+	if board == null or hand_zone == null:
 		return _fail_run_initialization("GameManager could not configure card return routing")
-	if not board.card_return_requested.is_connected(_run_flow.handle_card_return_requested):
-		return _fail_run_initialization("GameManager could not connect card return routing")
+	if not board.card_return_requested.is_connected(_on_board_card_return_requested):
+		board.card_return_requested.connect(_on_board_card_return_requested)
 	return true
 
 
-func _on_board_card_return_requested(card: CardEntity) -> void:
-	_run_flow.handle_card_return_requested(card)
+func _on_board_card_return_requested(card: Card) -> void:
+	if card == null or not is_instance_valid(card) or not hand_zone.add_card(card, true):
+		push_error("GameManager failed to return Card to HandZone")
 
 
 func _forward_combat_started(instance: EventInstance, monster: MobInstance) -> void:
@@ -399,7 +461,7 @@ func _sync_pilgrim_crest() -> void:
 
 
 func _refresh_event_display(instance: EventInstance) -> void:
-	for event_node in board.events:
+	for event_node: BoardEvent in board.event_zone.get_events():
 		if event_node.event_instance == instance:
 			event_node.refresh_display()
 			return
@@ -409,20 +471,6 @@ func _on_unsupported_modal_event(_instance: EventInstance) -> void:
 	push_warning("GameManager received an unsupported event type")
 
 
-## 按固定设计坐标布置玩法内容，再统一缩放和居中玩法画布。
+## 页面区域使用场景中保存的 1920×1080 设计坐标；缩放由 GameplayCanvas 统一处理。
 func _center_layout() -> void:
-	return
-	# 从这里统一调整设计坐标（1920×1080）。
-	var design_size := LayoutConfig.DESIGN_VIEWPORT_SIZE
-	board.position = LayoutConfig.board_origin(
-		design_size, board.width, board.height, board.cell_size
-	)
-	hand_area.position = LayoutConfig.hand_origin(design_size)
-
-	# 以下节点当前由 game_manager.tscn 的 Inspector 负责定位。
-	# 需要切回代码布局时，可在这里集中修改它们的位置。
-	hand_tray.position = Vector2(283.0, 656.0)
-	pilgrim_crest_hud.position = Vector2(1620.0, 28.0)
-
-	# GameplayCanvas 负责按窗口尺寸统一缩放并居中。
 	gameplay_canvas.fit_to_viewport(get_viewport().get_visible_rect().size)

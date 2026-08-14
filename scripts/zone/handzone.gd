@@ -1,5 +1,29 @@
+## 手牌区域组件
+##
+## 负责管理手牌成员、横向布局与手牌拖拽事务。
+## 包括：
+## - Card 的稳定成员集合与插入顺序
+## - 手牌卡牌的重叠、旋转和浮动布局
+## - 拖拽开始时的来源快照与取消恢复
+## - 将接收的 CardInstance 规范化为 HAND 状态
+##
+## 不负责：
+## - 卡牌数据的创建、持久化或购买规则
+## - 其它区域的空间判断与拖拽来源解析
+## - Board 牌链、商店补货或回收收益
+##
+## 使用方式：
+## 先将 HandZone 注册到当前页面的 DraggerLayer，再通过 add_card() 接收卡牌；
+## 跨区域拖拽由 DraggerLayer 调用本组件的拖拽协议完成。
+##
+## 依赖：
+## CardZone：提供区域基础协议。
+## CardInstance：保存卡牌区域、位置与朝向状态。
+
 extends CardZone
 class_name HandZone
+
+signal hand_count_changed(current_count: int, max_count: int)
 
 var cards: Array[Card] = []
 
@@ -8,7 +32,9 @@ var cards: Array[Card] = []
 var virtual_preview: Array[int] = []
 var _preview_card: Card
 var _preview_is_source: bool = false
+var _drag_snapshot: Dictionary = {}
 
+@export var display_capacity: int = 10
 @export var card_overlap: float = 10.0
 @export var card_row_y: float = 0.0
 @export var rot_max: float = 8.0
@@ -38,35 +64,31 @@ func _register_existing_cards() -> void:
 	for child in get_children():
 		if child is Card and not cards.has(child):
 			cards.append(child)
-			child.cur_zone = self
+			_normalize_hand_state(child)
 
 
 func get_cards() -> Array[Card]:
 	return cards.duplicate()
 
 
+func get_card_count() -> int:
+	return cards.size()
+
+
+func get_display_capacity() -> int:
+	return display_capacity
+
+
+func owns_card(card: Card) -> bool:
+	return card != null and cards.has(card)
+
+
 func add_card(card: Card, keep_global_position: bool = true) -> bool:
-	if card == null:
+	if card == null or card.get_card_inst() == null:
 		return false
 
 	var insert_index := _get_insert_index(card)
-	var old_index := cards.find(card)
-	if old_index != -1:
-		cards.remove_at(old_index)
-		if old_index < insert_index:
-			insert_index -= 1
-
-	if card.get_parent() == null:
-		add_child(card)
-	elif card.get_parent() != self:
-		card.reparent(self, keep_global_position)
-
-	insert_index = clampi(insert_index, 0, cards.size())
-	cards.insert(insert_index, card)
-	card.cur_zone = self
-	_clear_preview()
-	refresh_hand()
-	return true
+	return _accept_card(card, keep_global_position, insert_index)
 
 
 func remove_card(card: Card) -> bool:
@@ -75,10 +97,9 @@ func remove_card(card: Card) -> bool:
 		return false
 
 	cards.remove_at(index)
-	if card.cur_zone == self:
-		card.cur_zone = null
 	_clear_preview()
 	refresh_hand()
+	_emit_hand_count_changed()
 	return true
 
 
@@ -87,14 +108,28 @@ func can_trans_to_target(_card: Card) -> bool:
 
 
 func can_trans_from_source(card: Card) -> bool:
-	return cards.has(card)
+	return owns_card(card) or (_drag_snapshot.get("card", null) == card)
 
 
-# 来源 Zone：卡牌刚被拿起，先从布局中移除，但不修改真实 cards 列表。
+# 来源 Zone：保存完整快照并暂时撤销稳定成员资格。
 func start_drag(card: Card) -> void:
-	if not cards.has(card):
+	if card == null or not cards.has(card):
 		return
 
+	var instance := card.get_card_inst()
+	_drag_snapshot = {
+		"card": card,
+		"index": cards.find(card),
+		"parent": card.get_parent(),
+		"global_position": card.global_position,
+		"rotation": card.rotation,
+		"target_position": card.target_position,
+		"z_index": card.z_index,
+		"cur_zone": instance.cur_zone if instance != null else null,
+		"battlefield_pos": instance.battlefield_pos if instance != null else Vector2i(-1, -1),
+		"direction": instance.direction if instance != null else 0,
+	}
+	cards.remove_at(int(_drag_snapshot["index"]))
 	_preview_card = card
 	_preview_is_source = true
 	virtual_preview = _build_indices_without(card)
@@ -135,19 +170,20 @@ func _get_preview_insert_index(card: Card, preview_count: int) -> int:
 
 
 func drag_end_source(card: Card, ok: bool) -> bool:
-	if card != _preview_card:
+	if card != _preview_card or _drag_snapshot.get("card", null) != card:
 		return false
 
 	if ok:
-		var index := cards.find(card)
-		if index != -1:
-			cards.remove_at(index)
-		if card.cur_zone == self:
-			card.cur_zone = null
-		_clear_preview()
-	else:
+		# 目标先提交；若是同区拖拽，目标已经重新建立了成员资格，不能再次删除。
+		var left_hand := not cards.has(card)
+		_drag_snapshot.clear()
 		_clear_preview()
 		refresh_hand()
+		if left_hand:
+			_emit_hand_count_changed()
+		return true
+
+	_restore_drag_snapshot()
 	return true
 
 
@@ -168,21 +204,7 @@ func drag_end_target(card: Card, ok: bool) -> bool:
 	# virtual_preview 的 -1 下标已经是在“排除拖拽卡”后的目标顺序中。
 	# 同区重排时不能再根据旧索引补偿，否则会落到预览槽位的前一张牌位置。
 	var insert_index := _get_preview_insert_card_index(card)
-	var old_index := cards.find(card)
-	if old_index != -1:
-		cards.remove_at(old_index)
-
-	if card.get_parent() == null:
-		add_child(card)
-	elif card.get_parent() != self:
-		card.reparent(self, true)
-
-	insert_index = clampi(insert_index, 0, cards.size())
-	cards.insert(insert_index, card)
-	card.cur_zone = self
-	_clear_preview()
-	refresh_hand()
-	return true
+	return _accept_card(card, true, insert_index)
 
 
 func _get_preview_insert_card_index(card: Card) -> int:
@@ -190,6 +212,78 @@ func _get_preview_insert_card_index(card: Card) -> int:
 	if preview_index != -1:
 		return preview_index
 	return _get_insert_index(card)
+
+
+func _accept_card(card: Card, keep_global_position: bool, insert_index: int) -> bool:
+	if card == null or card.get_card_inst() == null:
+		return false
+
+	var was_logical_member: bool = cards.has(card) or _drag_snapshot.get("card", null) == card
+	var old_global := card.global_position
+	var old_index := cards.find(card)
+	if old_index != -1:
+		cards.remove_at(old_index)
+		if old_index < insert_index:
+			insert_index -= 1
+
+	if card.get_parent() == null:
+		add_child(card)
+	elif card.get_parent() != self:
+		card.reparent(self, keep_global_position)
+	if keep_global_position:
+		card.global_position = old_global
+
+	insert_index = clampi(insert_index, 0, cards.size())
+	cards.insert(insert_index, card)
+	_normalize_hand_state(card)
+	_clear_preview()
+	refresh_hand()
+	if not was_logical_member:
+		_emit_hand_count_changed()
+	return true
+
+
+func _emit_hand_count_changed() -> void:
+	hand_count_changed.emit(get_card_count(), get_display_capacity())
+
+
+func _normalize_hand_state(card: Card) -> void:
+	var instance := card.get_card_inst()
+	if instance == null:
+		return
+	var came_from_board := instance.cur_zone == CardInstance.ZONE.BOARD
+	instance.cur_zone = CardInstance.ZONE.HAND
+	instance.battlefield_pos = Vector2i(-1, -1)
+	if came_from_board:
+		instance.direction = 0
+	card.rotation = 0.0
+	card.refresh_display()
+
+
+func _restore_drag_snapshot() -> void:
+	var card := _drag_snapshot.get("card", null) as Card
+	if card == null:
+		_clear_preview()
+		return
+
+	var original_parent := _drag_snapshot.get("parent", null) as Node
+	if original_parent != null and is_instance_valid(original_parent):
+		if card.get_parent() != original_parent:
+			card.reparent(original_parent, true)
+		card.global_position = _drag_snapshot["global_position"]
+	cards.insert(clampi(int(_drag_snapshot["index"]), 0, cards.size()), card)
+	card.rotation = _drag_snapshot["rotation"]
+	card.target_position = _drag_snapshot["target_position"]
+	card.z_index = int(_drag_snapshot["z_index"])
+	var instance := card.get_card_inst()
+	if instance != null:
+		instance.cur_zone = _drag_snapshot["cur_zone"]
+		instance.battlefield_pos = _drag_snapshot["battlefield_pos"]
+		instance.direction = int(_drag_snapshot["direction"])
+		card.refresh_display()
+	_drag_snapshot.clear()
+	_clear_preview()
+	refresh_hand()
 
 
 func _get_insert_index(card: Card) -> int:
@@ -280,3 +374,6 @@ func _clear_preview() -> void:
 	virtual_preview.clear()
 	_preview_card = null
 	_preview_is_source = false
+
+func name()->String:
+	return "hand_zone"

@@ -1,11 +1,41 @@
+## 卡牌拖拽协调组件
+##
+## 负责协调当前页面中 Card 与已注册 CardZone 之间的拖拽流程。
+## 包括：
+## - 注册和注销可交互区域
+## - 根据卡牌变换后的中心点解析目标区域
+## - 在拖拽开始时解析并缓存唯一来源区域
+## - 按目标先提交、来源后提交的顺序结束拖拽
+##
+## 不负责：
+## - 卡牌节点的位置运动与视觉反馈
+## - 各区域内部的布局、规则判断与业务结算
+## - 卡牌实例状态的直接写入
+##
+## 使用方式：
+## 页面创建唯一 DraggerLayer 后注册 HandZone、BoardZone、ShopZone 和 ReclaimZone；
+## Card 通过 bind_drag_layer() 接入，并由本组件接收 start_drag/update_drag/end_drag 通知。
+##
+## 依赖：
+## Card：提供拖拽卡牌视图与变换后的中心点。
+## CardZone：提供区域命中、所有权和拖拽事务协议。
+
 class_name DraggerLayer
 extends Node
 
-## Detection and drag-flow coordinator for the new Card model.
-## Card still owns dragging and movement; zones own preview and commit behavior.
 var _registered_zones: Array[CardZone] = []
+var _interaction_locked := false
 var dragging_card: Card
+var _drag_source: CardZone
 var _preview_target: CardZone
+
+
+func set_interaction_locked(locked: bool) -> void:
+	_interaction_locked = locked
+
+
+func is_interaction_locked() -> bool:
+	return _interaction_locked
 
 
 func register_zone(zone: CardZone) -> void:
@@ -35,20 +65,26 @@ func get_registered_zones() -> Array[CardZone]:
 	return valid_zones
 
 
-func start_drag(card: Card) -> void:
-	if card == null:
-		return
+func start_drag(card: Card) -> bool:
+	if _interaction_locked or card == null or dragging_card != null:
+		return false
+
+	var owners := _find_card_owners(card)
+	if owners.size() > 1:
+		push_warning("DraggerLayer found multiple owners for Card: %s" % card)
+		return false
 
 	dragging_card = card
+	_drag_source = owners[0] if owners.size() == 1 else null
 	_preview_target = null
 
-	var source := card.cur_zone
-	if source != null and not source.can_trans_from_source(card):
-		dragging_card = null
-		return
-
-	if source != null:
-		source.start_drag(card)
+	if _drag_source != null:
+		if not _drag_source.can_trans_from_source(card):
+			dragging_card = null
+			_drag_source = null
+			return false
+		_drag_source.start_drag(card)
+	return true
 
 
 func update_drag(card: Card) -> void:
@@ -66,41 +102,41 @@ func update_drag(card: Card) -> void:
 	if target != null:
 		target.update_drag(card)
 		_preview_target = target
-	# The source zone keeps its removal preview while the card is outside a target.
 
 
-func end_drag(card: Card) -> void:
+func end_drag(card: Card) -> bool:
 	if card == null or card != dragging_card:
-		return
+		return false
 
-	# Make sure a release without a final mouse-motion event still gets a preview.
 	update_drag(card)
-
-	var source := card.cur_zone
 	var target := _preview_target
-	var can_trans := (
-		target != null
-		and target.can_trans_to_target(card)
-		and (source == null or source.can_trans_from_source(card))
-	)
-
-	var committed := false
-	if can_trans:
-		# 目标区先提交。BoardZone 等目标可能在释放时发现预览格不可用，
-		# 此时必须阻止源区删除卡牌。
-		committed = target.drag_end_target(card, true)
-
-	if committed:
-		if source != null and source != target:
-			source.drag_end_source(card, true)
+	var target_valid := target != null and target.can_trans_to_target(card)
+	var target_committed := false
+	if target_valid:
+		target_committed = target.drag_end_target(card, true)
 	else:
 		if target != null:
 			target.drag_end_target(card, false)
-		if source != null:
-			source.drag_end_source(card, false)
+
+	if target_committed:
+		if _drag_source != null:
+			_drag_source.drag_end_source(card, true)
+	else:
+		if _drag_source != null:
+			_drag_source.drag_end_source(card, false)
 
 	dragging_card = null
+	_drag_source = null
 	_preview_target = null
+	return target_committed
+
+
+func _find_card_owners(card: Card) -> Array[CardZone]:
+	var owners: Array[CardZone] = []
+	for zone in get_registered_zones():
+		if zone.owns_card(card):
+			owners.append(zone)
+	return owners
 
 
 func _get_card_center(card: Card) -> Vector2:

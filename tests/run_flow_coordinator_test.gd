@@ -13,11 +13,13 @@ class RecordingModal:
 	extends EventModalCoordinator
 	var begun_instances: Array[EventInstance] = []
 	var completed_settlements := 0
+	var begun_chains: Array = []
 
 	func begin(
 		instance: EventInstance, _player_stats: CombatStats, _chain: Array[CardInstance]
 	) -> void:
 		begun_instances.append(instance)
+		begun_chains.append(_chain.duplicate())
 
 	func complete_combat_settlement() -> void:
 		completed_settlements += 1
@@ -68,16 +70,17 @@ class RecordingFaithEchoEndpoint:
 
 class RecordingCardService:
 	extends RunCardService
-	var returned_cards: Array[CardEntity] = []
+	var returned_cards: Array[Card] = []
 	var return_allow_overflow: Array[bool] = []
 
-	func return_existing_to_hand(card: CardEntity, allow_overflow := false) -> bool:
+	func return_existing_to_hand(card: Card, allow_overflow := false) -> bool:
 		returned_cards.append(card)
 		return_allow_overflow.append(allow_overflow)
 		return true
 
 
 var _failure_count := 0
+var _fixture_boards: Array[Board] = []
 
 
 func _init() -> void:
@@ -94,8 +97,10 @@ func _run_tests() -> void:
 	_test_failed_boss_settlement_keeps_interaction_pending()
 	_test_boss_victory_enters_finished()
 	_test_resolved_non_boss_event_uses_cleanup_port()
-	_test_faith_echo_and_guide_return_delegate_to_runtime_services()
+	_test_faith_echo_is_forwarded_without_owning_guide_return()
 	_test_explicit_faith_echo_port_overrides_pipeline_internals()
+	_cleanup_fixtures()
+	await process_frame
 	quit(1 if _failure_count > 0 else 0)
 
 
@@ -248,13 +253,11 @@ func _test_boss_victory_enters_finished() -> void:
 	var signal_order: Array[String] = []
 	var signal_states: Array[bool] = []
 	var reentry_state := {"attempts": 0, "result": true}
-	flow.run_finished.connect(
-		func() -> void:
-			signal_order.append("run_finished")
-			signal_states.append(flow.get_state() == STATE_FINISHED)
-			finish_signals.append(true)
-	)
-	flow.combat_resolved.connect(
+	var on_run_finished := func() -> void:
+		signal_order.append("run_finished")
+		signal_states.append(flow.get_state() == STATE_FINISHED)
+		finish_signals.append(true)
+	var on_combat_resolved := (
 		func(resolved_instance: EventInstance, resolved_result: CombatResult) -> void:
 			signal_order.append("combat_resolved")
 			signal_states.append(
@@ -267,6 +270,8 @@ func _test_boss_victory_enters_finished() -> void:
 				resolved_instance, resolved_result
 			)
 	)
+	flow.run_finished.connect(on_run_finished)
+	flow.combat_resolved.connect(on_combat_resolved)
 	var boss := _event(EventData.EventType.BOSS)
 	fixture.pipeline.event_interaction_requested.emit(boss)
 
@@ -305,6 +310,8 @@ func _test_boss_victory_enters_finished() -> void:
 	)
 	fixture.pipeline.resolve_placement(_placement_result())
 	_expect(placement_resolutions == 0, "FINISHED flow rejects new placement pipeline work")
+	flow.run_finished.disconnect(on_run_finished)
+	flow.combat_resolved.disconnect(on_combat_resolved)
 
 
 func _test_resolved_non_boss_event_uses_cleanup_port() -> void:
@@ -325,7 +332,7 @@ func _test_resolved_non_boss_event_uses_cleanup_port() -> void:
 	)
 
 
-func _test_faith_echo_and_guide_return_delegate_to_runtime_services() -> void:
+func _test_faith_echo_is_forwarded_without_owning_guide_return() -> void:
 	var fixture := _make_started_fixture()
 	var flow = fixture.flow
 	if flow == null:
@@ -335,7 +342,7 @@ func _test_faith_echo_and_guide_return_delegate_to_runtime_services() -> void:
 	fixture.faith.faith_changed.emit(2)
 	fixture.faith.echo_spawn_requested.emit()
 
-	var returned_card := CardEntity.new()
+	var returned_card := Card.new()
 	fixture.board.card_return_requested.emit(returned_card)
 
 	_expect(faith_values == [2], "flow forwards FaithService changes")
@@ -344,13 +351,14 @@ func _test_faith_echo_and_guide_return_delegate_to_runtime_services() -> void:
 		"flow delegates faith echo spawning to exploration"
 	)
 	_expect(
-		fixture.card_service.returned_cards == [returned_card],
-		"flow delegates board guide return to the run card service"
+		fixture.card_service.returned_cards.is_empty(),
+		"RunFlow leaves Board card-return ownership to the page composition"
 	)
 	_expect(
-		fixture.card_service.return_allow_overflow == [true],
-		"guide return permits the required hand overflow"
+		fixture.card_service.return_allow_overflow.is_empty(),
+		"RunFlow does not choose hand overflow policy for page-level returns"
 	)
+	returned_card.free()
 
 
 func _test_explicit_faith_echo_port_overrides_pipeline_internals() -> void:
@@ -388,6 +396,10 @@ func _make_fixture() -> Dictionary:
 		return {"flow": null}
 
 	var board := Board.new()
+	var board_zone := BoardZone.new()
+	board.add_child(board_zone)
+	board.board_zone = board_zone
+	_fixture_boards.append(board)
 	var player := PlayerData.new()
 	var player_stats := CombatStats.new()
 	var card_service := RecordingCardService.new()
@@ -439,6 +451,13 @@ func _make_fixture() -> Dictionary:
 		"pipeline": pipeline,
 		"resolution": resolution,
 	}
+
+
+func _cleanup_fixtures() -> void:
+	for board: Board in _fixture_boards:
+		if is_instance_valid(board):
+			board.free()
+	_fixture_boards.clear()
 
 
 func _event(event_type: EventData.EventType) -> EventInstance:

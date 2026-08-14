@@ -1,21 +1,12 @@
 extends SceneTree
 
 const CoordinatorPath := "res://scripts/game/event/event_modal_coordinator.gd"
-const HandScene = preload("res://scenes/game/hand.tscn")
-const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
-const CardManagerScript = preload("res://scripts/game/card_manager.gd")
+const HandScene = preload("res://scenes/zone/handzone.tscn")
+const CardScene = preload("res://scenes/card/card.tscn")
 
 var _failure_count := 0
 var _emitted_instance: EventInstance
 var _emitted_count := 0
-
-
-class FakeDragLayer:
-	extends RefCounted
-	var interaction_locked := false
-
-	func set_interaction_locked(locked: bool) -> void:
-		interaction_locked = locked
 
 
 class FakeShopView:
@@ -81,7 +72,7 @@ func _init() -> void:
 
 func _run_tests() -> void:
 	await _test_shop_purchase_uses_active_event_and_grants_card_to_run_service()
-	await _test_treasure_card_reward_respects_hand_capacity_without_resolving_event()
+	await _test_treasure_card_reward_enters_hand_and_resolves_event()
 	await _test_combat_confirmation_emits_pending_result_without_mutating_encounter()
 	quit(1 if _failure_count > 0 else 0)
 
@@ -96,7 +87,7 @@ func _test_shop_purchase_uses_active_event_and_grants_card_to_run_service() -> v
 		coordinator.configure(
 			fixture.controller,
 			fixture.drag_layer,
-			fixture.hand_area,
+			fixture.hand_zone,
 			fixture.card_service,
 			fixture.player,
 			fixture.shop_view,
@@ -118,18 +109,17 @@ func _test_shop_purchase_uses_active_event_and_grants_card_to_run_service() -> v
 	await _free_fixture(fixture)
 
 
-func _test_treasure_card_reward_respects_hand_capacity_without_resolving_event() -> void:
+func _test_treasure_card_reward_enters_hand_and_resolves_event() -> void:
 	var fixture := _create_fixture()
 	var coordinator = _create_coordinator()
 	if coordinator == null:
 		await _free_fixture(fixture)
 		return
-	fixture.hand_area.max_hand_size = 0
 	_expect(
 		coordinator.configure(
 			fixture.controller,
 			fixture.drag_layer,
-			fixture.hand_area,
+			fixture.hand_zone,
 			fixture.card_service,
 			fixture.player,
 			fixture.shop_view,
@@ -139,13 +129,16 @@ func _test_treasure_card_reward_respects_hand_capacity_without_resolving_event()
 		),
 		"modal coordinator configures for treasure"
 	)
+	var initial_cards: int = fixture.card_service.get_entities().size()
 	coordinator.begin(fixture.treasure_instance, fixture.player_stats, _empty_chain())
 	fixture.treasure_view.reward_requested.emit(0)
 
-	_expect(not fixture.treasure_instance.is_resolved, "full hand does not consume treasure")
+	_expect(fixture.treasure_instance.is_resolved, "card reward resolves treasure")
 	_expect(
-		fixture.treasure_view.last_message == "手牌已满，无法领取这张卡牌。", "treasure explains capacity failure"
+		fixture.card_service.get_entities().size() == initial_cards + 1,
+		"treasure card reward enters HandZone"
 	)
+	_expect(not fixture.treasure_view.visible, "resolved treasure closes its modal")
 	await _free_fixture(fixture)
 
 
@@ -159,7 +152,7 @@ func _test_combat_confirmation_emits_pending_result_without_mutating_encounter()
 		coordinator.configure(
 			fixture.controller,
 			fixture.drag_layer,
-			fixture.hand_area,
+			fixture.hand_zone,
 			fixture.card_service,
 			fixture.player,
 			fixture.shop_view,
@@ -206,15 +199,13 @@ func _create_coordinator():
 
 
 func _create_fixture() -> Dictionary:
-	var hand_area := HandScene.instantiate() as HandArea
-	root.add_child(hand_area)
-	var drag_node := Node2D.new()
-	root.add_child(drag_node)
-	var card_manager := CardManagerScript.new()
-	card_manager.card_scene = CardEntityScene
+	var hand_zone := HandScene.instantiate() as HandZone
+	root.add_child(hand_zone)
+	var drag_layer := DraggerLayer.new()
+	root.add_child(drag_layer)
 	var card_service := RunCardService.new()
 	_expect(
-		card_service.configure(card_manager, hand_area, drag_node),
+		card_service.configure(CardScene, hand_zone, drag_layer),
 		"fixture configures runtime card service"
 	)
 	var controller := EventInteractionController.new()
@@ -239,11 +230,10 @@ func _create_fixture() -> Dictionary:
 	var monster_instance := _event_instance(EventData.EventType.MONSTER, monster_content)
 	var monster := (monster_instance.runtime_state as EncounterRuntimeState).mob_instance
 	return {
-		"hand_area": hand_area,
-		"drag_node": drag_node,
+		"hand_zone": hand_zone,
 		"card_service": card_service,
 		"controller": controller,
-		"drag_layer": FakeDragLayer.new(),
+		"drag_layer": drag_layer,
 		"player": player,
 		"player_stats": player_stats,
 		"shop_view": FakeShopView.new(),
@@ -302,7 +292,7 @@ func _free_fixture(fixture: Dictionary) -> void:
 	var service: RunCardService = fixture.card_service
 	if service != null:
 		service.clear()
-	for key in ["hand_area", "drag_node"]:
+	for key in ["hand_zone", "drag_layer"]:
 		var node = fixture[key]
 		if is_instance_valid(node):
 			node.queue_free()

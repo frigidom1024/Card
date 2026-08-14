@@ -6,8 +6,8 @@
 [node name="ShopZone" type="Control" unique_id=1212533033]
 layout_mode = 3
 anchors_preset = 0
-offset_right = 289.0
-offset_bottom = 163.0
+offset_right = 341.0
+offset_bottom = 333.0
 mouse_filter = 2
 script = ExtResource("1_shop_zone")
 

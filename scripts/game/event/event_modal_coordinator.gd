@@ -1,10 +1,28 @@
+## 事件弹窗协调组件
+##
+## 负责把当前探索事件的交互输入转换为商店、宝藏与战斗弹窗流程。
+## 包括：
+## - 打开和关闭事件弹窗
+## - 结算事件奖励并通过 RunCardService 发放卡牌
+## - 发布交互锁和战斗结算请求
+##
+## 不负责：
+## - 手牌容量或布局规则
+## - 战斗结果对运行状态的最终写入
+## - 常驻 Shop 与 ReclaimZone 的管理
+##
+## 使用方式：
+## 通过 configure() 注入控制器、唯一 DraggerLayer、HandZone、运行卡牌服务和弹窗视图，
+## 再调用 begin() 启动指定 EventInstance 的交互。
+##
+## 依赖：
+## EventInteractionController：管理事件交互生命周期。
+## RunCardService：创建并发放奖励 Card。
+## HandZone：作为运行卡牌服务的手牌目标。
+## DraggerLayer：响应弹窗期间的输入锁。
+
 class_name EventModalCoordinator
 extends RefCounted
-
-## Owns event-modal input and reward presentation for a single run.
-##
-## This coordinator does not apply CombatResult state. It exposes the pending
-## combat tuple so EncounterResolutionCoordinator can perform that mutation.
 
 const MarketPriceContextScript := preload("res://scripts/game/market/market_price_context.gd")
 
@@ -17,8 +35,8 @@ signal unsupported_event(instance: EventInstance)
 signal event_display_refresh_requested(instance: EventInstance)
 
 var _controller: EventInteractionController
-var _drag_layer
-var _hand_area: HandArea
+var _drag_layer: DraggerLayer
+var _hand_zone: HandZone
 var _card_service: RunCardService
 var _player: PlayerData
 var _shop_view
@@ -32,8 +50,8 @@ var _treasure_rng := RandomNumberGenerator.new()
 
 func configure(
 	controller: EventInteractionController,
-	drag_layer,
-	hand_area: HandArea,
+	drag_layer: DraggerLayer,
+	hand_zone: HandZone,
 	card_service: RunCardService,
 	player: PlayerData,
 	shop_view,
@@ -45,7 +63,7 @@ func configure(
 	if (
 		controller == null
 		or drag_layer == null
-		or hand_area == null
+		or hand_zone == null
 		or card_service == null
 		or player == null
 		or shop_view == null
@@ -56,7 +74,7 @@ func configure(
 		return false
 	_controller = controller
 	_drag_layer = drag_layer
-	_hand_area = hand_area
+	_hand_zone = hand_zone
 	_card_service = card_service
 	_player = player
 	_shop_view = shop_view
@@ -175,9 +193,6 @@ func _on_shop_purchase_requested(item_index: int) -> void:
 	var active_event := _controller.get_active_event() if _controller != null else null
 	if active_event == null or active_event.get_event_type() != EventData.EventType.SHOP:
 		return
-	if _hand_area.is_full():
-		_shop_view.show_message("手牌已满，无法购买。", true)
-		return
 	var result := _shop_resolver.purchase_item(
 		active_event, item_index, _player, true, _create_price_context()
 	)
@@ -208,9 +223,6 @@ func _on_treasure_reward_requested(option_index: int) -> void:
 		_treasure_view.show_message("无效的奖励选项。", true)
 		return
 	var option := options[option_index]
-	if option.kind == TreasureRewardOption.Kind.CARD and _hand_area.is_full():
-		_treasure_view.show_message("手牌已满，无法领取这张卡牌。", true)
-		return
 	var result := _treasure_resolver.claim_reward(
 		active_event, option_index, _player, true, _treasure_rng
 	)

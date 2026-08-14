@@ -1,16 +1,29 @@
+## 运行展示协调组件
+##
+## 负责把运行期状态与领域信号同步到玩家徽记和页面输入锁。
+## 包括：
+## - 生命、信仰与金币的展示同步
+## - 普通事件与终局状态的拖拽锁同步
+##
+## 不负责：
+## - 卡牌创建、移动或区域规则
+## - 商店、事件奖励与战斗结果的业务结算
+## - 运行流程状态的推进
+##
+## 使用方式：
+## 先通过 configure() 注入展示节点与运行数据，再通过 bind() 订阅 RunFlowCoordinator
+## 和 EventModalCoordinator，最后调用 sync_all() 完成首次刷新。
+##
+## 依赖：
+## PilgrimCrestHud：显示生命、信仰与金币。
+## DraggerLayer：应用页面交互锁。
+## RunFlowCoordinator/EventModalCoordinator：发布运行与弹窗状态。
+
 class_name RunPresentationCoordinator
 extends RefCounted
 
-## Adapts run-domain signals to the hand tray, player crest and drag layer.
-##
-## This coordinator is intentionally presentation-only. It reads runtime state,
-## forwards UI updates and preserves terminal input locks without resolving
-## events, applying rewards or invoking card rules.
-
-var _hand_area: HandArea
-var _hand_tray: HandTray
 var _crest: PilgrimCrestHud
-var _drag_layer: DragLayer
+var _drag_layer: DraggerLayer
 var _player_data: PlayerData
 var _player_stats: CombatStats
 var _faith: FaithService
@@ -18,7 +31,6 @@ var _retraction_cost: CardRetractionCostService
 
 var _flow: RunFlowCoordinator
 var _modal: EventModalCoordinator
-var _market: PersistentMarketCoordinator
 var _configured := false
 var _bound := false
 var _input_locked := false
@@ -27,10 +39,8 @@ var _flow_state := RunFlowCoordinator.State.UNINITIALIZED
 
 
 func configure(
-	hand_area: HandArea,
-	hand_tray: HandTray,
 	crest: PilgrimCrestHud,
-	drag_layer: DragLayer,
+	drag_layer: DraggerLayer,
 	player_data: PlayerData,
 	player_stats: CombatStats,
 	faith: FaithService = null,
@@ -39,16 +49,12 @@ func configure(
 	if _configured:
 		return false
 	if (
-		hand_area == null
-		or hand_tray == null
-		or crest == null
+		crest == null
 		or drag_layer == null
 		or player_data == null
 		or player_stats == null
 	):
 		return false
-	_hand_area = hand_area
-	_hand_tray = hand_tray
 	_crest = crest
 	_drag_layer = drag_layer
 	_player_data = player_data
@@ -60,16 +66,13 @@ func configure(
 	return true
 
 
-func bind(
-	flow: RunFlowCoordinator, modal: EventModalCoordinator, market: PersistentMarketCoordinator
-) -> bool:
+func bind(flow: RunFlowCoordinator, modal: EventModalCoordinator) -> bool:
 	if not _configured or _bound:
 		return false
-	if flow == null or modal == null or market == null:
+	if flow == null or modal == null:
 		return false
 	_flow = flow
 	_modal = modal
-	_market = market
 	_bound = true
 	_connect_domain_signals()
 	if _flow.has_method("get_state"):
@@ -80,7 +83,6 @@ func bind(
 func sync_all() -> void:
 	if not _configured:
 		return
-	_sync_hand_tray(_hand_area.get_card_count(), _hand_area.max_hand_size)
 	_crest.set_vitality(_player_stats.hp, _player_stats.max_hp)
 	if _faith != null:
 		_crest.set_faith(_faith.get_faith())
@@ -109,21 +111,20 @@ func apply_flow_state(state: RunFlowCoordinator.State) -> void:
 
 
 func _connect_presentation_signals() -> void:
-	if not _hand_area.hand_count_changed.is_connected(_on_hand_count_changed):
-		_hand_area.hand_count_changed.connect(_on_hand_count_changed)
 	if _faith != null and not _faith.faith_changed.is_connected(_on_faith_changed):
 		_faith.faith_changed.connect(_on_faith_changed)
-	if _retraction_cost != null and not _retraction_cost.retraction_cost_paid.is_connected(_on_retraction_cost_paid):
+	if (
+		_retraction_cost != null
+		and not _retraction_cost.retraction_cost_paid.is_connected(_on_retraction_cost_paid)
+	):
 		_retraction_cost.retraction_cost_paid.connect(_on_retraction_cost_paid)
 
 
 func _connect_domain_signals() -> void:
 	if not _modal.interaction_lock_changed.is_connected(apply_lock_request):
 		_modal.interaction_lock_changed.connect(apply_lock_request)
-	if not _market.player_state_changed.is_connected(_on_market_player_state_changed):
-		_market.player_state_changed.connect(_on_market_player_state_changed)
-	if not _market.market_ready_changed.is_connected(_on_market_ready_changed):
-		_market.market_ready_changed.connect(_on_market_ready_changed)
+	if not _modal.non_combat_interaction_finished.is_connected(_on_non_combat_finished):
+		_modal.non_combat_interaction_finished.connect(_on_non_combat_finished)
 	if not _flow.combat_resolved.is_connected(_on_combat_resolved):
 		_flow.combat_resolved.connect(_on_combat_resolved)
 	if not _flow.exploration_failed.is_connected(_on_flow_failed):
@@ -144,15 +145,6 @@ func _connect_optional_signal(source: Object, signal_name: String, callback: Cal
 		signal_ref.connect(callback)
 
 
-func _on_hand_count_changed(current_count: int, max_count: int) -> void:
-	_sync_hand_tray(current_count, max_count)
-
-
-func _sync_hand_tray(current_count: int, max_count: int) -> void:
-	if _hand_tray != null:
-		_hand_tray.set_hand_count(current_count, max_count)
-
-
 func _on_faith_changed(current_faith: int) -> void:
 	if _crest != null:
 		_crest.set_faith(current_faith)
@@ -163,11 +155,7 @@ func _on_retraction_cost_paid(_cost: int, _returned_count: int, remaining_gold: 
 		_crest.set_gold(remaining_gold)
 
 
-func _on_market_player_state_changed() -> void:
-	sync_all()
-
-
-func _on_market_ready_changed(_is_ready: bool) -> void:
+func _on_non_combat_finished(_instance: EventInstance) -> void:
 	sync_all()
 
 

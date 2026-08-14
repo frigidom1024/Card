@@ -4,6 +4,7 @@ const GameManagerScene = preload("res://scenes/game/game_manager.tscn")
 const RevivalDeck = preload("res://data/starting_decks/revival_starting_deck.tres")
 const BasePlayerData = preload("res://data/player/player_data.tres")
 const StartingDeckDataScript = preload("res://scripts/run/starting_deck_data.gd")
+const CardScene = preload("res://scenes/card/card.tscn")
 
 var _failure_count := 0
 
@@ -114,12 +115,16 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 			not placement_subscriber is CardChainCoordinator,
 			"CardChainCoordinator does not subscribe to Board placements directly"
 		)
+	var return_connections: Array = manager.board.card_return_requested.get_connections()
 	_expect(
-		not manager.board.card_return_requested.is_connected(
-			Callable(manager, "_on_board_card_return_requested")
-		),
-		"GameManager exposes guide return as a compatibility delegate instead of a Board subscriber"
+		return_connections.size() == 1,
+		"Board card return has exactly one page-level subscriber"
 	)
+	if return_connections.size() == 1:
+		_expect(
+			return_connections[0].callable == Callable(manager, "_on_board_card_return_requested"),
+			"GameManager is the sole Board card-return subscriber"
+		)
 	var exploration_coordinator = manager.get("_exploration_coordinator")
 	_expect(
 		exploration_coordinator != null, "GameManager creates a dedicated exploration coordinator"
@@ -134,28 +139,20 @@ func _test_valid_preset_initializes_isolated_run_state() -> void:
 		"Board no longer exposes a direct event-interaction signal"
 	)
 	_expect(
-		not manager.board.events.is_empty(),
+		not manager.board.event_zone.get_events().is_empty(),
 		"run setup immediately pre-spawns the configured level events"
 	)
 	var returned_guide := _make_guide_card()
+	var returned_instance := returned_guide.get_card_inst()
 	manager.add_child(returned_guide)
 	manager._on_board_card_return_requested(returned_guide)
 	_expect(
-		returned_guide in manager.hand_area.cards,
-		"GameManager returns guide cards through HandArea"
-	)
-
-	manager.hand_area.max_hand_size = manager.hand_area.cards.size()
-	var returned_when_full := _make_guide_card()
-	manager.add_child(returned_when_full)
-	manager._on_board_card_return_requested(returned_when_full)
-	_expect(
-		returned_when_full in manager.hand_area.cards,
-		"GameManager never loses a guide card when the hand is full"
+		manager.hand_zone.owns_card(returned_guide),
+		"GameManager returns guide cards through HandZone"
 	)
 	_expect(
-		manager.hand_area.max_hand_size >= manager.hand_area.cards.size(),
-		"GameManager temporarily expands hand capacity for an already-owned guide card"
+		returned_guide.get_card_inst() == returned_instance,
+		"returning a guide preserves its exact CardInstance"
 	)
 
 	manager.free()
@@ -172,13 +169,13 @@ func _test_invalid_preset_is_rejected_before_scene_entry() -> void:
 	manager.free()
 
 
-func _make_guide_card() -> CardEntity:
-	var entity := preload("res://scenes/card_view/card_entity.tscn").instantiate() as CardEntity
+func _make_guide_card() -> Card:
+	var card := CardScene.instantiate() as Card
 	var data := CardData.new()
 	data.card_type = CardData.CardType.GUIDE
 	data.card_name = "Guide"
-	entity.bind_instance(CardInstance.new(data))
-	return entity
+	card.bind_card_inst(CardInstance.new(data))
+	return card
 
 
 func _count_roots(cards: Array) -> int:

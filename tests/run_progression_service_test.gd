@@ -4,6 +4,7 @@ const RunProgressionConfigScript := preload("res://scripts/game/run/run_progress
 const RunProgressionServiceScript := preload("res://scripts/game/run/run_progression_service.gd")
 const CardDataScript := preload("res://scripts/card/card_data.gd")
 const BoardPlacementResultScript := preload("res://scripts/game/board_placement_result.gd")
+const CardScene := preload("res://scenes/card/card.tscn")
 
 var _failure_count := 0
 
@@ -12,6 +13,7 @@ func _init() -> void:
 
 func _run_tests() -> void:
     _test_action_count_ignores_guide()
+    _test_action_count_ignores_guide_card_fallback()
     _test_rarity_weights_progress_with_actions()
     _test_card_availability_follows_weight()
     quit(1 if _failure_count > 0 else 0)
@@ -29,6 +31,24 @@ func _test_action_count_ignores_guide() -> void:
     )
     _expect(service.record_player_action(normal), "ordinary placement records an action")
     _expect(service.get_action_count() == 1, "ordinary placement increments action count")
+
+func _test_action_count_ignores_guide_card_fallback() -> void:
+    var service := RunProgressionServiceScript.new()
+    service.configure(RunProgressionConfigScript.new())
+    var data := CardDataScript.new()
+    data.card_type = CardData.CardType.GUIDE
+    var card := CardScene.instantiate() as Card
+    card.bind_card_inst(CardInstance.new(data))
+    var guide := BoardPlacementResultScript.new(
+        BoardPlacementResult.Kind.CHAIN_EXTENDED, card, card, [card], []
+    )
+    _expect(
+        not service.record_player_action(guide),
+        "GUIDE source card fallback does not count as an action"
+    )
+    _expect(service.get_action_count() == 0, "GUIDE source card fallback keeps action count at zero")
+    card.free()
+
 
 func _test_rarity_weights_progress_with_actions() -> void:
     var service := RunProgressionServiceScript.new()

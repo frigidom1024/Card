@@ -56,8 +56,12 @@ func is_card_available(card_data: CardData) -> bool:
 func _is_guide_result(result: BoardPlacementResult) -> bool:
     if result.kind == BoardPlacementResult.Kind.GUIDE_RESOLVED:
         return true
-    var source_card := result.source_card
-    return source_card != null \
-        and source_card.card_instance != null \
-        and source_card.card_instance.card_data != null \
-        and source_card.card_instance.card_data.card_type == CardData.CardType.GUIDE
+    var source_card: Card = result.source_card
+    var source_inst: CardInstance = (
+        source_card.get_card_inst() if source_card != null else null
+    )
+    return (
+        source_inst != null
+        and source_inst.card_data != null
+        and source_inst.card_data.card_type == CardData.CardType.GUIDE
+    )

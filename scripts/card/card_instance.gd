@@ -1,3 +1,23 @@
+## 卡牌状态组件
+##
+## 负责保存一张卡牌在运行时的唯一状态来源。
+## 包括：
+## - 卡牌数据引用
+## - 当前区域、棋盘位置与朝向
+## - 当前点数、护甲与规则触发次数
+##
+## 不负责：
+## - 卡牌节点的显示与输入交互
+## - 卡牌所在区域的注册与空间管理
+## - 卡牌数值变化后的界面刷新
+##
+## 使用方式：
+## 创建 CardInstance 后，将它传给 Card.bind_card_inst()；修改可见数值后，
+## 由对应的 Card 调用 refresh_display() 同步界面。
+##
+## 依赖：
+## CardData：提供卡牌的静态数据与初始属性。
+
 extends RefCounted
 class_name CardInstance
 
@@ -8,7 +28,7 @@ enum ZONE {
 	HAND,
 	BOARD,
 	DISCARD,
-	DRAGLAYER
+	SHOP,
 }
 
 var cur_zone: ZONE

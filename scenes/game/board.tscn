@@ -1,20 +1,12 @@
-[gd_scene format=3 uid="uid://bf2h2gqo4hyjl"]
+[gd_scene format=3 uid="uid://dubisrc6ucgtl"]
 
-[ext_resource type="Script" uid="uid://dh5vjxc0y58eg" path="res://scripts/game/board.gd" id="1_bw3vb"]
-[ext_resource type="PackedScene" path="res://scenes/game/board_background.tscn" id="2_board_background"]
+[ext_resource type="Script" uid="uid://dh5vjxc0y58eg" path="res://scripts/game/board.gd" id="1_board"]
+[ext_resource type="PackedScene" uid="uid://dxqav0xg4yyfc" path="res://scenes/zone/board_zone.tscn" id="2_board_zone"]
+[ext_resource type="PackedScene" path="res://scenes/zone/board_event_zone.tscn" id="3_event_zone"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_8ba60"]
-size = Vector2(1040, 832)
+[node name="Board" type="Node2D" unique_id=1766049077]
+script = ExtResource("1_board")
 
-[node name="Board" type="Node2D" unique_id=969095891]
-script = ExtResource("1_bw3vb")
+[node name="BoardZone" parent="." unique_id=684522923 instance=ExtResource("2_board_zone")]
 
-[node name="BoardBackground" parent="." instance=ExtResource("2_board_background")]
-
-[node name="DropDetector" type="Area2D" parent="." unique_id=517732839]
-collision_layer = 0
-collision_mask = 0
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="DropDetector" unique_id=616528054]
-position = Vector2(524, 419)
-shape = SubResource("RectangleShape2D_8ba60")
+[node name="BoardEventZone" parent="." unique_id=43664162 instance=ExtResource("3_event_zone")]

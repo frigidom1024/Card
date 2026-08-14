@@ -1,10 +1,28 @@
+## 遭遇结算协调组件
+##
+## 负责：
+## - 将已确认的战斗结果写回玩家与事件运行时状态
+## - 处理胜利奖励、撤退强化和失败通知
+## - 通过 BoardZone 移除耗尽卡牌，并调用 RunCardService 回手或销毁
+## - 刷新仍留在牌桌上的 Card 显示
+##
+## 不负责：
+## - 计算战斗结果或决定卡牌是否耗尽
+## - 管理牌桌格子、手牌布局或拖拽事务
+## - 直接创建 Card/CardInstance 配对
+## - 处理事件弹窗与页面导航
+##
+## 使用方式：
+## 通过 configure() 注入 Board、运行时状态和窄业务回调，随后调用 apply()
+## 同步提交一份已确认的 CombatResult。
+##
+## 依赖：
+## Board/BoardZone：定位并移除牌桌 Card。
+## RunCardService：保持 Card 与 CardInstance 的精确所有权并执行回手/销毁。
+## EncounterRewardResolver：生成胜利奖励。
+
 class_name EncounterResolutionCoordinator
 extends RefCounted
-
-## Applies a confirmed encounter result to run-time state.
-##
-## Combat calculation remains in EncounterCombatFlowCoordinator. This class owns
-## only the state transition after the player confirms a combat settlement.
 signal exploration_failed(result: CombatResult)
 
 var _board: Board
@@ -141,33 +159,34 @@ func _strengthen_encounter_monster(instance: EventInstance) -> void:
 
 
 func _settle_depleted_cards(result: CombatResult) -> void:
-	if result == null:
+	if result == null or _board == null or _board.board_zone == null:
 		return
-	for depleted_instance in result.depleted_cards:
-		var entity := _find_board_entity(depleted_instance)
-		if entity == null:
+	for depleted_instance: CardInstance in result.depleted_cards:
+		var card := _find_board_card(depleted_instance)
+		if card == null:
 			continue
-		if not _board.remove_card(entity):
+		if not _board.board_zone.remove_card(card):
 			continue
 		if _is_root_instance(depleted_instance):
 			depleted_instance.reset_points()
 			depleted_instance.reset_armor()
-			if not _card_service.return_existing_to_hand_temporarily(entity):
+			card.refresh_display()
+			if not _card_service.return_existing_to_hand_temporarily(card):
 				push_error("Failed to return a depleted root card to hand")
-		elif not _card_service.destroy_existing_card(entity):
+		elif not _card_service.destroy_existing_card(card):
 			push_error("Failed to destroy a depleted normal card")
 
-	for retained_entity in _board.cards:
-		if retained_entity != null:
-			retained_entity.refresh_combat_tags()
+	for retained_card: Card in _board.board_zone.get_cards():
+		if retained_card != null and is_instance_valid(retained_card):
+			retained_card.refresh_display()
 
 
-func _find_board_entity(instance: CardInstance) -> CardEntity:
-	if instance == null:
+func _find_board_card(instance: CardInstance) -> Card:
+	if instance == null or _board == null or _board.board_zone == null:
 		return null
-	for entity in _board.cards:
-		if entity != null and entity.card_instance == instance:
-			return entity
+	for card: Card in _board.board_zone.get_cards():
+		if card != null and is_instance_valid(card) and card.get_card_inst() == instance:
+			return card
 	return null
 
 

@@ -11,7 +11,7 @@ enum Phase {
 	INTERCEPTING,
 }
 
-signal phase_changed(phase: Phase) #暂时无监听
+signal phase_changed(phase: Phase) # 暂时无监听
 
 var pursuit_enabled := true
 var cards_to_surround: int = 2
@@ -20,6 +20,7 @@ var cards_to_intercept: int = 2
 var _phase: Phase = Phase.HIDDEN
 var _cards_since_appearance := 0
 var _boss_event: BoardEvent
+
 
 func configure(
 	enabled: bool = true,
@@ -30,21 +31,26 @@ func configure(
 	cards_to_surround = maxi(1, surround_threshold)
 	cards_to_intercept = maxi(1, intercept_threshold)
 
+
 func register_boss(boss_event: BoardEvent) -> void:
 	_boss_event = boss_event
 	_cards_since_appearance = 0
 	_set_phase(Phase.ACTIVE)
+
 
 func clear_boss() -> void:
 	_boss_event = null
 	_cards_since_appearance = 0
 	_set_phase(Phase.HIDDEN)
 
+
 func get_phase() -> Phase:
 	return _phase
 
+
 func is_intercepting() -> bool:
 	return _phase == Phase.INTERCEPTING
+
 
 ## Records only ordinary chain extensions. GUIDE resolves space but never advances pursuit.
 func record_placement(board: Board, result: BoardPlacementResult) -> void:
@@ -52,21 +58,33 @@ func record_placement(board: Board, result: BoardPlacementResult) -> void:
 		return
 	record_card_placed(board)
 
+
 ## 在成功放置一张卡后调用。拆牌不会调用本方法，因此追猎进度不会倒退。
 func record_card_placed(board: Board) -> void:
-	if not pursuit_enabled or _boss_event == null or board == null or _phase == Phase.HIDDEN:
+	if (
+		not pursuit_enabled
+		or _boss_event == null
+		or board == null
+		or board.board_zone == null
+		or _phase == Phase.HIDDEN
+	):
 		return
 	_cards_since_appearance += 1
 	if _phase == Phase.ACTIVE and _cards_since_appearance >= cards_to_surround:
 		if _move_to_surrounding(board):
 			_set_phase(Phase.SURROUNDING)
-	if _phase == Phase.SURROUNDING and _cards_since_appearance >= cards_to_surround + cards_to_intercept:
-		var last_card: CardEntity = board.cards.back() if not board.cards.is_empty() else null
+	if (
+		_phase == Phase.SURROUNDING
+		and _cards_since_appearance >= cards_to_surround + cards_to_intercept
+	):
+		var cards: Array[Card] = board.board_zone.get_cards()
+		var last_card: Card = cards.back() if not cards.is_empty() else null
 		if last_card != null:
 			# 强制占据牌头连接格：下一张牌若想接上牌链，就必须覆盖这个格子。
-			var forward_cell := board.get_placement_cell(last_card)
+			var forward_cell: Vector2i = board.board_zone.get_placement_cell(last_card)
 			if board.move_event(_boss_event, forward_cell):
 				_set_phase(Phase.INTERCEPTING)
+
 
 func _set_phase(value: Phase) -> void:
 	if _phase == value:
@@ -74,11 +92,15 @@ func _set_phase(value: Phase) -> void:
 	_phase = value
 	phase_changed.emit(_phase)
 
+
 func _move_to_surrounding(board: Board) -> bool:
-	if board.cards.is_empty() or _boss_event == null:
+	if board.board_zone == null or _boss_event == null:
 		return false
-	var last_card: CardEntity = board.cards.back()
-	var card_cells := board.get_card_cells(last_card.global_position, last_card.rotation_degrees)
+	var cards: Array[Card] = board.board_zone.get_cards()
+	if cards.is_empty():
+		return false
+	var last_card: Card = cards.back()
+	var card_cells: Array[Vector2i] = board.board_zone.get_card_cells(last_card)
 	var candidates: Array[Vector2i] = []
 	var offsets: Array[Vector2i] = [
 		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1),

@@ -141,7 +141,7 @@ func _run() -> void:
 	_expect(player.gold == purchase_gold_before - purchase_price, "successful purchase deducts the product price")
 	_expect(purchased_inst in card_service.get_instances(), "purchase registers the exact displayed CardInstance")
 	_expect(purchased_card in card_service.get_card_views(), "purchase registers the exact displayed Card view")
-	_expect(purchased_card.get_parent() == hand_zone and purchased_card.cur_zone == hand_zone, "purchase preserves target ownership of the displayed Card")
+	_expect(purchased_card.get_parent() == hand_zone and hand_zone.owns_card(purchased_card) and purchased_inst.cur_zone == CardInstance.ZONE.HAND, "purchase preserves target ownership of the displayed Card")
 	_expect(shop.call("get_offer", other_slot) == other_offer, "single-slot restock preserves other offer instances")
 	_expect(zone.get_product(other_slot) == other_card, "single-slot restock preserves other Card views")
 	var replacement_inst: CardInstance = shop.call("get_offer", purchase_slot)

@@ -72,7 +72,7 @@ func _run_tests() -> void:
 		"GameManager scene instantiates the shared hover preview panel"
 	)
 	_expect(
-		scene_source.contains('[node name="EventHoverPreviewLayer" type="CanvasLayer" parent="."]'),
+		scene_source.contains('[node name="EventHoverPreviewLayer" type="CanvasLayer" parent="."'),
 		"GameManager scene provides a dedicated hover-preview canvas layer"
 	)
 	_expect(
@@ -132,8 +132,16 @@ func _run_tests() -> void:
 		"GameManager retains a typed run-setup composition dependency"
 	)
 	_expect(
-		source.contains("var _persistent_market_coordinator: PersistentMarketCoordinator"),
-		"GameManager retains a typed persistent-market composition dependency"
+		not source.contains("PersistentMarketCoordinator"),
+		"GameManager no longer depends on the legacy persistent-market coordinator"
+	)
+	_expect(
+		source.contains("@onready var shop: Shop = $GameplayCanvas/Hud/Shop"),
+		"GameManager receives the resident Shop through the active page"
+	)
+	_expect(
+		source.contains("@onready var reclaim_zone: ReclaimZone = $GameplayCanvas/Hud/ReclaimZone"),
+		"GameManager receives the resident ReclaimZone through the active page"
 	)
 	_expect(
 		source.contains("var _event_modal_coordinator: EventModalCoordinator"),
@@ -172,12 +180,28 @@ func _run_tests() -> void:
 		"GameManager does not own retreat monster strengthening"
 	)
 	_expect(
-		source.contains("PersistentMarketCoordinatorScript.new()"),
-		"GameManager composes the persistent market through PersistentMarketCoordinator"
+		not source.contains("PersistentMarketCoordinatorScript.new()"),
+		"GameManager does not construct the removed persistent market coordinator"
 	)
 	_expect(
-		source.contains("var _persistent_market_coordinator"),
-		"GameManager retains the persistent market coordinator"
+		source.contains("func _configure_shop() -> bool:"),
+		"GameManager configures the resident Shop directly"
+	)
+	_expect(
+		source.contains("func _configure_reclaim_zone() -> bool:"),
+		"GameManager configures the resident ReclaimZone directly"
+	)
+	_expect(
+		not scene_source.contains('PersistentMarket'),
+		"GameManager scene does not instantiate the legacy PersistentMarket"
+	)
+	_expect(
+		not scene_source.contains('CardManager'),
+		"GameManager scene does not instantiate the legacy CardManager"
+	)
+	_expect(
+		not scene_source.contains('HandArea'),
+		"GameManager scene does not instantiate the legacy HandArea"
 	)
 	_expect(
 		not source.contains("PersistentMarketStateScript.new()"),

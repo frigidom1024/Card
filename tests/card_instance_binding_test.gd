@@ -22,6 +22,30 @@ func _init() -> void:
 
 func _run() -> void:
 	var card := CARD_SCENE.instantiate() as Card
+	var prebound_data := CardData.new()
+	prebound_data.max_points = 7
+	prebound_data.armor = 3
+	prebound_data.artwork_path = "res://assert/card/ribwood_guardian_root.png"
+	var prebound_inst := CardInstance.new(prebound_data)
+	var prebound_card := CARD_SCENE.instantiate() as Card
+	prebound_card.bind_card_inst(prebound_inst)
+	root.add_child(prebound_card)
+	await process_frame
+
+	var prebound_attack_label := prebound_card.get_node("CardTexture/SubViewport/AttackLabel/Label") as Label
+	var prebound_defense_label := prebound_card.get_node("CardTexture/SubViewport/DefenseLabel/Label") as Label
+	var prebound_artwork := prebound_card.get_node("CardTexture/SubViewport/Artwork") as TextureRect
+	_expect(prebound_card.get_card_inst() == prebound_inst, "pre-tree binding keeps the exact CardInstance identity")
+	_expect(prebound_attack_label.text == "7", "pre-tree binding refreshes the current-points label after ready")
+	_expect(prebound_defense_label.text == "3", "pre-tree binding refreshes the current-armor label after ready")
+	_expect(prebound_artwork.visible, "pre-tree binding shows artwork after ready")
+	_expect(
+		prebound_artwork.texture != null
+		and prebound_artwork.texture.resource_path == prebound_data.artwork_path,
+		"pre-tree binding loads the configured artwork after ready"
+	)
+
+
 	root.add_child(card)
 	await process_frame
 
@@ -38,6 +62,9 @@ func _run() -> void:
 	_expect(card.has_method("bind_card_inst"), "Card exposes bind_card_inst")
 	_expect(card.has_method("get_card_inst"), "Card exposes get_card_inst")
 	_expect(card.has_method("refresh_display"), "Card exposes refresh_display")
+	_expect(card.get("cur_zone") == null, "Card no longer owns zone state")
+	_expect(CardInstance.ZONE.has("SHOP"), "CardInstance exposes SHOP zone")
+	_expect(not CardInstance.ZONE.has("DRAGLAYER"), "CardInstance no longer exposes DRAGLAYER zone")
 	if card.has_method("bind_card_inst") and card.has_method("get_card_inst"):
 		card.bind_card_inst(card_inst)
 		_expect(card.get_card_inst() == card_inst, "Card keeps the exact CardInstance identity")
@@ -75,6 +102,7 @@ func _run() -> void:
 	_expect(dragger.update_count == 1, "Card notifies DraggerLayer during drag movement")
 	_expect(dragger.last_card == card, "Card passes itself to DraggerLayer.update_drag")
 
+	prebound_card.free()
 	card.free()
 	dragger.free()
 	quit(1 if _failures > 0 else 0)

@@ -2,7 +2,7 @@ extends SceneTree
 
 const GameManagerScene = preload("res://scenes/game/game_manager.tscn")
 const EventScene = preload("res://scenes/game/event.tscn")
-const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
+const CardScene = preload("res://scenes/card/card.tscn")
 const RevivalDeck = preload("res://data/starting_decks/revival_starting_deck.tres")
 const MarrowRatEvent = preload("res://data/levels/ribwood/events/ribwood_marrow_rat_event.tres")
 const BrokenBannerShopEvent = preload("res://data/levels/ribwood/events/ribwood_broken_banner_shop_event.tres")
@@ -41,12 +41,12 @@ func _assert_real_event_contact_opens_its_modal(
 	_expect(_place_root(board), "%s fixture places the root card" % modal_name)
 
 	var card := _make_hand_card(manager, 3)
-	manager.drag_layer.on_card_drag_start(card)
-	card.global_position = _horizontal_global_center(board, Vector2i(2, 0))
-	card.rotation_degrees = 90.0
-	manager.drag_layer.on_card_drag_end(card)
+	_expect(
+		_drop_card(manager, card, _horizontal_global_center(board, Vector2i(2, 0))),
+		"%s contact commits the dragged card" % modal_name
+	)
 
-	_expect(card in board.cards, "%s contact commits the dragged card" % modal_name)
+	_expect(board.board_zone.owns_card(card), "%s contact commits the dragged card" % modal_name)
 	_expect(
 		manager.get_run_flow().get_state() == RunFlowCoordinator.State.INTERACTING,
 		"%s contact enters interaction state" % modal_name
@@ -60,6 +60,7 @@ func _assert_real_event_contact_opens_its_modal(
 			_expect(manager.treasure_event_view.visible, "%s contact opens treasure UI" % modal_name)
 	manager.free()
 	await process_frame
+
 
 func _assert_closing_shop_restores_event_contact_flow() -> void:
 	var manager := await _make_manager()
@@ -157,35 +158,50 @@ func _assert_guide_contact_opens_combat_modal() -> void:
 	_expect(event_node != null, "guide fixture attaches the Ribwood monster event")
 	_expect(_place_root(board), "guide fixture places the root card")
 	var normal := _make_hand_card(manager, 3)
-	_expect(_drop_card(manager, normal, _horizontal_global_center(board, Vector2i(2, 0))), "guide fixture extends the chain")
+	_expect(
+		_drop_card(manager, normal, _horizontal_global_center(board, Vector2i(2, 0))),
+		"guide fixture extends the chain"
+	)
 
 	var guide := _make_hand_card(manager, 0, CardData.CardType.GUIDE)
-	_expect(_drop_card(manager, guide, _horizontal_global_center(board, Vector2i(4, 0))), "guide card placement commits")
+	var guide_instance := guide.get_card_inst()
+	_expect(
+		_drop_card(manager, guide, _horizontal_global_center(board, Vector2i(4, 0))),
+		"guide card placement commits"
+	)
 	_expect(
 		manager.get_run_flow().get_state() == RunFlowCoordinator.State.INTERACTING,
 		"guide-driven contact enters interaction state"
 	)
 	_expect(manager.combat_event_view.visible, "guide-driven contact opens combat UI")
-	_expect(guide in manager.hand_area.cards, "guide card returns to hand after resolving its movement")
+	_expect(manager.hand_zone.owns_card(guide), "guide card returns to hand after resolving its movement")
+	_expect(guide.get_card_inst() == guide_instance, "guide return preserves its exact CardInstance")
 	manager.free()
 	await process_frame
 
 
 func _drop_card(
-	manager: Node, card: CardEntity, global_position: Vector2, direction: int = 1
+	manager: Node, card: Card, global_center: Vector2, direction: int = 1
 ) -> bool:
-	manager.drag_layer.on_card_drag_start(card)
-	card.global_position = global_position
+	var card_inst := card.get_card_inst()
+	if card_inst == null or not manager.drag_layer.start_drag(card):
+		return false
+	card_inst.direction = direction
+	card.refresh_display()
+	card.global_position = global_center - card.size * 0.5
+	card.target_position = card.position
 	card.rotation_degrees = direction * 90.0
-	manager.drag_layer.on_card_drag_end(card)
-	return card in manager.board.cards or card in manager.hand_area.cards
+	if not manager.drag_layer.end_drag(card):
+		return false
+	return manager.board.board_zone.owns_card(card) or manager.hand_zone.owns_card(card)
+
 
 func _make_manager() -> Node:
 	var manager := GameManagerScene.instantiate()
 	_expect(manager.configure_run(RevivalDeck), "contact fixture configures the game manager")
 	root.add_child(manager)
 	await process_frame
-	for event_node in manager.board.events.duplicate():
+	for event_node in manager.board.event_zone.get_events().duplicate():
 		manager.board.remove_event(event_node)
 	return manager
 
@@ -194,7 +210,7 @@ func _attach_event(board: Board, event_data: EventData, origin: Vector2i) -> Boa
 	var instance := event_data.create_instance()
 	instance.origin = origin
 	var event_node := EventScene.instantiate() as BoardEvent
-	event_node.setup(instance, board.cell_size)
+	event_node.setup(instance, board.board_zone.back_ground.cell_size)
 	if not board.attach_event(event_node):
 		event_node.free()
 		return null
@@ -208,22 +224,25 @@ func _place_root(
 ) -> bool:
 	var root_data := CardData.new()
 	root_data.card_type = CardData.CardType.ROOT
-	var root := CardEntityScene.instantiate() as CardEntity
-	root.bind_instance(CardInstance.new(root_data))
-	root.global_position = _card_center(board, cells)
-	root.rotation_degrees = direction * 90.0
-	get_root().add_child(root)
-	return board.add_card(root)
+	var root_instance := CardInstance.new(root_data)
+	root_instance.direction = direction
+	var root_card := CardScene.instantiate() as Card
+	root_card.bind_card_inst(root_instance)
+	get_root().add_child(root_card)
+	root_card.global_position = _card_center(board, cells) - root_card.size * 0.5
+	root_card.target_position = root_card.position
+	root_card.rotation_degrees = direction * 90.0
+	return board.board_zone.add_card(root_card)
 
 
-func _make_hand_card(manager: Node, damage: int, card_type := CardData.CardType.NORMAL) -> CardEntity:
+func _make_hand_card(manager: Node, damage: int, card_type := CardData.CardType.NORMAL) -> Card:
 	var data := CardData.new()
 	data.card_type = card_type
 	data.damage = damage
-	var card := CardEntityScene.instantiate() as CardEntity
-	card.bind_instance(CardInstance.new(data))
-	card.drag_layer = manager.drag_layer
-	manager.hand_area.add_card(card, false)
+	var card := CardScene.instantiate() as Card
+	card.bind_card_inst(CardInstance.new(data))
+	card.bind_drag_layer(manager.drag_layer)
+	manager.hand_zone.add_card(card, false)
 	return card
 
 
@@ -235,8 +254,13 @@ func _horizontal_global_center(board: Board, left_cell: Vector2i) -> Vector2:
 func _card_center(board: Board, cells: Array[Vector2i]) -> Vector2:
 	var center := Vector2.ZERO
 	for cell in cells:
-		center += board.grid_to_world_center(cell)
+		center += _cell_global_center(board, cell)
 	return center / cells.size()
+
+
+func _cell_global_center(board: Board, cell: Vector2i) -> Vector2:
+	var background := board.board_zone.back_ground
+	return background.to_global((Vector2(cell) + Vector2(0.5, 0.5)) * background.cell_size)
 
 
 func _expect(condition: bool, message: String) -> void:

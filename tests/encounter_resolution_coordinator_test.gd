@@ -3,9 +3,9 @@ extends SceneTree
 const EncounterResolutionCoordinatorPath := "res://scripts/game/event/encounter/encounter_resolution_coordinator.gd"
 const BoardScene = preload("res://scenes/game/board.tscn")
 const EventScene = preload("res://scenes/game/event.tscn")
-const HandScene = preload("res://scenes/game/hand.tscn")
-const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
-const CardManagerScript = preload("res://scripts/game/card_manager.gd")
+const HandZoneScene = preload("res://scenes/zone/handzone.tscn")
+const CardScene = preload("res://scenes/card/card.tscn")
+const DraggerLayerScene = preload("res://scenes/drag_layer/dragger_layer.tscn")
 
 var _failure_count := 0
 var _player_state_change_count := 0
@@ -40,21 +40,21 @@ func _test_victory_discards_depleted_normal_card_and_grants_rewards() -> void:
 	var exhausted := _place_owned_card(fixture, false, Vector2i(2, 0), 2)
 	_expect(exhausted != null, "victory fixture places an owned normal card")
 	if exhausted != null:
-		exhausted.card_instance.current_points = 0
+		exhausted.get_card_inst().current_points = 0
 
 	_expect(
 		coordinator.apply(
 			fixture.instance,
-			_result(CombatResult.Outcome.VICTORY, 20, 0, 0, [exhausted.card_instance])
+			_result(CombatResult.Outcome.VICTORY, 20, 0, 0, [exhausted.get_card_inst()])
 		),
 		"victory applies"
 	)
 	_expect(fixture.instance.is_resolved, "victory resolves the encounter")
 	_expect(fixture.monster.stats.hp == 0, "victory writes echo HP")
 	_expect(fixture.player_data.gold == 38, "victory grants configured gold")
-	_expect(exhausted not in fixture.board.cards, "victory removes exhausted normal card from board")
+	_expect(exhausted not in fixture.board.board_zone.get_cards(), "victory removes exhausted normal card from board")
 	_expect(
-		exhausted.card_instance not in fixture.card_service.get_instances(),
+		exhausted.get_card_inst() not in fixture.card_service.get_instances(),
 		"victory stops tracking exhausted normal card"
 	)
 	_expect(
@@ -62,7 +62,7 @@ func _test_victory_discards_depleted_normal_card_and_grants_rewards() -> void:
 		"victory tracks only the earned reward after discard"
 	)
 	_expect(
-		fixture.card_service.get_entities()[0] in fixture.hand_area.cards,
+		fixture.card_service.get_entities()[0] in fixture.hand_zone.get_cards(),
 		"victory places reward in hand"
 	)
 	_expect(_event_display_refresh_count == 1, "victory refreshes normal event display")
@@ -85,10 +85,10 @@ func _test_retreat_keeps_surviving_cards_and_strengthens_echo() -> void:
 		"retreat applies"
 	)
 	_expect(not fixture.instance.is_resolved, "retreat leaves encounter unresolved")
-	_expect(survivor in fixture.board.cards, "retreat keeps a card with remaining points on board")
-	_expect(survivor not in fixture.hand_area.cards, "retreat does not return surviving cards to hand")
+	_expect(survivor in fixture.board.board_zone.get_cards(), "retreat keeps a card with remaining points on board")
+	_expect(survivor not in fixture.hand_zone.get_cards(), "retreat does not return surviving cards to hand")
 	_expect(
-		survivor.card_instance in fixture.card_service.get_instances(),
+		survivor.get_card_inst() in fixture.card_service.get_instances(),
 		"retreat preserves surviving card ownership"
 	)
 	_expect(fixture.monster.enhancement_stacks == 1, "retreat adds one enhancement stack")
@@ -110,23 +110,23 @@ func _test_retreat_resets_and_returns_depleted_root() -> void:
 	var root_card := _place_owned_card(fixture, true, Vector2i(0, 0), 2, 2)
 	_expect(root_card != null, "root fixture places an owned root card")
 	if root_card != null:
-		root_card.card_instance.current_points = 0
-		root_card.card_instance.current_armor = 0
+		root_card.get_card_inst().current_points = 0
+		root_card.get_card_inst().current_armor = 0
 
 	_expect(
 		coordinator.apply(
 			fixture.instance,
-			_result(CombatResult.Outcome.RETREAT, 20, 18, 0, [root_card.card_instance])
+			_result(CombatResult.Outcome.RETREAT, 20, 18, 0, [root_card.get_card_inst()])
 		),
 		"depleted-root retreat applies"
 	)
-	_expect(root_card not in fixture.board.cards, "depleted root leaves board")
-	_expect(root_card in fixture.hand_area.cards, "depleted root returns to hand")
-	_expect(root_card.card_instance.cur_zone == CardInstance.ZONE.HAND, "returned root enters hand zone")
-	_expect(root_card.card_instance.current_points == 2, "returned root resets point value")
-	_expect(root_card.card_instance.current_armor == 2, "returned root resets armor")
+	_expect(root_card not in fixture.board.board_zone.get_cards(), "depleted root leaves board")
+	_expect(root_card in fixture.hand_zone.get_cards(), "depleted root returns to hand")
+	_expect(root_card.get_card_inst().cur_zone == CardInstance.ZONE.HAND, "returned root enters hand zone")
+	_expect(root_card.get_card_inst().current_points == 2, "returned root resets point value")
+	_expect(root_card.get_card_inst().current_armor == 2, "returned root resets armor")
 	_expect(
-		root_card.card_instance in fixture.card_service.get_instances(),
+		root_card.get_card_inst() in fixture.card_service.get_instances(),
 		"returned root stays owned for later placement"
 	)
 
@@ -144,18 +144,18 @@ func _test_defeat_discards_depleted_card_without_rewards() -> void:
 	var exhausted := _place_owned_card(fixture, false, Vector2i(2, 0), 1)
 	_expect(exhausted != null, "defeat fixture places an owned normal card")
 	if exhausted != null:
-		exhausted.card_instance.current_points = 0
+		exhausted.get_card_inst().current_points = 0
 
 	_expect(
 		coordinator.apply(
 			fixture.instance,
-			_result(CombatResult.Outcome.DEFEAT, 0, 16, 0, [exhausted.card_instance])
+			_result(CombatResult.Outcome.DEFEAT, 0, 16, 0, [exhausted.get_card_inst()])
 		),
 		"defeat applies"
 	)
 	_expect(not fixture.instance.is_resolved, "defeat does not resolve the encounter")
 	_expect(fixture.player_data.gold == 30, "defeat grants no encounter gold")
-	_expect(exhausted not in fixture.board.cards, "defeat removes exhausted normal card")
+	_expect(exhausted not in fixture.board.board_zone.get_cards(), "defeat removes exhausted normal card")
 	_expect(fixture.card_service.get_entities().is_empty(), "defeat grants no reward card")
 	_expect(_event_display_refresh_count == 0, "defeat does not refresh encounter display")
 
@@ -229,14 +229,17 @@ func _configure_coordinator(fixture: Dictionary):
 func _create_fixture(event_type: EventData.EventType) -> Dictionary:
 	var board := BoardScene.instantiate() as Board
 	root.add_child(board)
-	var hand_area := HandScene.instantiate() as HandArea
-	root.add_child(hand_area)
-	var drag_layer := Node2D.new()
+	var hand_zone := HandZoneScene.instantiate() as HandZone
+	root.add_child(hand_zone)
+	var drag_layer := DraggerLayerScene.instantiate() as DraggerLayer
 	root.add_child(drag_layer)
-	var card_manager := CardManagerScript.new()
-	card_manager.card_scene = CardEntityScene
+	drag_layer.register_zone(hand_zone)
+	board.board_zone.set_drag_layer(drag_layer)
 	var card_service := RunCardService.new()
-	_expect(card_service.configure(card_manager, hand_area, drag_layer), "fixture configures card ownership")
+	_expect(
+		card_service.configure(CardScene, hand_zone, drag_layer),
+		"fixture configures card ownership"
+	)
 
 	var content: EncounterEventContent = (
 		MonsterEventContent.new()
@@ -252,7 +255,7 @@ func _create_fixture(event_type: EventData.EventType) -> Dictionary:
 	instance.origin = Vector2i(6, 6)
 	var monster := EncounterEventResolver.new().begin(instance)
 	var event_node := EventScene.instantiate() as BoardEvent
-	event_node.setup(instance, board.cell_size)
+	event_node.setup(instance, int(board.event_zone.cell_size))
 	_expect(board.attach_event(event_node), "fixture attaches encounter event to board")
 
 	var player_data := PlayerData.new()
@@ -261,7 +264,7 @@ func _create_fixture(event_type: EventData.EventType) -> Dictionary:
 	reward_rng.seed = 41
 	return {
 		"board": board,
-		"hand_area": hand_area,
+		"hand_zone": hand_zone,
 		"drag_layer": drag_layer,
 		"card_service": card_service,
 		"player_stats": _stats(20, 20, 4),
@@ -293,22 +296,22 @@ func _gold_drop(amount: int) -> EncounterDropEntry:
 	return drop
 
 
-func _place_anchor_root(fixture: Dictionary, left_cell: Vector2i) -> CardEntity:
+func _place_anchor_root(fixture: Dictionary, left_cell: Vector2i) -> Card:
 	var root_data := CardData.new()
 	root_data.card_name = "Anchor Root"
 	root_data.card_type = CardData.CardType.ROOT
 	root_data.max_points = 1
-	var root_card := CardEntityScene.instantiate() as CardEntity
-	root_card.bind_instance(CardInstance.new(root_data))
+	var root_card := CardScene.instantiate() as Card
+	root_card.bind_card_inst(CardInstance.new(root_data))
+	root_card.refresh_display()
 	root.add_child(root_card)
-	root_card.global_position = fixture.board.to_global(_horizontal_card_center(fixture.board, left_cell))
-	root_card.rotation_degrees = 90.0
-	return root_card if fixture.board.add_card(root_card) else null
+	_move_card_to_anchor(fixture.board.board_zone, root_card, left_cell, 1)
+	return root_card if fixture.board.board_zone.add_card(root_card) else null
 
 
 func _place_owned_card(
 	fixture: Dictionary, is_root: bool, left_cell: Vector2i, points: int, armor: int = 0
-) -> CardEntity:
+) -> Card:
 	var data := CardData.new()
 	data.card_name = "Settlement Root" if is_root else "Settlement Card"
 	data.card_type = CardData.CardType.ROOT if is_root else CardData.CardType.NORMAL
@@ -316,12 +319,11 @@ func _place_owned_card(
 	data.armor = armor
 	if not fixture.card_service.grant_to_hand(data):
 		return null
-	var card: CardEntity = fixture.card_service.get_entities().back()
-	if not fixture.hand_area.remove_card(card):
+	var card: Card = fixture.card_service.get_card_views().back()
+	if not fixture.hand_zone.remove_card(card):
 		return null
-	card.global_position = fixture.board.to_global(_horizontal_card_center(fixture.board, left_cell))
-	card.rotation_degrees = 90.0
-	return card if fixture.board.add_card(card) else null
+	_move_card_to_anchor(fixture.board.board_zone, card, left_cell, 1)
+	return card if fixture.board.board_zone.add_card(card) else null
 
 
 func _result(
@@ -361,11 +363,31 @@ func _make_mob(hp: int) -> MobData:
 	return mob
 
 
-func _horizontal_card_center(board: Board, left_cell: Vector2i) -> Vector2:
-	var right_cell := left_cell + Vector2i.RIGHT
-	return board.to_local(
-		(board.grid_to_world_center(left_cell) + board.grid_to_world_center(right_cell)) / 2.0
-	)
+func _move_card_to_anchor(
+	board_zone: BoardZone,
+	card: Card,
+	anchor: Vector2i,
+	direction: int
+) -> void:
+	var background := board_zone.back_ground
+	var cell_size := background.cell_size
+	var local_center: Vector2
+	if posmod(direction, 4) % 2 == 0:
+		local_center = Vector2(
+			(float(anchor.x) + 0.5) * cell_size,
+			(float(anchor.y) + 1.0) * cell_size
+		)
+	else:
+		local_center = Vector2(
+			(float(anchor.x) + 1.0) * cell_size,
+			(float(anchor.y) + 0.5) * cell_size
+		)
+	var center := background.to_global(local_center)
+	card.global_position = center - card.size * 0.5
+	card.target_position = card.position
+	card.get_card_inst().direction = direction
+	card.rotation = deg_to_rad(float(direction * 90))
+	card.refresh_display()
 
 
 func _reset_ports(fixture: Dictionary) -> void:
@@ -395,7 +417,7 @@ func _free_fixture(fixture: Dictionary) -> void:
 	var card_service: RunCardService = fixture.card_service
 	if card_service != null:
 		card_service.clear()
-	for node_name in ["board", "hand_area", "drag_layer"]:
+	for node_name in ["board", "hand_zone", "drag_layer"]:
 		var node = fixture[node_name]
 		if is_instance_valid(node):
 			node.queue_free()

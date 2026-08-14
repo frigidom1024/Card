@@ -107,7 +107,7 @@ func _on_event_spawned(event_node: BoardEvent) -> void:
 
 
 func _find_event_node(instance: EventInstance) -> BoardEvent:
-	for event_node in _board.events:
+	for event_node: BoardEvent in _board.event_zone.get_events():
 		if event_node != null and event_node.event_instance == instance:
 			return event_node
 	return null

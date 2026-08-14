@@ -25,13 +25,18 @@ func configure(board: Board, preview, viewport: Viewport) -> bool:
 	_preview = preview
 	_viewport = viewport
 	_active_event = null
-	if _board == null or _preview == null or _viewport == null:
+	if (
+		_board == null
+		or _board.event_zone == null
+		or _preview == null
+		or _viewport == null
+	):
 		return false
 	if not _board.event_attached.is_connected(_on_event_attached):
 		_board.event_attached.connect(_on_event_attached)
 	if not _board.event_removed.is_connected(_on_event_removed):
 		_board.event_removed.connect(_on_event_removed)
-	for event_node in _board.events:
+	for event_node: BoardEvent in _board.event_zone.get_events():
 		_bind_event(event_node)
 	_preview.dismiss()
 	return true
@@ -131,5 +136,7 @@ func _disconnect_board() -> void:
 		_board.event_attached.disconnect(_on_event_attached)
 	if _board.event_removed.is_connected(_on_event_removed):
 		_board.event_removed.disconnect(_on_event_removed)
-	for event_node in _board.events:
-		_unbind_event(event_node)
+	var event_zone: BoardEventZone = _board.event_zone
+	if event_zone != null:
+		for event_node: BoardEvent in event_zone.get_events():
+			_unbind_event(event_node)

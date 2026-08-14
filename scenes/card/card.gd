@@ -1,3 +1,26 @@
+## 卡牌实体组件
+##
+## 负责管理一张卡牌在游戏世界中的表现与拖拽交互。
+## 包括：
+## - CardInstance 的精确绑定
+## - 点数、护甲与卡面图片的显示
+## - 鼠标悬停、拖拽与视觉反馈
+## - 拖拽过程中与 DraggerLayer 的通信
+##
+## 不负责：
+## - 卡牌数据的持久化
+## - 卡牌所在区域的管理
+## - 卡牌是否合法放置的规则判断
+## - CardInstance 状态变更的业务决策
+##
+## 使用方式：
+## 通过 bind_card_inst() 注入一个 CardInstance，必要时在实例状态变化后调用
+## refresh_display()；通过 bind_drag_layer() 接入当前页面的拖拽层。
+##
+## 依赖：
+## CardInstance：提供卡牌的唯一运行时状态。
+## DraggerLayer：接收卡牌拖拽生命周期通知。
+
 extends Button
 class_name Card
 @onready var card_texture: Control = $CardTexture
@@ -26,8 +49,7 @@ var target_position:Vector2
 var drag_offset:Vector2
 var velocity:Vector2 = Vector2.ZERO
 
-var drag_layer:DraggerLayer
-var cur_zone:CardZone
+var drag_layer: DraggerLayer
 var card_inst: CardInstance
 
 
@@ -41,8 +63,9 @@ func _ready() -> void:
 	if not resized.is_connected(_sync_hover_pivot):
 		resized.connect(_sync_hover_pivot)
 		
-	target_position  = position
-	card_inst=CardInstance.create_debug_card()
+	target_position = position
+	if card_inst == null:
+		card_inst = CardInstance.create_debug_card()
 	refresh_display()
 
 func _process(delta: float) -> void:
@@ -109,14 +132,33 @@ func _start_drag(mouse_position: Vector2) -> void:
 	z_index = 100
 	drag_offset = get_global_mouse_position() - global_position
 	target_position = position
-	if drag_layer:
-		drag_layer.start_drag(self)
+	if drag_layer and not drag_layer.start_drag(self):
+		dragging = false
+		z_index = 0
+		return
 
-	
-func _update_drag(mouse_postion:Vector2)->void:
-	target_position= get_global_mouse_position()-drag_offset
+
+func _update_drag(mouse_position: Vector2) -> void:
+	update_drag_target_from_global_pointer(get_global_mouse_position())
 	if drag_layer:
 		drag_layer.update_drag(self)
+
+
+func update_drag_target_from_global_pointer(global_pointer: Vector2) -> void:
+	var parent_control := get_parent() as Control
+
+	# 鼠标全局位置 - 点击时的鼠标偏移
+	var target_global_position := global_pointer - drag_offset
+
+	if parent_control == null:
+		target_position = target_global_position
+		return
+
+	# 全局坐标 -> 父 Control 的局部坐标
+	target_position = (
+		parent_control.get_global_transform().affine_inverse()
+		* target_global_position
+	)
 
 func _end_drag()->void:
 	if not dragging:
@@ -158,8 +200,7 @@ func bind_drag_layer(drag_layer:DraggerLayer)->void:
 
 func bind_card_inst(value: CardInstance) -> void:
 	card_inst = value
-	if is_node_ready():
-		refresh_display()
+	refresh_display()
 
 
 func get_card_inst() -> CardInstance:

@@ -1,11 +1,28 @@
 class_name RunSetupCoordinator
 extends RefCounted
 
-## Builds the mutable state required by one game run.
+## 局内初始化协调组件
 ##
-## This coordinator owns no scene policy beyond assigning starter cards to the
-## supplied hand. GameManager remains responsible for composing its FaithService
-## after retrieving the isolated runtime PlayerData.
+## 负责根据静态玩家与初始牌组创建一次游戏流程所需的隔离运行状态。
+## 包括：
+## - 复制 PlayerData 并创建 CombatStats
+## - 配置 RunCardService、战斗流程、事件交互与进度服务
+## - 使用 Card 场景在指定 HandZone 中创建初始卡牌
+## - 初始化失败时统一清理所有部分创建的运行状态
+##
+## 不负责：
+## - 游戏页面的场景组合与 Zone 注册
+## - 商店、牌桌、回收区的业务逻辑
+## - FaithService 等页面级服务的装配
+##
+## 使用方式：
+## 先通过 configure() 注入玩家、牌组、Card 场景、HandZone 与唯一 DraggerLayer，
+## 再调用 initialize()；成功后从 get_context() 或兼容 getter 取得运行服务。
+##
+## 依赖：
+## RunCardService：创建并管理 Card 与 CardInstance。
+## HandZone：接收初始手牌。
+## DraggerLayer：绑定运行期 Card 到页面唯一拖拽协调器。
 signal initialization_failed(reason: String)
 
 const RunCardServiceScript := preload("res://scripts/game/run/run_card_service.gd")
@@ -19,9 +36,9 @@ const RunProgressionServiceScript := preload("res://scripts/game/run/run_progres
 
 var _source_player: PlayerData
 var _starting_deck: StartingDeckData
-var _card_manager: Node2D
-var _hand_area: HandArea
-var _drag_layer: Node2D
+var _card_scene: PackedScene
+var _hand_zone: HandZone
+var _drag_layer: DraggerLayer
 var _progression_config: RunProgressionConfig
 
 var _runtime_player: PlayerData
@@ -36,23 +53,23 @@ var _failure_reason := ""
 func configure(
 	source_player: PlayerData,
 	deck: StartingDeckData,
-	card_manager: Node2D,
-	hand_area: HandArea,
-	drag_layer: Node2D,
+	card_scene: PackedScene,
+	hand_zone: HandZone,
+	drag_layer: DraggerLayer,
 	progression_config: RunProgressionConfig = null
 ) -> bool:
 	if (
 		source_player == null
 		or deck == null
-		or card_manager == null
-		or hand_area == null
+		or card_scene == null
+		or hand_zone == null
 		or drag_layer == null
 	):
 		return false
 	_source_player = source_player
 	_starting_deck = deck
-	_card_manager = card_manager
-	_hand_area = hand_area
+	_card_scene = card_scene
+	_hand_zone = hand_zone
 	_drag_layer = drag_layer
 	_progression_config = progression_config
 	return true
@@ -65,7 +82,7 @@ func initialize() -> bool:
 		return _fail("Run setup is missing PlayerData.base_stats")
 	if _starting_deck == null or not _starting_deck.validate().is_empty():
 		return _fail("Run setup is missing a valid StartingDeckData")
-	if _card_manager == null or _hand_area == null or _drag_layer == null:
+	if _card_scene == null or _hand_zone == null or _drag_layer == null:
 		return _fail("Run setup is missing card runtime dependencies")
 
 	var runtime_player := _source_player.duplicate(true) as PlayerData
@@ -85,7 +102,7 @@ func initialize() -> bool:
 		return _fail("Run setup could not create runtime combat stats")
 
 	var card_service: RunCardService = RunCardServiceScript.new()
-	if not card_service.configure(_card_manager, _hand_area, _drag_layer):
+	if not card_service.configure(_card_scene, _hand_zone, _drag_layer):
 		return _fail("Run setup could not configure runtime card service", card_service)
 	if not card_service.initialize_starting_deck(_starting_deck):
 		return _fail("Run setup could not create configured starter cards", card_service)

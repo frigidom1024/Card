@@ -131,7 +131,6 @@ func _test_game_manager_centering() -> void:
 	var pilgrim_crest_hud := (
 		gm.get_node_or_null("GameplayCanvas/PilgrimCrestHud") as PilgrimCrestHud
 	)
-	var hand_tray := gm.get_node_or_null("GameplayCanvas/HandTray") as HandTray
 	_expect(
 		pilgrim_crest_hud != null,
 		"game manager owns a Pilgrim Crest HUD inside the gameplay canvas"
@@ -148,36 +147,10 @@ func _test_game_manager_centering() -> void:
 		pilgrim_crest_hud != null and pilgrim_crest_hud.mouse_filter == Control.MOUSE_FILTER_IGNORE,
 		"Pilgrim Crest HUD does not block card input"
 	)
-	_expect(hand_tray != null, "game manager owns a hand tray inside the gameplay canvas")
-	_expect(
-		hand_tray != null and hand_tray.get_parent() == gameplay_canvas,
-		"hand tray scales with the gameplay canvas"
-	)
-	_expect(
-		hand_tray != null and hand_tray.z_index == -1, "hand tray uses the required render layer"
-	)
-	var hand_tray_index := (
-		gameplay_canvas.get_children().find(hand_tray) if gameplay_canvas != null else -1
-	)
-	var hand_manager_index := (
-		gameplay_canvas.get_children().find(gm.hand_area) if gameplay_canvas != null else -1
-	)
-	_expect(
-		hand_tray_index >= 0 and hand_manager_index == hand_tray_index + 1,
-		"hand tray is immediately before hand manager in the gameplay canvas"
-	)
-	_expect(
-		hand_tray != null and hand_tray.mouse_filter == Control.MOUSE_FILTER_IGNORE,
-		"hand tray does not block card input"
-	)
 	var manager_source := FileAccess.get_file_as_string("res://scripts/game_manager.gd")
 	_expect(
 		manager_source.replace("\r\n", "\n").contains("func _center_layout() -> void:\n\treturn"),
 		"GameManager keeps _center_layout as an empty compatibility hook"
-	)
-	_expect(
-		not manager_source.contains("_sync_hand_tray"),
-		"GameManager does not own hand-tray synchronization"
 	)
 	_expect(
 		not manager_source.contains("size_changed.connect(_center_layout)"),

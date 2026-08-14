@@ -19,19 +19,22 @@ func configure(board: Board) -> bool:
 
 
 func resolve_placement(result: BoardPlacementResult) -> int:
-	if result == null or _board == null:
+	if result == null or _board == null or _board.board_zone == null:
 		return 0
 	if result.kind != BoardPlacementResult.Kind.CHAIN_EXTENDED:
 		return 0
-	var added_entity := result.chain_tail
-	if added_entity == null:
-		added_entity = result.source_card
-	if added_entity == null or added_entity.card_instance == null:
+	var added_card: Card = result.chain_tail
+	if added_card == null:
+		added_card = result.source_card
+	if added_card == null:
+		return 0
+	var instance := added_card.get_card_inst()
+	if instance == null:
 		return 0
 	var applied_count := _card_chain_rule_service.resolve_card_added(
-		_board.get_combat_card_chain(), added_entity.card_instance
+		_board.board_zone.get_combat_card_chain(), instance
 	)
 	if applied_count > 0:
-		added_entity.refresh_combat_tags()
+		added_card.refresh_display()
 	card_chain_rules_applied.emit(result, applied_count)
 	return applied_count

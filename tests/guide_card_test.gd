@@ -1,186 +1,91 @@
 extends SceneTree
 
-const BoardScene := preload("res://scenes/game/board.tscn")
-const CardEntityScene := preload("res://scenes/card_view/card_entity.tscn")
-const BoardPlacementResultScript := preload("res://scripts/game/board_placement_result.gd")
+const BOARD_ZONE_SCENE := preload("res://scenes/zone/board_zone.tscn")
+const CARD_SCENE := preload("res://scenes/card/card.tscn")
 
-var _failure_count := 0
-var _returned_card: CardEntity = null
+var _failures := 0
 
 
 func _init() -> void:
-	call_deferred("_run_tests")
+	call_deferred("_run")
 
 
-func _run_tests() -> void:
-	_expect(
-		CardData.CardType.GUIDE != CardData.CardType.NORMAL, "GUIDE must be a distinct CardType"
-	)
-	var guide := _make_card(CardData.CardType.GUIDE)
-	_expect(
-		guide.card_instance.card_data.card_type == CardData.CardType.GUIDE,
-		"guide card keeps GUIDE type"
-	)
-	_expect(
-		CardDetailFormat.card_type_name(CardData.CardType.GUIDE) == "GUIDE",
-		"guide cards have a distinct detail label"
-	)
-	guide.queue_free()
+func _run() -> void:
+	_expect(CardData.CardType.GUIDE != CardData.CardType.NORMAL, "GUIDE remains a distinct CardType")
 
-	_test_guide_card_shifts_chain_and_returns()
-	_test_guide_return_routes_through_run_card_service()
-	_test_guide_result_keeps_chain_order_and_reports_new_cells()
-	quit(1 if _failure_count > 0 else 0)
-
-
-func _test_guide_card_shifts_chain_and_returns() -> void:
-	var board := BoardScene.instantiate() as Board
+	var board := BOARD_ZONE_SCENE.instantiate() as BoardZone
 	root.add_child(board)
-	board.card_return_requested.connect(_on_card_return_requested)
-
-	var root_card := _make_card(CardData.CardType.ROOT)
-	root_card.position = Vector2(156, 260)
-	root_card.card_instance.direction = 0
-	root_card.rotation_degrees = 0.0
-	_expect(board.add_card(root_card), "root card can be placed")
-
-	var second_card := _make_card(CardData.CardType.NORMAL)
-	second_card.position = board.grid_to_world_center(Vector2i(1, 1))
-	second_card.card_instance.direction = 1
-	second_card.rotation_degrees = 90.0
-	_expect(board.add_card(second_card), "second card can be placed after root")
-
-	var root_position := root_card.global_position
-	var second_position := second_card.global_position
-	var second_rotation := second_card.rotation_degrees
-
-	var guide := _make_card(CardData.CardType.GUIDE)
-	guide.position = board.grid_to_world_center(Vector2i(3, 1))
-	guide.card_instance.direction = 1
-	guide.rotation_degrees = 90.0
-	_expect(board.add_card(guide), "guide card can be placed after the chain")
-
-	_expect(_returned_card == guide, "board requests the guide card be returned")
-	_expect(board.cards.size() == 2, "guide card is not added to the board chain")
-	_expect(
-		board.cards[0] == root_card and board.cards[1] == second_card,
-		"board chain order stays unchanged"
-	)
-	_expect(
-		root_card.global_position.is_equal_approx(second_position),
-		"card 1 moves to card 2's old position"
-	)
-	_expect(
-		second_card.global_position.is_equal_approx(guide.global_position),
-		"card 2 moves to guide card's old position"
-	)
-	_expect(
-		is_equal_approx(root_card.rotation_degrees, second_rotation),
-		"card 1 inherits card 2's rotation"
-	)
-	_expect(
-		is_equal_approx(second_card.rotation_degrees, guide.rotation_degrees),
-		"card 2 inherits guide card's rotation"
-	)
-	_expect(root_card.card_instance.direction == 1, "card 1 inherits card 2's direction")
-	_expect(second_card.card_instance.direction == 1, "card 2 inherits guide card's direction")
-	_expect(guide.get_parent() == board, "guide card remains available for the return handler")
-	_expect(not board._grid_owner.values().has(guide), "guide card does not own board cells")
-	_expect(board._grid_owner[Vector2i(1, 1)] == root_card, "board grid is rebuilt for card 1")
-	_expect(board._grid_owner[Vector2i(3, 1)] == second_card, "board grid is rebuilt for card 2")
-	_expect(root_position != root_card.global_position, "card 1 actually moved")
-
-	board.queue_free()
-	guide.queue_free()
-
-
-func _test_guide_return_routes_through_run_card_service() -> void:
-	var flow_source := FileAccess.get_file_as_string(
-		"res://scripts/game/run/run_flow_coordinator.gd"
-	)
-	_expect(
-		flow_source.contains("return _context.card_service.return_existing_to_hand(card, true)"),
-		"GUIDE card return delegates to RunCardService with overflow"
-	)
-	var manager_source := FileAccess.get_file_as_string("res://scripts/game_manager.gd")
-	_expect(
-		manager_source.contains("_run_flow.handle_card_return_requested(card)"),
-		"GameManager routes GUIDE card returns through RunFlowCoordinator"
-	)
-
-
-func _test_guide_result_keeps_chain_order_and_reports_new_cells() -> void:
-	var board := BoardScene.instantiate() as Board
-	root.add_child(board)
-
-	var root_card := _make_card(CardData.CardType.ROOT)
-	root_card.position = Vector2(156, 260)
-	root_card.card_instance.direction = 0
-	root_card.rotation_degrees = 0.0
-	_expect(board.add_card(root_card), "root card can be placed for the guide transaction")
-
-	var second_card := _make_card(CardData.CardType.NORMAL)
-	second_card.position = board.grid_to_world_center(Vector2i(1, 1))
-	second_card.card_instance.direction = 1
-	second_card.rotation_degrees = 90.0
-	_expect(board.add_card(second_card), "second card can be placed for the guide transaction")
-
-	var placement_results: Array = []
-	board.placement_committed.connect(func(result) -> void: placement_results.append(result))
-
-	var guide := _make_card(CardData.CardType.GUIDE)
-	guide.position = board.grid_to_world_center(Vector2i(3, 1))
-	guide.card_instance.direction = 1
-	guide.rotation_degrees = 90.0
-	var guide_cells := board.get_card_cells(guide.global_position, guide.rotation_degrees)
-	_expect(board.add_card(guide), "guide card resolves a placement transaction")
-
-	_expect(placement_results.size() == 1, "guide placement publishes exactly one transaction")
-	if placement_results.size() == 1:
-		var result = placement_results[0]
-		_expect(
-			result.kind == BoardPlacementResultScript.Kind.GUIDE_RESOLVED,
-			"guide placement uses GUIDE_RESOLVED"
+	await process_frame
+	var operations: Array[BoardCardPlacement] = []
+	if board.has_signal("placement_applied"):
+		board.placement_applied.connect(func(operation: BoardCardPlacement) -> void:
+			operations.append(operation)
 		)
-		_expect(result.source_card == guide, "guide result retains the guide source")
-		_expect(result.chain_tail == second_card, "guide result reports the shifted chain tail")
-		_expect(
-			result.affected_cards == [root_card, second_card],
-			"guide result keeps the original chain order"
-		)
-		_expect(
-			result.newly_occupied_cells == guide_cells,
-			"guide result reports the endpoint cells newly occupied by the shifted chain"
-		)
-		_expect(
-			result.overlapped_event == null, "guide result has no event when no event is contacted"
-		)
-	_expect(guide not in board.cards, "guide source never enters the chain")
-	_expect(board.cards == [root_card, second_card], "guide keeps existing board chain order")
-	_expect(
-		second_card.global_position.is_equal_approx(guide.global_position),
-		"guide endpoint is occupied by the final chain card"
-	)
 
-	board.queue_free()
-	guide.queue_free()
+	var root_card := _make_card(CardData.CardType.ROOT, 0, "Root")
+	root.add_child(root_card)
+	await process_frame
+	_move_card_to_anchor(board, root_card, Vector2i(4, 4), 0)
+	_expect(board.add_card(root_card), "ROOT fixture commits")
+
+	var tail := _make_card(CardData.CardType.NORMAL, 0, "Tail")
+	root.add_child(tail)
+	await process_frame
+	_move_card_to_anchor(board, tail, Vector2i(4, 2), 0)
+	_expect(board.add_card(tail), "tail fixture commits")
+
+	operations.clear()
+	var root_instance := root_card.get_card_inst()
+	var tail_instance := tail.get_card_inst()
+	var guide := _make_card(CardData.CardType.GUIDE, 0, "Guide")
+	root.add_child(guide)
+	await process_frame
+	_move_card_to_anchor(board, guide, Vector2i(4, 0), 0)
+	var guide_cells := board.get_card_cells(guide)
+	_expect(board.drag_end_target(guide, true), "GUIDE resolves against the chain endpoint")
+	_expect(operations.size() == 1, "GUIDE emits one structured placement")
+	if operations.size() == 1:
+		var operation := operations[0]
+		_expect(operation.kind == BoardCardPlacement.Kind.GUIDE_SHIFTED, "GUIDE operation uses GUIDE_SHIFTED")
+		_expect(operation.card == guide, "GUIDE operation retains the source Card")
+		_expect(operation.card_inst == guide.get_card_inst(), "GUIDE operation retains the exact CardInstance")
+		_expect(operation.occupied_cells == guide_cells, "GUIDE reports the endpoint cells")
+		_expect(operation.affected_cards == [root_card, tail], "GUIDE reports the chain in original order")
+		_expect(operation.chain_tail == tail, "GUIDE reports the shifted chain tail")
+	_expect(not board.owns_card(guide), "GUIDE never becomes a stable BoardZone member")
+	_expect(board.get_cards() == [root_card, tail], "GUIDE preserves chain order")
+	_expect(root_card.get_card_inst() == root_instance and tail.get_card_inst() == tail_instance, "GUIDE preserves exact CardInstance identity")
+	_expect(root_instance.battlefield_pos == Vector2i(4, 2), "ROOT moves into the previous tail layout")
+	_expect(tail_instance.battlefield_pos == Vector2i(4, 0), "tail moves into the GUIDE layout")
+	_expect(board.get_card_at(Vector2i(4, 0)) == tail, "shifted tail owns the GUIDE endpoint")
+
+	board.free()
+	quit(1 if _failures > 0 else 0)
 
 
-func _make_card(card_type: CardData.CardType) -> CardEntity:
-	var card := CardEntityScene.instantiate() as CardEntity
+func _make_card(card_type: CardData.CardType, direction: int, card_name: String) -> Card:
 	var data := CardData.new()
 	data.card_type = card_type
-	data.card_name = "Test Card"
-	card.bind_instance(CardInstance.new(data))
-	root.add_child(card)
+	data.card_name = card_name
+	var instance := CardInstance.new(data)
+	instance.direction = direction
+	var card := CARD_SCENE.instantiate() as Card
+	card.bind_card_inst(instance)
 	return card
 
 
-func _on_card_return_requested(card: CardEntity) -> void:
-	_returned_card = card
+func _move_card_to_anchor(board: BoardZone, card: Card, anchor: Vector2i, direction: int) -> void:
+	var background := board.back_ground
+	var cell_size := background.cell_size
+	var local_center := Vector2((float(anchor.x) + 0.5) * cell_size, (float(anchor.y) + 1.0) * cell_size)
+	if posmod(direction, 4) % 2 == 1:
+		local_center = Vector2((float(anchor.x) + 1.0) * cell_size, (float(anchor.y) + 0.5) * cell_size)
+	card.global_position = background.to_global(local_center) - card.size * 0.5
+	card.target_position = card.position
+	card.get_card_inst().direction = direction
 
 
 func _expect(condition: bool, message: String) -> void:
 	if not condition:
-		_failure_count += 1
+		_failures += 1
 		push_error(message)

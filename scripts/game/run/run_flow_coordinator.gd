@@ -160,12 +160,6 @@ func handle_combat_settlement_request(instance: EventInstance, result: CombatRes
 	return true
 
 
-func handle_card_return_requested(card: CardEntity) -> bool:
-	if _context == null or _context.card_service == null or card == null:
-		return false
-	return _context.card_service.return_existing_to_hand(card, true)
-
-
 func _connect_signals() -> void:
 	if not _pipeline.event_interaction_requested.is_connected(_on_event_interaction_requested):
 		_pipeline.event_interaction_requested.connect(_on_event_interaction_requested)
@@ -181,8 +175,6 @@ func _connect_signals() -> void:
 		_faith.faith_changed.connect(_forward_faith_changed)
 	if _faith != null and not _faith.echo_spawn_requested.is_connected(_on_faith_echo_spawn_requested):
 		_faith.echo_spawn_requested.connect(_on_faith_echo_spawn_requested)
-	if not _board.card_return_requested.is_connected(handle_card_return_requested):
-		_board.card_return_requested.connect(handle_card_return_requested)
 
 
 func _disconnect_signals() -> void:
@@ -212,15 +204,13 @@ func _disconnect_signals() -> void:
 		_faith.faith_changed.disconnect(_forward_faith_changed)
 	if _faith != null and _faith.echo_spawn_requested.is_connected(_on_faith_echo_spawn_requested):
 		_faith.echo_spawn_requested.disconnect(_on_faith_echo_spawn_requested)
-	if _board != null and _board.card_return_requested.is_connected(handle_card_return_requested):
-		_board.card_return_requested.disconnect(handle_card_return_requested)
 
 
 func _on_event_interaction_requested(instance: EventInstance) -> void:
 	if not accepts_placement() or instance == null or instance.is_resolved:
 		return
 	_set_state(State.INTERACTING)
-	_modal.begin(instance, _context.player_stats, _board.get_combat_card_chain())
+	_modal.begin(instance, _context.player_stats, _board.board_zone.get_combat_card_chain())
 
 
 ## Shop and treasure dialogs finish synchronously without combat settlement.
