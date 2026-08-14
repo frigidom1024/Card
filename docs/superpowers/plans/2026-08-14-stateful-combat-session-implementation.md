@@ -1,33 +1,33 @@
-# Stateful Combat Session Implementation Plan
+# 有状态战斗会话实施计划
 
-> **For Codex:** Execute this plan task-by-task with `superpowers:test-driven-development`. Do not batch tasks together. After each task, run the focused tests, inspect the diff, and create the listed commit.
+> **给 Codex：** 使用 `superpowers:test-driven-development` 逐项执行本计划，不要合并多个任务。每完成一个任务，都要运行对应测试、检查差异，并创建该任务列出的提交。
 
-**Goal:** Replace the synchronous full-combat calculation with a stateful, event-by-event combat session that has explicit trigger timing, separate player/monster attack batches, generic in-combat operation cards, board-facing presentation events, and user-controlled combat speed.
+**目标：** 用按事件逐步推进的有状态战斗会话替代同步计算整场战斗的方式，并提供明确的触发时序、彼此独立的玩家/怪物攻击批次、通用战斗操作卡、面向棋盘的表现事件，以及由玩家控制的战斗速度。
 
-**Architecture:** `CombatSession` is the single authoritative state machine. Commands and triggers enter as pending requests; `CombatIntentResolver` atomically commits one major behavior into immutable `CombatEventBatch` output. Presentation ACK, settlement delay, and interaction holds gate the next advance. UI adapters may preview targets and submit commands, but never mutate combat state directly.
+**架构：** `CombatSession` 是唯一权威的战斗状态机。命令和触发器以待处理请求进入系统；`CombatIntentResolver` 将一个主要行为原子提交为不可变的 `CombatEventBatch` 输出。表现确认（ACK）、结算延迟和交互占用共同控制下一次推进。UI 适配器可以预览目标和提交命令，但绝不能直接修改战斗状态。
 
-**Tech Stack:** Godot 4.7, GDScript, `RefCounted` domain objects, signals at scene/controller boundaries, headless `SceneTree` tests.
+**技术栈：** Godot 4.7、GDScript、`RefCounted` 领域对象、场景/控制器边界信号，以及无界面的 `SceneTree` 测试。
 
-**Design specification:** `docs/superpowers/specs/2026-08-14-combat-session-and-operation-cards-design.md`
+**设计规格：** `docs/superpowers/specs/2026-08-14-combat-session-and-operation-cards-design.md`
 
-## Global execution rules
+## 全局执行规则
 
-- Preserve all unrelated working-tree changes. In particular, do not overwrite or stage the user's current card, scene, board, hand, or drag-layer edits.
-- Tests use `extends SceneTree` and exit non-zero when an expectation fails.
-- Focused test command:
+- 保留工作区中所有无关修改，尤其不得覆盖或暂存用户当前对卡牌、场景、棋盘、手牌区或拖拽层的修改。
+- 测试使用 `extends SceneTree`；断言失败时必须以非零退出码退出。
+- 定向测试命令：
 
 ```powershell
 $godot = (Get-Command Godot_v4.7.1-stable_win64_console.exe).Source
 & $godot --headless --path . --script res://tests/<test_file>.gd
 ```
 
-- Import/compile check after script or resource changes:
+- 修改脚本或资源后的导入/编译检查：
 
 ```powershell
 & $godot --headless --editor --path . --quit
 ```
 
-- Before every commit:
+- 每次提交前执行：
 
 ```powershell
 git diff --check
@@ -35,33 +35,33 @@ git status --short
 git diff -- <paths owned by the task>
 ```
 
-- Stage only paths owned by the current task.
-- A batch is committed before it is emitted. It is historical fact and cannot be rolled back while its animation is playing.
-- Queues contain requests, not calculated damage, target values, or outcomes. Re-read mutable target/state values when dequeuing.
+- 只暂存当前任务负责的路径。
+- 批次必须先提交再发出。批次是已经发生的历史事实，动画播放期间也不能回滚。
+- 队列中保存请求，而不是已经计算好的伤害、目标数值或结果。请求出队时必须重新读取可变的目标和状态数值。
 
 ---
 
-## Task 1: Add stable combat entity IDs and immutable protocol DTOs
+## 任务 1：添加稳定的战斗实体 ID 与不可变协议 DTO
 
-**Files**
+**文件**
 
-- Modify: `scripts/card/card_instance.gd`
-- Create: `scripts/combatv2/protocol/combat_command.gd`
-- Create: `scripts/combatv2/protocol/play_combat_operation_command.gd`
-- Create: `scripts/combatv2/protocol/combat_trigger_request.gd`
-- Create: `scripts/combatv2/protocol/combat_intent.gd`
-- Create: `scripts/combatv2/protocol/combat_domain_event.gd`
-- Create: `scripts/combatv2/protocol/combat_event_batch.gd`
-- Create: `scripts/combatv2/protocol/combat_command_result.gd`
-- Test: `tests/combat_protocol_test.gd`
+- 修改：`scripts/card/card_instance.gd`
+- 新建：`scripts/combatv2/protocol/combat_command.gd`
+- 新建：`scripts/combatv2/protocol/play_combat_operation_command.gd`
+- 新建：`scripts/combatv2/protocol/combat_trigger_request.gd`
+- 新建：`scripts/combatv2/protocol/combat_intent.gd`
+- 新建：`scripts/combatv2/protocol/combat_domain_event.gd`
+- 新建：`scripts/combatv2/protocol/combat_event_batch.gd`
+- 新建：`scripts/combatv2/protocol/combat_command_result.gd`
+- 测试：`tests/combat_protocol_test.gd`
 
-**Consumes**
+**输入接口**
 
 ```gdscript
 CardInstance.new(data: CardData, explicit_instance_id: StringName = &"")
 ```
 
-**Produces**
+**输出接口**
 
 ```gdscript
 CardInstance.instance_id: StringName
@@ -73,9 +73,9 @@ CombatCommandResult.accepted(command_id: StringName) -> CombatCommandResult
 CombatCommandResult.rejected(command_id: StringName, reason: StringName) -> CombatCommandResult
 ```
 
-### Step 1: Write the failing protocol test
+### 步骤 1：编写失败的协议测试
 
-Create `tests/combat_protocol_test.gd`:
+新建 `tests/combat_protocol_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -117,18 +117,18 @@ func _expect(condition: bool, message: String) -> void:
     push_error(message)
 ```
 
-### Step 2: Run the test and verify the failure
+### 步骤 2：运行测试并确认失败
 
 ```powershell
 $godot = (Get-Command Godot_v4.7.1-stable_win64_console.exe).Source
 & $godot --headless --path . --script res://tests/combat_protocol_test.gd
 ```
 
-Expected: non-zero exit because the protocol scripts and explicit `CardInstance` ID constructor do not exist.
+预期：以非零退出码退出，因为协议脚本和支持显式 ID 的 `CardInstance` 构造函数尚不存在。
 
-### Step 3: Implement the minimal DTOs
+### 步骤 3：实现最小协议 DTO
 
-Use typed `RefCounted` classes with constructor-only payload assignment. Define these enums exactly:
+使用强类型 `RefCounted` 类，并且仅在构造函数中写入载荷。严格定义以下枚举：
 
 ```gdscript
 # combat_event_batch.gd
@@ -188,7 +188,7 @@ enum Type {
 }
 ```
 
-Minimum `CardInstance` change:
+`CardInstance` 的最小改动：
 
 ```gdscript
 var instance_id: StringName
@@ -209,9 +209,9 @@ func duplicate_for_combat() -> CardInstance:
     return copy
 ```
 
-`CombatEventBatch.duplicate_runtime()` must deep-copy every event and `cause_snapshot`; external callers never receive the session-owned arrays/dictionaries.
+`CombatEventBatch.duplicate_runtime()` 必须深拷贝每个事件和 `cause_snapshot`；外部调用方绝不能拿到会话持有的数组或字典。
 
-### Step 4: Run focused and regression tests
+### 步骤 4：运行定向测试和回归测试
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_protocol_test.gd
@@ -219,9 +219,9 @@ func duplicate_for_combat() -> CardInstance:
 & $godot --headless --editor --path . --quit
 ```
 
-Expected: all commands exit `0`.
+预期：所有命令均以退出码 `0` 结束。
 
-### Step 5: Commit
+### 步骤 5：提交
 
 ```powershell
 git add scripts/card/card_instance.gd scripts/combatv2/protocol tests/combat_protocol_test.gd
@@ -230,24 +230,24 @@ git commit -m "feat: define combat session protocol"
 
 ---
 
-## Task 2: Build `CombatSessionState` and the atomic intent resolver
+## 任务 2：构建 `CombatSessionState` 与原子意图解析器
 
-**Files**
+**文件**
 
-- Create: `scripts/combatv2/session/combat_session_state.gd`
-- Create: `scripts/combatv2/session/combat_intent_resolver.gd`
-- Create: `tests/helpers/combat_test_fixtures.gd`
-- Test: `tests/combat_session_state_test.gd`
-- Test: `tests/combat_intent_resolver_test.gd`
+- 新建：`scripts/combatv2/session/combat_session_state.gd`
+- 新建：`scripts/combatv2/session/combat_intent_resolver.gd`
+- 新建：`tests/helpers/combat_test_fixtures.gd`
+- 测试：`tests/combat_session_state_test.gd`
+- 测试：`tests/combat_intent_resolver_test.gd`
 
-**Consumes**
+**输入接口**
 
 ```gdscript
 CombatSessionState.new(player_stats: CombatStats, monster: MobInstance, chain: Array[CardInstance], resources: Dictionary, operation_cards: Array[CardInstance])
 CombatIntentResolver.resolve(state: CombatSessionState, intents: Array[CombatIntent]) -> Array[CombatDomainEvent]
 ```
 
-**Produces**
+**输出接口**
 
 ```gdscript
 CombatSessionState.get_card(card_id: StringName) -> CardInstance
@@ -257,9 +257,9 @@ CombatSessionState.is_terminal() -> bool
 CombatSessionState.duplicate_result_snapshot() -> Dictionary
 ```
 
-### Step 1: Write failing state and resolver tests
+### 步骤 1：编写失败的状态与解析器测试
 
-Create `tests/combat_session_state_test.gd` with this core assertion:
+新建 `tests/combat_session_state_test.gd`，加入以下核心断言：
 
 ```gdscript
 extends SceneTree
@@ -279,7 +279,7 @@ func _init() -> void:
     quit(0)
 ```
 
-Create `tests/helpers/combat_test_fixtures.gd` with explicit-ID helpers used by both tests:
+新建 `tests/helpers/combat_test_fixtures.gd`，提供两个测试共用的显式 ID 辅助函数：
 
 ```gdscript
 extends RefCounted
@@ -299,7 +299,7 @@ static func make_monster(display_name: String, health: int) -> MobInstance:
     return MobInstance.new(data)
 ```
 
-Create `tests/combat_intent_resolver_test.gd`:
+新建 `tests/combat_intent_resolver_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -326,20 +326,20 @@ func _init() -> void:
     quit(0)
 ```
 
-### Step 2: Run tests and verify failure
+### 步骤 2：运行测试并确认失败
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_session_state_test.gd
 & $godot --headless --path . --script res://tests/combat_intent_resolver_test.gd
 ```
 
-Expected: both fail because session state and resolver are absent.
+预期：两个测试都失败，因为会话状态和解析器尚不存在。
 
-### Step 3: Implement state ownership and atomic intent application
+### 步骤 3：实现状态所有权与原子意图应用
 
-`CombatSessionState` must duplicate the monster, chain cards, operation cards, stats, and resource dictionary on construction. Maintain an ID-to-card map for O(1) lookup. Never store scene `Node` references.
+`CombatSessionState` 构造时必须复制怪物、牌链卡牌、操作卡、属性和资源字典。维护 ID 到卡牌的映射，以支持 O(1) 查找。绝不能保存场景 `Node` 引用。
 
-Resolver outline:
+解析器轮廓：
 
 ```gdscript
 func resolve(state: CombatSessionState, intents: Array[CombatIntent]) -> Array[CombatDomainEvent]:
@@ -361,9 +361,9 @@ func resolve(state: CombatSessionState, intents: Array[CombatIntent]) -> Array[C
     return events
 ```
 
-Each event stores before/after values. A damage-card intent emits `CARD_SHIELD_CHANGED` before `CARD_POINTS_CHANGED`, then `CARD_DEPLETED` when points become zero. Resource spending must reject before mutation if insufficient; the generic operation transaction in Task 6 will validate the complete intent set before calling this resolver.
+每个事件都保存变更前后的值。伤害卡牌意图先发出 `CARD_SHIELD_CHANGED`，再发出 `CARD_POINTS_CHANGED`；点数变为零时继续发出 `CARD_DEPLETED`。资源不足时，资源消耗必须在任何修改发生前拒绝；任务 6 的通用操作事务会在调用此解析器前验证完整意图集合。
 
-### Step 4: Run focused tests
+### 步骤 4：运行定向测试
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_session_state_test.gd
@@ -372,9 +372,9 @@ Each event stores before/after values. A damage-card intent emits `CARD_SHIELD_C
 & $godot --headless --editor --path . --quit
 ```
 
-Expected: all commands exit `0`.
+预期：所有命令均以退出码 `0` 结束。
 
-### Step 5: Commit
+### 步骤 5：提交
 
 ```powershell
 git add scripts/combatv2/session/combat_session_state.gd scripts/combatv2/session/combat_intent_resolver.gd tests/combat_session_state_test.gd tests/combat_intent_resolver_test.gd tests/helpers/combat_test_fixtures.gd
@@ -383,15 +383,15 @@ git commit -m "feat: add atomic combat state resolver"
 
 ---
 
-## Task 3: Implement the stateful `CombatSession` and presentation ACK contract
+## 任务 3：实现有状态 `CombatSession` 与表现确认协议
 
-**Files**
+**文件**
 
-- Create: `scripts/combatv2/session/combat_trigger_queue.gd`
-- Create: `scripts/combatv2/session/combat_session.gd`
-- Test: `tests/combat_session_test.gd`
+- 新建：`scripts/combatv2/session/combat_trigger_queue.gd`
+- 新建：`scripts/combatv2/session/combat_session.gd`
+- 测试：`tests/combat_session_test.gd`
 
-**Consumes**
+**输入接口**
 
 ```gdscript
 CombatSession.new(state: CombatSessionState, intent_resolver: CombatIntentResolver)
@@ -402,7 +402,7 @@ CombatSession.submit_command(command: CombatCommand) -> CombatCommandResult
 CombatSession.close_operation_window() -> void
 ```
 
-**Produces**
+**输出接口**
 
 ```gdscript
 CombatSession.get_phase() -> Phase
@@ -412,9 +412,9 @@ CombatSession.is_finished() -> bool
 CombatSession.build_result() -> CombatResult
 ```
 
-### Step 1: Write the failing session test
+### 步骤 1：编写失败的会话测试
 
-Create `tests/combat_session_test.gd`:
+新建 `tests/combat_session_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -442,17 +442,17 @@ func _init() -> void:
     quit(0)
 ```
 
-### Step 2: Run the test and verify failure
+### 步骤 2：运行测试并确认失败
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_session_test.gd
 ```
 
-Expected: non-zero exit because `CombatSession` and its ACK state do not exist.
+预期：以非零退出码退出，因为 `CombatSession` 及其确认状态尚不存在。
 
-### Step 3: Implement the minimum phase machine
+### 步骤 3：实现最小阶段状态机
 
-Use this phase enum:
+使用以下阶段枚举：
 
 ```gdscript
 enum Phase {
@@ -469,7 +469,7 @@ enum Phase {
 }
 ```
 
-Session invariants:
+会话不变量：
 
 ```gdscript
 func advance_one_event() -> CombatEventBatch:
@@ -489,11 +489,11 @@ func acknowledge_batch(sequence: int) -> bool:
     return true
 ```
 
-`start()` is the only legal transition out of `CREATED`; it atomically creates the `COMBAT_START` batch and marks it pending. `advance_one_event()` commits no more than one major behavior. `submit_command()` only enqueues accepted commands; it never performs an immediate mutation.
+`start()` 是离开 `CREATED` 的唯一合法转换；它原子创建 `COMBAT_START` 批次并将其标记为待表现。`advance_one_event()` 每次最多提交一个主要行为。`submit_command()` 只将已接受的命令入队，绝不立即修改状态。
 
-For this task, `_resolve_next_request()` may support only combat start and a basic player attack placeholder. Tasks 4–7 replace the placeholder with complete attack, trigger, and operation resolution.
+在本任务中，`_resolve_next_request()` 可以只支持战斗开始和一个基础玩家攻击占位实现。任务 4～7 将用完整的攻击、触发和操作结算替换该占位实现。
 
-### Step 4: Run focused tests
+### 步骤 4：运行定向测试
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_session_test.gd
@@ -501,9 +501,9 @@ For this task, `_resolve_next_request()` may support only combat start and a bas
 & $godot --headless --editor --path . --quit
 ```
 
-Expected: all commands exit `0`.
+预期：所有命令均以退出码 `0` 结束。
 
-### Step 5: Commit
+### 步骤 5：提交
 
 ```powershell
 git add scripts/combatv2/session/combat_trigger_queue.gd scripts/combatv2/session/combat_session.gd tests/combat_session_test.gd
@@ -512,33 +512,33 @@ git commit -m "feat: add stateful combat session"
 
 ---
 
-## Task 4: Split player attack and monster attack into separate batches
+## 任务 4：将玩家攻击和怪物攻击拆分为独立批次
 
-**Files**
+**文件**
 
-- Modify: `scripts/combatv2/session/combat_session.gd`
-- Modify: `scripts/combatv2/session/combat_intent_resolver.gd`
-- Modify: `scripts/combatv2/combat_service.gd`
-- Test: `tests/combat_attack_order_test.gd`
-- Modify test: `tests/combatv2_service_test.gd`
+- 修改：`scripts/combatv2/session/combat_session.gd`
+- 修改：`scripts/combatv2/session/combat_intent_resolver.gd`
+- 修改：`scripts/combatv2/combat_service.gd`
+- 测试：`tests/combat_attack_order_test.gd`
+- 修改测试：`tests/combatv2_service_test.gd`
 
-**Consumes**
+**输入接口**
 
 ```gdscript
 CombatSession.advance_one_event() -> CombatEventBatch
 MobInstance.next_action() -> MobAction
 ```
 
-**Produces**
+**输出接口**
 
 ```gdscript
 CombatSession._build_player_attack_intents(card_id: StringName) -> Array[CombatIntent]
 CombatSession._build_monster_attack_intents(card_id: StringName) -> Array[CombatIntent]
 ```
 
-### Step 1: Write the failing attack-order test
+### 步骤 1：编写失败的攻击顺序测试
 
-Create `tests/combat_attack_order_test.gd`:
+新建 `tests/combat_attack_order_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -598,19 +598,19 @@ func _make_session(card_points: int, monster_health: int):
     return SessionScript.new(state, ResolverScript.new())
 ```
 
-Add helpers required by the snippet directly in this test rather than relying on implicit framework behavior.
+将代码片段需要的辅助函数直接添加到该测试中，不要依赖测试框架的隐式行为。
 
-### Step 2: Run the test and verify failure
+### 步骤 2：运行测试并确认失败
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_attack_order_test.gd
 ```
 
-Expected: non-zero exit because player damage and retaliation are still resolved together or the operation-window transition is absent.
+预期：以非零退出码退出，因为玩家伤害与怪物反击仍在一起结算，或者尚未实现操作窗口转换。
 
-### Step 3: Move clash behavior behind distinct request types
+### 步骤 3：将交战行为拆分到不同请求类型之后
 
-Required ordering:
+要求的顺序：
 
 ```text
 PLAYER_ATTACK
@@ -620,11 +620,11 @@ PLAYER_ATTACK
 → MONSTER_ATTACK
 ```
 
-Player batch intents may damage only the monster. Monster batch intents may damage only the current target card. The batch `cause_snapshot` records source card ID, target ID, requested amount, and attack phase; it does not store a reference to a mutable card.
+玩家批次中的意图只能伤害怪物；怪物批次中的意图只能伤害当前目标卡牌。批次的 `cause_snapshot` 记录来源卡牌 ID、目标 ID、请求数值和攻击阶段，不保存任何可变卡牌引用。
 
-Remove the mixed player/monster `CombatEffectDraft` construction from `_resolve_card_clash()` in `combat_service.gd`. Keep `resolve_encounter()` temporarily as a compatibility adapter that repeatedly advances and ACKs a session until it can build a `CombatResult`. Mark it internal/legacy in its doc comment; callers are migrated in Task 11.
+移除 `combat_service.gd` 的 `_resolve_card_clash()` 中混合玩家与怪物行为的 `CombatEffectDraft` 构建逻辑。暂时保留 `resolve_encounter()` 作为兼容适配器：重复推进并确认会话，直到能够构建 `CombatResult`。在文档注释中将其标记为内部/旧接口；调用方在任务 11 中迁移。
 
-Terminal check rule:
+终局检查规则：
 
 ```gdscript
 func _after_player_attack_committed() -> void:
@@ -634,9 +634,9 @@ func _after_player_attack_committed() -> void:
     _phase = Phase.PLAYER_OPERATION_WINDOW
 ```
 
-Do not enqueue a monster attack until the operation window is closed and post-player triggers are exhausted.
+在玩家操作窗口关闭且玩家攻击后的触发全部处理完之前，不得将怪物攻击入队。
 
-### Step 4: Run focused and combat regressions
+### 步骤 4：运行定向测试和战斗回归测试
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_attack_order_test.gd
@@ -645,9 +645,9 @@ Do not enqueue a monster attack until the operation window is closed and post-pl
 & $godot --headless --editor --path . --quit
 ```
 
-Expected: all commands exit `0`; existing balance outcomes remain unchanged even though their internal event batching is now separated.
+预期：所有命令均以退出码 `0` 结束；虽然内部事件批次已经拆分，但现有数值平衡结果保持不变。
 
-### Step 5: Commit
+### 步骤 5：提交
 
 ```powershell
 git add scripts/combatv2/session/combat_session.gd scripts/combatv2/session/combat_intent_resolver.gd scripts/combatv2/combat_service.gd tests/combat_attack_order_test.gd tests/combatv2_service_test.gd
@@ -656,37 +656,37 @@ git commit -m "refactor: separate combat attack phases"
 
 ---
 
-## Task 5: Replace implicit rule timing with an explicit trigger queue and dispatcher
+## 任务 5：用显式触发队列和分发器替代隐式规则时序
 
-**Files**
+**文件**
 
-- Create: `scripts/combatv2/session/combat_rule_dispatcher.gd`
-- Modify: `scripts/combatv2/session/combat_trigger_queue.gd`
-- Modify: `scripts/combatv2/session/combat_session.gd`
-- Modify: `scripts/combatv2/protocol/combat_trigger_request.gd`
-- Modify: `scripts/combatv2/card/card_rule.gd`
-- Modify: `scripts/combatv2/card/rules/armored_next_card_point_bonus_rule.gd`
-- Modify: `scripts/combatv2/card/rules/behind_head_pre_trigger_rule.gd`
-- Modify: `scripts/combatv2/card/rules/card_damage_multiplier_rule.gd`
-- Modify: `scripts/combatv2/card/rules/chain_length_head_armor_bonus_rule.gd`
-- Modify: `scripts/combatv2/card/rules/chain_length_head_point_bonus_rule.gd`
-- Modify: `scripts/combatv2/card/rules/combat_start_point_bonus_rule.gd`
-- Modify: `scripts/combatv2/card/rules/first_card_damage_double_rule.gd`
-- Modify: `scripts/combatv2/card/rules/last_card_defense_bonus_rule.gd`
-- Modify: `scripts/combatv2/card/rules/last_card_defense_double_rule.gd`
-- Modify: `scripts/combatv2/card/rules/next_card_armor_bonus_rule.gd`
-- Modify: `scripts/combatv2/card/rules/next_card_point_bonus_rule.gd`
-- Modify: `scripts/combatv2/card/rules/previous_defense_damage_bonus_rule.gd`
-- Modify: `scripts/combatv2/card/rules/previous_defense_heal_bonus_rule.gd`
-- Modify: `scripts/combatv2/card/rules/previous_weapon_damage_bonus_rule.gd`
-- Modify: `scripts/combatv2/card/rules/previous_weapon_damage_double_rule.gd`
-- Modify: `scripts/combatv2/mob_effect.gd`
-- Modify: `scripts/combatv2/mob_effects/mob_effect_rear_shock.gd`
-- Modify: `scripts/combatv2/mob_effects/mob_effect_shield_break.gd`
-- Test: `tests/combat_trigger_queue_test.gd`
-- Modify test: `tests/combatv2_card_rule_test.gd`
+- 新建：`scripts/combatv2/session/combat_rule_dispatcher.gd`
+- 修改：`scripts/combatv2/session/combat_trigger_queue.gd`
+- 修改：`scripts/combatv2/session/combat_session.gd`
+- 修改：`scripts/combatv2/protocol/combat_trigger_request.gd`
+- 修改：`scripts/combatv2/card/card_rule.gd`
+- 修改：`scripts/combatv2/card/rules/armored_next_card_point_bonus_rule.gd`
+- 修改：`scripts/combatv2/card/rules/behind_head_pre_trigger_rule.gd`
+- 修改：`scripts/combatv2/card/rules/card_damage_multiplier_rule.gd`
+- 修改：`scripts/combatv2/card/rules/chain_length_head_armor_bonus_rule.gd`
+- 修改：`scripts/combatv2/card/rules/chain_length_head_point_bonus_rule.gd`
+- 修改：`scripts/combatv2/card/rules/combat_start_point_bonus_rule.gd`
+- 修改：`scripts/combatv2/card/rules/first_card_damage_double_rule.gd`
+- 修改：`scripts/combatv2/card/rules/last_card_defense_bonus_rule.gd`
+- 修改：`scripts/combatv2/card/rules/last_card_defense_double_rule.gd`
+- 修改：`scripts/combatv2/card/rules/next_card_armor_bonus_rule.gd`
+- 修改：`scripts/combatv2/card/rules/next_card_point_bonus_rule.gd`
+- 修改：`scripts/combatv2/card/rules/previous_defense_damage_bonus_rule.gd`
+- 修改：`scripts/combatv2/card/rules/previous_defense_heal_bonus_rule.gd`
+- 修改：`scripts/combatv2/card/rules/previous_weapon_damage_bonus_rule.gd`
+- 修改：`scripts/combatv2/card/rules/previous_weapon_damage_double_rule.gd`
+- 修改：`scripts/combatv2/mob_effect.gd`
+- 修改：`scripts/combatv2/mob_effects/mob_effect_rear_shock.gd`
+- 修改：`scripts/combatv2/mob_effects/mob_effect_shield_break.gd`
+- 测试：`tests/combat_trigger_queue_test.gd`
+- 修改测试：`tests/combatv2_card_rule_test.gd`
 
-**Consumes**
+**输入接口**
 
 ```gdscript
 CombatTriggerQueue.enqueue(request: CombatTriggerRequest) -> void
@@ -697,7 +697,7 @@ CombatRuleDispatcher.collect(state: CombatSessionState, request: CombatTriggerRe
 CombatRuleDispatcher.build_intents(state: CombatSessionState, request: CombatTriggerRequest) -> Array[CombatIntent]
 ```
 
-**Produces**
+**输出接口**
 
 ```gdscript
 CardRule.get_supported_triggers() -> Array[int]
@@ -707,9 +707,9 @@ MobEffect.get_supported_triggers() -> Array[int]
 MobEffect.build_intents(context: Dictionary) -> Array[CombatIntent]
 ```
 
-### Step 1: Write the failing trigger-queue test
+### 步骤 1：编写失败的触发队列测试
 
-Create `tests/combat_trigger_queue_test.gd`:
+新建 `tests/combat_trigger_queue_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -730,7 +730,7 @@ func _init() -> void:
     quit(0)
 ```
 
-Extend the same file with survival and loop-guard cases:
+在同一文件中补充存活策略和循环保护用例：
 
 ```gdscript
 func _test_depleted_source_obeys_survival_policy() -> void:
@@ -755,9 +755,9 @@ func _test_trigger_chain_limit_faults_instead_of_looping() -> void:
     assert(session.get_fault()[&"reason"] == &"trigger_chain_limit_exceeded")
 ```
 
-Define survival policy flags on `CombatTriggerRequest`: `REQUIRE_SOURCE_ACTIVE`, `REQUIRE_SOURCE_PRESENT`, `ALLOW_SOURCE_DEPLETED`, `REQUIRE_TARGET_ACTIVE`, `REQUIRE_TARGET_PRESENT`, `RETARGET_ON_RESOLVE`, `CANCEL_ON_COMBAT_END`, and `EXECUTE_DURING_COMBAT_END`.
+在 `CombatTriggerRequest` 上定义以下存活策略标志：`REQUIRE_SOURCE_ACTIVE`、`REQUIRE_SOURCE_PRESENT`、`ALLOW_SOURCE_DEPLETED`、`REQUIRE_TARGET_ACTIVE`、`REQUIRE_TARGET_PRESENT`、`RETARGET_ON_RESOLVE`、`CANCEL_ON_COMBAT_END` 和 `EXECUTE_DURING_COMBAT_END`。
 
-Extend `tests/combatv2_card_rule_test.gd` with a session-level case:
+在 `tests/combatv2_card_rule_test.gd` 中添加会话级用例：
 
 ```gdscript
 func _test_finished_trigger_can_enqueue_follow_up_trigger() -> void:
@@ -770,22 +770,22 @@ func _test_finished_trigger_can_enqueue_follow_up_trigger() -> void:
     _expect(second_trigger.cause_snapshot[&"source_id"] == &"follower", "completion trigger resolves second")
 ```
 
-The fixture uses two test rules: one supports `COMBAT_STARTED`; the other supports `CARD_TRIGGER_FINISHED` for source `starter`.
+测试夹具使用两条测试规则：一条响应 `COMBAT_STARTED`；另一条响应来源为 `starter` 的 `CARD_TRIGGER_FINISHED`。
 
-### Step 2: Run the tests and verify failure
+### 步骤 2：运行测试并确认失败
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_trigger_queue_test.gd
 & $godot --headless --path . --script res://tests/combatv2_card_rule_test.gd
 ```
 
-Expected: queue priority/order and completion-trigger chaining are not yet available.
+预期：测试失败，因为队列优先级/顺序以及完成后触发链尚未实现。
 
-### Step 3: Implement deterministic trigger scheduling
+### 步骤 3：实现确定性的触发调度
 
-Queue order is `(priority ascending, insertion_sequence ascending)`. A trigger request contains type, source ID, cause snapshot, priority, and insertion sequence. It contains no resolved amount.
+队列顺序为 `(priority 升序, insertion_sequence 升序)`。触发请求包含类型、来源 ID、原因快照、优先级和插入序号，不包含已经结算的数值。
 
-Dispatcher algorithm:
+分发器算法：
 
 ```gdscript
 func collect(state: CombatSessionState, request: CombatTriggerRequest) -> Array[CombatTriggerRequest]:
@@ -802,15 +802,15 @@ func collect(state: CombatSessionState, request: CombatTriggerRequest) -> Array[
     return matches
 ```
 
-When a card rule resolves, record its trigger count, emit `CARD_TRIGGER_FINISHED`, then enqueue `CARD_TRIGGER_FINISHED` with a cause snapshot containing the completed source card/rule IDs. When a front/current card becomes depleted, enqueue `FRONT_CARD_DEPLETED`. Do not recursively execute a trigger during event construction; every rule resolution must become its own `CARD_TRIGGER` batch.
+卡牌规则结算后，记录其触发次数，发出 `CARD_TRIGGER_FINISHED`，随后将新的 `CARD_TRIGGER_FINISHED` 请求入队；其原因快照包含已完成的来源卡牌/规则 ID。前方或当前卡牌耗尽时，将 `FRONT_CARD_DEPLETED` 入队。构建事件时不得递归执行触发器；每次规则结算都必须形成独立的 `CARD_TRIGGER` 批次。
 
-Before dequeuing, enforce the request's survival policy against the latest session state. Ordinary ongoing effects default to active source/target plus `CANCEL_ON_COMBAT_END`; death effects explicitly use `ALLOW_SOURCE_DEPLETED`. Only requests marked `EXECUTE_DURING_COMBAT_END` may survive the ending phase. `RETARGET_ON_RESOLVE` is opt-in; fixed operation-card targets never use it.
+请求出队前，必须依据最新会话状态检查其存活策略。普通持续效果默认要求来源和目标仍有效，并使用 `CANCEL_ON_COMBAT_END`；死亡效果必须显式使用 `ALLOW_SOURCE_DEPLETED`。只有标记了 `EXECUTE_DURING_COMBAT_END` 的请求才能在结束阶段继续存在。`RETARGET_ON_RESOLVE` 必须显式启用；固定目标的操作卡绝不能使用它。
 
-Track a monotonically increasing trigger sequence, `root_cause_id`, atomic-chain depth, and per-session trigger count. Default guards are 64 triggers per atomic chain and 512 per combat. Exceeding either guard faults the session with `trigger_chain_limit_exceeded` rather than recursing or hanging.
+跟踪单调递增的触发序号、`root_cause_id`、原子链深度和单场战斗触发总数。默认限制为每条原子链最多 64 次触发、每场战斗最多 512 次。超过任一限制时，以 `trigger_chain_limit_exceeded` 将会话置为故障状态，而不是继续递归或卡死。
 
-Adapt every existing card rule and mob effect listed under **Files** to emit intents instead of mutating a draft. Preserve existing exported fields so `.tres` resources continue loading. Keep a temporary draft-to-intent compatibility helper only inside this task if needed to migrate one resource at a time; remove that helper before the task commit.
+改造 **文件** 列表中的所有现有卡牌规则和怪物效果，使其发出意图而不是修改草案。保留已有导出字段，确保 `.tres` 资源继续正常加载。如需逐个迁移资源，可以仅在本任务期间保留临时的草案到意图兼容辅助函数，但必须在提交本任务前删除。
 
-### Step 4: Run focused and rule regressions
+### 步骤 4：运行定向测试和规则回归测试
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_trigger_queue_test.gd
@@ -820,9 +820,9 @@ Adapt every existing card rule and mob effect listed under **Files** to emit int
 & $godot --headless --editor --path . --quit
 ```
 
-Expected: all commands exit `0`; rule order is deterministic and each trigger is independently observable.
+预期：所有命令均以退出码 `0` 结束；规则顺序确定，并且每次触发都可以被独立观察。
 
-### Step 5: Commit
+### 步骤 5：提交
 
 ```powershell
 git add scripts/combatv2/session/combat_rule_dispatcher.gd scripts/combatv2/session/combat_trigger_queue.gd scripts/combatv2/session/combat_session.gd scripts/combatv2/protocol/combat_trigger_request.gd scripts/combatv2/card/card_rule.gd scripts/combatv2/card/rules scripts/combatv2/mob_effect.gd scripts/combatv2/mob_effects tests/combat_trigger_queue_test.gd tests/combatv2_card_rule_test.gd
@@ -831,23 +831,23 @@ git commit -m "refactor: make combat trigger timing explicit"
 
 ---
 
-## Task 6: Define generic combat-operation cards and transactional resolution
+## 任务 6：定义通用战斗操作卡与事务式结算
 
-**Files**
+**文件**
 
-- Modify: `scripts/card/card_data.gd`
-- Create: `scripts/combatv2/operation/combat_operation_definition.gd`
-- Create: `scripts/combatv2/operation/combat_target_spec.gd`
-- Create: `scripts/combatv2/operation/combat_cost_spec.gd`
-- Create: `scripts/combatv2/operation/card_disposition_spec.gd`
-- Create: `scripts/combatv2/operation/combat_operation_effect.gd`
-- Create: `scripts/combatv2/operation/combat_operation_resolver.gd`
-- Modify: `scripts/combatv2/session/combat_session.gd`
-- Create: `tests/helpers/combat_operation_test_fixture.gd`
-- Test: `tests/combat_operation_resolver_test.gd`
-- Test: `tests/combat_pending_request_revalidation_test.gd`
+- 修改：`scripts/card/card_data.gd`
+- 新建：`scripts/combatv2/operation/combat_operation_definition.gd`
+- 新建：`scripts/combatv2/operation/combat_target_spec.gd`
+- 新建：`scripts/combatv2/operation/combat_cost_spec.gd`
+- 新建：`scripts/combatv2/operation/card_disposition_spec.gd`
+- 新建：`scripts/combatv2/operation/combat_operation_effect.gd`
+- 新建：`scripts/combatv2/operation/combat_operation_resolver.gd`
+- 修改：`scripts/combatv2/session/combat_session.gd`
+- 新建：`tests/helpers/combat_operation_test_fixture.gd`
+- 测试：`tests/combat_operation_resolver_test.gd`
+- 测试：`tests/combat_pending_request_revalidation_test.gd`
 
-**Consumes**
+**输入接口**
 
 ```gdscript
 CardData.combat_operation: CombatOperationDefinition
@@ -855,7 +855,7 @@ CombatOperationResolver.validate(state: CombatSessionState, command: PlayCombatO
 CombatOperationResolver.resolve(state: CombatSessionState, command: PlayCombatOperationCommand, sequence: int) -> CombatEventBatch
 ```
 
-**Produces**
+**输出接口**
 
 ```gdscript
 CombatOperationDefinition.target_spec: CombatTargetSpec
@@ -866,9 +866,9 @@ CombatSessionState.get_operation_card(card_id: StringName) -> CardInstance
 CombatOperationEffect.build_intents(context: Dictionary) -> Array[CombatIntent]
 ```
 
-### Step 1: Write the failing operation-resolver test
+### 步骤 1：编写失败的操作解析器测试
 
-Create `tests/combat_operation_resolver_test.gd`:
+新建 `tests/combat_operation_resolver_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -897,9 +897,9 @@ func _init() -> void:
     quit(0)
 ```
 
-`combat_operation_test_fixture.gd` creates an operation definition with a three-gold cost, fixed card target, consume-on-success disposition, and a two-shield test effect.
+`combat_operation_test_fixture.gd` 创建一个操作定义：消耗 3 金币、固定卡牌目标、成功后消耗操作卡，并附带增加 2 点护盾的测试效果。
 
-Create `tests/combat_pending_request_revalidation_test.gd`:
+新建 `tests/combat_pending_request_revalidation_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -928,42 +928,42 @@ func _init() -> void:
     quit(0)
 ```
 
-The fixture gives the operation `+3` shield and the pending monster attack `2` damage. The assertion proves that the already committed player batch remains unchanged while the uncommitted monster request reads the latest shield at dequeue time.
+测试夹具让操作增加 `3` 点护盾，并让待处理的怪物攻击造成 `2` 点伤害。该断言用于证明：已经提交的玩家批次保持不变，而尚未提交的怪物请求会在出队时读取最新护盾值。
 
-Add another case to `tests/combat_operation_resolver_test.gd` that submits two three-gold commands while five gold is visible. The first command resolves; the second emits `COMMAND_REJECTED` with `insufficient_resource`, consumes no second card, and does not auto-retarget.
+在 `tests/combat_operation_resolver_test.gd` 中再添加一个用例：可见金币为 5 时，依次提交两个各消耗 3 金币的命令。第一个命令成功结算；第二个命令发出原因是 `insufficient_resource` 的 `COMMAND_REJECTED`，不消耗第二张卡，也不自动重新选择目标。
 
-### Step 2: Run the tests and verify failure
+### 步骤 2：运行测试并确认失败
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_operation_resolver_test.gd
 & $godot --headless --path . --script res://tests/combat_pending_request_revalidation_test.gd
 ```
 
-Expected: non-zero exit because operation definitions and resolver do not exist.
+预期：以非零退出码退出，因为操作定义和解析器尚不存在。
 
-### Step 3: Implement validate-then-commit operation resolution
+### 步骤 3：实现“先验证、后提交”的操作结算
 
-Add to `CardData`:
+向 `CardData` 添加：
 
 ```gdscript
 @export_group("Combat Operation")
 @export var combat_operation: CombatOperationDefinition
 ```
 
-Validation order:
+验证顺序：
 
-1. Command ID has not already been accepted.
-2. Session is in `PLAYER_OPERATION_WINDOW`.
-3. Operation card exists in the session operation-card map.
-4. Card has a `combat_operation` definition.
-5. Target exists and matches `CombatTargetSpec`.
-6. Cost is affordable.
-7. Every effect can build valid intents for the current state.
-8. Card disposition is legal.
+1. 命令 ID 尚未被接受过。
+2. 会话处于 `PLAYER_OPERATION_WINDOW`。
+3. 操作卡存在于会话的操作卡映射中。
+4. 卡牌具有 `combat_operation` 定义。
+5. 目标存在且符合 `CombatTargetSpec`。
+6. 当前资源足以支付费用。
+7. 每个效果都能针对当前状态构建有效意图。
+8. 卡牌去向合法。
 
-Resolver then builds a complete intent array, validates that array without mutation, and commits it once through `CombatIntentResolver`. On failure, return `CombatCommandResult.rejected(...)` and do not spend, move, consume, or mutate anything.
+随后，解析器构建完整意图数组，在不修改状态的情况下验证整个数组，并通过 `CombatIntentResolver` 一次性提交。失败时返回 `CombatCommandResult.rejected(...)`，且不得消耗资源、移动卡牌、消耗卡牌或进行任何状态修改。
 
-Minimum resolver shape:
+解析器的最小结构：
 
 ```gdscript
 func resolve(state: CombatSessionState, command: PlayCombatOperationCommand, sequence: int) -> CombatEventBatch:
@@ -983,9 +983,9 @@ func resolve(state: CombatSessionState, command: PlayCombatOperationCommand, seq
     return CombatEventBatch.new(sequence, CombatEventBatch.Kind.COMBAT_OPERATION, events, {&"command_id": command.command_id, &"operation_card_id": command.operation_card_id, &"target_id": command.target_id})
 ```
 
-`CombatSession.submit_command()` accepts valid commands in submission order and stores command IDs for idempotency. Dequeue-time validation runs again because earlier commands may have changed target, cost, or chain state. Invalid fixed targets reject; never auto-retarget.
+`CombatSession.submit_command()` 按提交顺序接受有效命令，并保存命令 ID 以保证幂等性。请求出队时必须再次验证，因为更早的命令可能已经改变目标、费用或牌链状态。固定目标失效时直接拒绝，绝不自动重新选择目标。
 
-### Step 4: Run focused tests
+### 步骤 4：运行定向测试
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_operation_resolver_test.gd
@@ -995,9 +995,9 @@ func resolve(state: CombatSessionState, command: PlayCombatOperationCommand, seq
 & $godot --headless --editor --path . --quit
 ```
 
-Expected: all commands exit `0`.
+预期：所有命令均以退出码 `0` 结束。
 
-### Step 5: Commit
+### 步骤 5：提交
 
 ```powershell
 git add scripts/card/card_data.gd scripts/combatv2/operation scripts/combatv2/session/combat_session.gd tests/combat_operation_resolver_test.gd tests/combat_pending_request_revalidation_test.gd tests/helpers/combat_operation_test_fixture.gd
@@ -1006,26 +1006,26 @@ git commit -m "feat: add generic combat operation pipeline"
 
 ---
 
-## Task 7: Implement retreat and gold-for-shield operation effects
+## 任务 7：实现撤退和金币强化护盾操作效果
 
-**Files**
+**文件**
 
-- Create: `scripts/combatv2/operation/retreat_operation_effect.gd`
-- Create: `scripts/combatv2/operation/add_card_shield_operation_effect.gd`
-- Modify: `scripts/combatv2/session/combat_intent_resolver.gd`
-- Modify: `scripts/combatv2/session/combat_session.gd`
-- Modify: `tests/helpers/combat_operation_test_fixture.gd`
-- Test: `tests/combat_retreat_operation_test.gd`
-- Test: `tests/combat_gold_shield_operation_test.gd`
+- 新建：`scripts/combatv2/operation/retreat_operation_effect.gd`
+- 新建：`scripts/combatv2/operation/add_card_shield_operation_effect.gd`
+- 修改：`scripts/combatv2/session/combat_intent_resolver.gd`
+- 修改：`scripts/combatv2/session/combat_session.gd`
+- 修改：`tests/helpers/combat_operation_test_fixture.gd`
+- 测试：`tests/combat_retreat_operation_test.gd`
+- 测试：`tests/combat_gold_shield_operation_test.gd`
 
-**Consumes**
+**输入接口**
 
 ```gdscript
 RetreatOperationEffect.build_intents(context: Dictionary) -> Array[CombatIntent]
 AddCardShieldOperationEffect.build_intents(context: Dictionary) -> Array[CombatIntent]
 ```
 
-**Produces**
+**输出接口**
 
 ```gdscript
 CombatSessionState.returned_card_ids: Array[StringName]
@@ -1033,9 +1033,9 @@ CombatSessionState.consumed_operation_card_ids: Array[StringName]
 CombatSessionState.retreat_requested: bool
 ```
 
-### Step 1: Write the failing retreat test
+### 步骤 1：编写失败的撤退测试
 
-Create `tests/combat_retreat_operation_test.gd`:
+新建 `tests/combat_retreat_operation_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -1068,11 +1068,11 @@ func _init() -> void:
     quit(0)
 ```
 
-Add a second case that targets an ID absent from the current chain and asserts: rejection batch, unchanged chain, unchanged monster enhancement, and unconsumed retreat card.
+添加第二个用例，目标 ID 不存在于当前牌链中，并断言：产生拒绝批次、牌链不变、怪物强化层数不变、撤退卡未被消耗。
 
-### Step 2: Write the failing gold-for-shield test
+### 步骤 2：编写失败的金币强化护盾测试
 
-Create `tests/combat_gold_shield_operation_test.gd`:
+新建 `tests/combat_gold_shield_operation_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -1097,20 +1097,20 @@ func _init() -> void:
     quit(0)
 ```
 
-Add insufficient-gold and stale-target cases. Both must reject without partial mutation.
+添加金币不足和目标过期用例。两种情况都必须拒绝，并且不能产生部分修改。
 
-### Step 3: Run tests and verify failure
+### 步骤 3：运行测试并确认失败
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_retreat_operation_test.gd
 & $godot --headless --path . --script res://tests/combat_gold_shield_operation_test.gd
 ```
 
-Expected: both fail because the concrete effects and chain-cut intents are absent.
+预期：两个测试都失败，因为具体操作效果和断开牌链意图尚不存在。
 
-### Step 4: Implement concrete effects and retreat termination
+### 步骤 4：实现具体效果与撤退终止逻辑
 
-Retreat effect intents, in order:
+撤退效果按以下顺序生成意图：
 
 ```gdscript
 return [
@@ -1121,20 +1121,20 @@ return [
 ]
 ```
 
-The resolver calculates the target index when applying `CUT_CHAIN_FROM_TARGET`, stores the removed ordered IDs, and uses exactly those IDs for `MOVE_CARDS_TO_HAND`. With `root → B → A → C → head` and target `A`, retained IDs are `root, B`; returned IDs are `A, C, head`.
+解析器应用 `CUT_CHAIN_FROM_TARGET` 时计算目标索引，保存按顺序移除的 ID，并将这些 ID 原样用于 `MOVE_CARDS_TO_HAND`。对于 `root → B → A → C → head` 且目标为 `A` 的情况，保留的 ID 是 `root, B`，返回手牌的 ID 是 `A, C, head`。
 
-On successful retreat:
+撤退成功后：
 
-- Preserve damage already committed.
-- Skip all later triggers and monster attack.
-- Include already depleted cards in settlement.
-- Do not award victory rewards.
-- Call `MobInstance.gain_enhancement()` exactly once.
-- Consume the retreat operation card.
+- 保留已经提交的伤害。
+- 跳过后续所有触发和怪物攻击。
+- 已经耗尽的卡牌仍纳入最终结算。
+- 不发放胜利奖励。
+- 只调用一次 `MobInstance.gain_enhancement()`。
+- 消耗撤退操作卡。
 
-Gold-for-shield builds `SPEND_RESOURCE` followed by `ADD_CARD_SHIELD`; its operation definition adds the shared consume-on-success disposition intent. Validate affordability and target existence before any intent commits.
+金币强化护盾操作先构建 `SPEND_RESOURCE`，再构建 `ADD_CARD_SHIELD`；其操作定义还会加入通用的“成功后消耗卡牌”去向意图。在提交任何意图前，必须验证费用可支付且目标仍然存在。
 
-### Step 5: Run focused tests and regressions
+### 步骤 5：运行定向测试和回归测试
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_retreat_operation_test.gd
@@ -1145,9 +1145,9 @@ Gold-for-shield builds `SPEND_RESOURCE` followed by `ADD_CARD_SHIELD`; its opera
 & $godot --headless --editor --path . --quit
 ```
 
-Expected: all commands exit `0`.
+预期：所有命令均以退出码 `0` 结束。
 
-### Step 6: Commit
+### 步骤 6：提交
 
 ```powershell
 git add scripts/combatv2/operation/retreat_operation_effect.gd scripts/combatv2/operation/add_card_shield_operation_effect.gd scripts/combatv2/session/combat_intent_resolver.gd scripts/combatv2/session/combat_session.gd tests/combat_retreat_operation_test.gd tests/combat_gold_shield_operation_test.gd tests/helpers/combat_operation_test_fixture.gd
@@ -1156,17 +1156,17 @@ git commit -m "feat: add in-combat retreat and shield operations"
 
 ---
 
-## Task 8: Add combat speed, advancement gates, and settlement scheduling
+## 任务 8：添加战斗速度、推进门控与结算调度
 
-**Files**
+**文件**
 
-- Create: `scripts/combatv2/runtime/combat_speed_controller.gd`
-- Create: `scripts/combatv2/runtime/combat_advance_gate.gd`
-- Create: `scripts/combatv2/runtime/combat_scheduler.gd`
-- Test: `tests/combat_speed_controller_test.gd`
-- Test: `tests/combat_scheduler_test.gd`
+- 新建：`scripts/combatv2/runtime/combat_speed_controller.gd`
+- 新建：`scripts/combatv2/runtime/combat_advance_gate.gd`
+- 新建：`scripts/combatv2/runtime/combat_scheduler.gd`
+- 测试：`tests/combat_speed_controller_test.gd`
+- 测试：`tests/combat_scheduler_test.gd`
 
-**Consumes**
+**输入接口**
 
 ```gdscript
 CombatSpeedController.set_speed_multiplier(value: float) -> void
@@ -1176,7 +1176,7 @@ CombatScheduler.begin_wait(base_duration_seconds: float) -> void
 CombatScheduler.advance(delta_seconds: float) -> bool
 ```
 
-**Produces**
+**输出接口**
 
 ```gdscript
 CombatSpeedController.speed_multiplier: float
@@ -1186,9 +1186,9 @@ CombatScheduler.get_remaining_real_seconds() -> float
 CombatScheduler.delay_ready: bool
 ```
 
-### Step 1: Write the failing speed-controller test
+### 步骤 1：编写失败的战斗速度控制器测试
 
-Create `tests/combat_speed_controller_test.gd`:
+新建 `tests/combat_speed_controller_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -1207,9 +1207,9 @@ func _init() -> void:
     quit(0)
 ```
 
-### Step 2: Write the failing scheduler/gate test
+### 步骤 2：编写失败的调度器/门控测试
 
-Create `tests/combat_scheduler_test.gd`:
+新建 `tests/combat_scheduler_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -1241,18 +1241,18 @@ func _init() -> void:
     quit(0)
 ```
 
-### Step 3: Run tests and verify failure
+### 步骤 3：运行测试并确认失败
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_speed_controller_test.gd
 & $godot --headless --path . --script res://tests/combat_scheduler_test.gd
 ```
 
-Expected: both fail because runtime timing classes are absent.
+预期：两个测试都失败，因为运行时计时类尚不存在。
 
-### Step 4: Implement speed as combat-time scaling
+### 步骤 4：将战斗速度实现为战斗时间缩放
 
-Name all UI-facing properties and methods “combat speed” / `combat_speed`; do not call this “playback speed”. Suggested bounds:
+所有面向 UI 的属性和方法统一命名为“战斗速度”/`combat_speed`，不得称为“播放速度”。建议范围：
 
 ```gdscript
 const MIN_SPEED := 0.25
@@ -1263,7 +1263,7 @@ func scale_duration(base_seconds: float) -> float:
     return maxf(base_seconds, 0.0) / speed_multiplier
 ```
 
-Track scheduler progress in normalized combat time:
+使用归一化战斗时间跟踪调度进度：
 
 ```gdscript
 func advance(real_delta: float) -> bool:
@@ -1278,18 +1278,18 @@ func get_remaining_real_seconds() -> float:
     return maxf(_base_duration - _elapsed_combat_seconds, 0.0) / _speed.speed_multiplier
 ```
 
-Changing speed therefore preserves elapsed fraction and rescales only the remaining real time.
+因此，改变战斗速度会保留已经经过的进度比例，只重新缩放剩余的现实时间。
 
-Gate equation:
+门控条件：
 
 ```gdscript
 func can_advance() -> bool:
     return settlement_delay_ready and presentation_ready and _interaction_holds.is_empty()
 ```
 
-Interaction holds are keyed by owner so repeated begin/end calls are idempotent. An active card drag uses owner `&"operation_drag"`.
+交互占用以所有者为键，使重复的开始/结束调用保持幂等。正在进行的操作卡拖拽使用所有者 `&"operation_drag"`。
 
-### Step 5: Run focused tests
+### 步骤 5：运行定向测试
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_speed_controller_test.gd
@@ -1297,9 +1297,9 @@ Interaction holds are keyed by owner so repeated begin/end calls are idempotent.
 & $godot --headless --editor --path . --quit
 ```
 
-Expected: all commands exit `0`.
+预期：所有命令均以退出码 `0` 结束。
 
-### Step 6: Commit
+### 步骤 6：提交
 
 ```powershell
 git add scripts/combatv2/runtime tests/combat_speed_controller_test.gd tests/combat_scheduler_test.gd
@@ -1308,19 +1308,19 @@ git commit -m "feat: add combat speed and advancement gates"
 
 ---
 
-## Task 9: Add target-only operation preview and a generic drag adapter
+## 任务 9：添加仅显示目标的操作预览与通用拖拽适配器
 
-**Files**
+**文件**
 
-- Create: `scripts/combatv2/operation/combat_operation_target_preview.gd`
-- Create: `scripts/game/event/encounter/combat_operation_drag_adapter.gd`
-- Modify: `scripts/game/drag_layer/dragger_layer.gd`
-- Create: `tests/helpers/combat_drag_test_fixture.gd`
-- Test: `tests/combat_operation_drag_adapter_test.gd`
-- Modify test: `tests/dragger_layer_test.gd`
-- Modify test: `tests/drag_layer_retraction_test.gd`
+- 新建：`scripts/combatv2/operation/combat_operation_target_preview.gd`
+- 新建：`scripts/game/event/encounter/combat_operation_drag_adapter.gd`
+- 修改：`scripts/game/drag_layer/dragger_layer.gd`
+- 新建：`tests/helpers/combat_drag_test_fixture.gd`
+- 测试：`tests/combat_operation_drag_adapter_test.gd`
+- 修改测试：`tests/dragger_layer_test.gd`
+- 修改测试：`tests/drag_layer_retraction_test.gd`
 
-**Consumes**
+**输入接口**
 
 ```gdscript
 CombatOperationDragAdapter.configure(board_zone: BoardZone, preview_provider: Callable, command_sink: Callable)
@@ -1331,7 +1331,7 @@ BoardZone.get_cards() -> Array[Card]
 CardEntity.get_card_view_screen_rect() -> Rect2
 ```
 
-**Produces**
+**输出接口**
 
 ```gdscript
 CombatOperationTargetPreview.target_id: StringName
@@ -1343,9 +1343,9 @@ DraggerLayer.combat_operation_drag_hold_changed(active: bool)
 DraggerLayer.configure_combat_operation_adapter(adapter: CombatOperationDragAdapter) -> void
 ```
 
-### Step 1: Write the failing drag-adapter test
+### 步骤 1：编写失败的拖拽适配器测试
 
-Create `tests/combat_operation_drag_adapter_test.gd`:
+新建 `tests/combat_operation_drag_adapter_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -1379,21 +1379,21 @@ func _has_property(value: Object, property_name: StringName) -> bool:
     return value.get_property_list().any(func(entry: Dictionary): return entry[&"name"] == property_name)
 ```
 
-The overlap point is inside both root and head card rectangles. The expected target is the head because the adapter iterates `BoardZone.get_cards()` in reverse chain/draw order.
+重叠点同时位于尾部卡牌和头部卡牌的矩形范围内。预期目标是头部卡牌，因为适配器按照牌链/绘制顺序的逆序遍历 `BoardZone.get_cards()`。
 
-Add invalid-target and no-target cases. They must submit no command and expose only `target_id`, validity, highlight style, and rejection reason.
+添加无效目标和无目标用例。两种情况都不得提交命令，预览只能暴露 `target_id`、有效性、高亮样式和拒绝原因。
 
-### Step 2: Run the test and verify failure
+### 步骤 2：运行测试并确认失败
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_operation_drag_adapter_test.gd
 ```
 
-Expected: non-zero exit because the preview DTO and adapter do not exist.
+预期：以非零退出码退出，因为预览 DTO 和适配器尚不存在。
 
-### Step 3: Implement a UI-only adapter
+### 步骤 3：实现仅负责 UI 的适配器
 
-Preview DTO:
+预览 DTO：
 
 ```gdscript
 class_name CombatOperationTargetPreview
@@ -1405,9 +1405,9 @@ var highlight_style: StringName
 var rejection_reason: StringName
 ```
 
-It must not contain a retreat segment, shield delta, future gold, damage, outcome, or source-card disposition.
+其中不得包含撤退牌段、护盾变化量、未来金币、伤害、结果或来源卡牌去向。
 
-Hit testing:
+命中测试：
 
 ```gdscript
 func _find_target(global_position: Vector2) -> CardEntity:
@@ -1419,11 +1419,11 @@ func _find_target(global_position: Vector2) -> CardEntity:
     return null
 ```
 
-The adapter may highlight/unhighlight targets and construct `PlayCombatOperationCommand`. It must not spend currency, alter the chain, add shield, consume a card, or settle combat.
+适配器可以高亮/取消高亮目标，并构建 `PlayCombatOperationCommand`。它不得消耗货币、修改牌链、增加护盾、消耗卡牌或执行战斗结算。
 
-Integrate into `DraggerLayer` before normal board/market drop handling. If `begin_drag()` returns false, preserve all existing drag behavior. Emit `combat_operation_drag_hold_changed(true)` at accepted drag start and `false` on every finish/cancel path. Reconcile this carefully with the user's current uncommitted `dragger_layer.gd` work rather than replacing the file wholesale.
+在棋盘/市场的普通放置处理之前，将其接入 `DraggerLayer`。如果 `begin_drag()` 返回 `false`，必须保留现有全部拖拽行为。操作拖拽被接受时发出 `combat_operation_drag_hold_changed(true)`，并在所有完成/取消路径发出 `false`。必须谨慎合并用户当前尚未提交的 `dragger_layer.gd` 修改，不能整文件覆盖。
 
-### Step 4: Run focused and drag regressions
+### 步骤 4：运行定向测试和拖拽回归测试
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_operation_drag_adapter_test.gd
@@ -1433,9 +1433,9 @@ Integrate into `DraggerLayer` before normal board/market drop handling. If `begi
 & $godot --headless --editor --path . --quit
 ```
 
-Expected: all commands exit `0`; ordinary dragging is unchanged.
+预期：所有命令均以退出码 `0` 结束；普通拖拽行为保持不变。
 
-### Step 5: Commit
+### 步骤 5：提交
 
 ```powershell
 git add scripts/combatv2/operation/combat_operation_target_preview.gd scripts/game/event/encounter/combat_operation_drag_adapter.gd scripts/game/drag_layer/dragger_layer.gd tests/combat_operation_drag_adapter_test.gd tests/dragger_layer_test.gd tests/drag_layer_retraction_test.gd tests/helpers/combat_drag_test_fixture.gd
@@ -1444,20 +1444,20 @@ git commit -m "feat: add combat operation target dragging"
 
 ---
 
-## Task 10: Add the board presentation port and card animation hooks
+## 任务 10：添加棋盘表现端口与卡牌动画接口
 
-**Files**
+**文件**
 
-- Create: `scripts/game/event/encounter/combat_presentation_port.gd`
-- Create: `scripts/game/event/encounter/combat_presentation_coordinator.gd`
-- Modify: `scripts/game/event/encounter/combat_event_view.gd`
-- Modify: `scripts/card/card_entity.gd`
-- Create: `tests/helpers/combat_presentation_test_fixture.gd`
-- Test: `tests/combat_presentation_coordinator_test.gd`
-- Modify test: `tests/combat_event_ui_scene_test.gd`
-- Modify test: `tests/board_scene_composition_test.gd`
+- 新建：`scripts/game/event/encounter/combat_presentation_port.gd`
+- 新建：`scripts/game/event/encounter/combat_presentation_coordinator.gd`
+- 修改：`scripts/game/event/encounter/combat_event_view.gd`
+- 修改：`scripts/card/card_entity.gd`
+- 新建：`tests/helpers/combat_presentation_test_fixture.gd`
+- 测试：`tests/combat_presentation_coordinator_test.gd`
+- 修改测试：`tests/combat_event_ui_scene_test.gd`
+- 修改测试：`tests/board_scene_composition_test.gd`
 
-**Consumes**
+**输入接口**
 
 ```gdscript
 CombatPresentationCoordinator.configure(port: CombatPresentationPort, speed: CombatSpeedController)
@@ -1466,7 +1466,7 @@ CombatPresentationPort.find_card(card_id: StringName) -> CardEntity
 CombatPresentationPort.show_monster_value(value_id: StringName, before: int, after: int, speed: float) -> void
 ```
 
-**Produces**
+**输出接口**
 
 ```gdscript
 CombatPresentationCoordinator.batch_presented(sequence: int)
@@ -1479,9 +1479,9 @@ CombatEventView.show_settlement(result: CombatResult) -> void
 CombatEventView.set_combat_speed(speed_multiplier: float) -> void
 ```
 
-### Step 1: Write the failing presentation test
+### 步骤 1：编写失败的表现层测试
 
-Create `tests/combat_presentation_coordinator_test.gd`:
+新建 `tests/combat_presentation_coordinator_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -1514,19 +1514,19 @@ func _init() -> void:
     quit(0)
 ```
 
-### Step 2: Run the test and verify failure
+### 步骤 2：运行测试并确认失败
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_presentation_coordinator_test.gd
 ```
 
-Expected: non-zero exit because presentation routing and card hooks do not exist.
+预期：命令以非零状态退出，因为表现路由与卡牌反馈钩子尚不存在。
 
-### Step 3: Implement event-to-view routing without concrete animation art
+### 步骤 3：实现事件到视图的路由，但暂不制作具体动画
 
-`CombatPresentationPort` is an adapter interface/script, not a domain dependency. Its concrete implementation locates board cards by stable `instance_id` and exposes monster/log/settlement view methods.
+`CombatPresentationPort` 是适配器接口/脚本，而不是领域层依赖。其具体实现通过稳定的 `instance_id` 定位棋盘卡牌，并提供怪物、日志和结算相关的视图方法。
 
-Coordinator routing:
+协调器路由：
 
 ```gdscript
 match event.type:
@@ -1538,7 +1538,7 @@ match event.type:
         _port.find_card(event.subject_id).request_combat_trigger_feedback(_speed.speed_multiplier)
 ```
 
-Card hooks may immediately update labels and emit completion signals in this task. Preserve method/signal boundaries so later animation work can replace the immediate completion:
+本任务中的卡牌钩子可以立即更新标签并发出完成信号。必须保留方法/信号边界，以便后续动画实现替换当前的立即完成逻辑：
 
 ```gdscript
 signal combat_feedback_finished(request_id: int)
@@ -1548,11 +1548,11 @@ func request_points_change(before: int, after: int, speed_multiplier: float) -> 
     combat_feedback_finished.emit(_next_feedback_request_id())
 ```
 
-Use equivalent hooks for shield and trigger shake. The coordinator ACKs only after all requests belonging to the batch finish. Missing/stale card views log a warning and count as immediately complete; they must not deadlock combat.
+护盾变化和触发抖动使用等价的钩子。只有属于该批次的全部表现请求完成后，协调器才进行 ACK。缺失或过期的卡牌视图只记录警告并按立即完成处理，绝不能导致战斗死锁。
 
-Replace the full-result replay surface of `CombatEventView` with the five methods listed under **Produces**. Keep the current combat log available by translating each batch to log rows incrementally.
+使用上方 **输出接口** 中列出的五个方法替换 `CombatEventView` 的完整结果回放接口。将每个批次增量转换为日志行，以继续提供现有战斗日志。
 
-### Step 4: Run focused and UI regressions
+### 步骤 4：运行定向测试和 UI 回归测试
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_presentation_coordinator_test.gd
@@ -1561,9 +1561,9 @@ Replace the full-result replay surface of `CombatEventView` with the five method
 & $godot --headless --editor --path . --quit
 ```
 
-Expected: all commands exit `0`; board cards expose animation interfaces even though visual animation remains immediate/minimal.
+预期：所有命令均以 `0` 状态退出；即使当前视觉动画仍为立即完成的最小实现，棋盘卡牌也已经提供动画接口。
 
-### Step 5: Commit
+### 步骤 5：提交
 
 ```powershell
 git add scripts/game/event/encounter/combat_presentation_port.gd scripts/game/event/encounter/combat_presentation_coordinator.gd scripts/game/event/encounter/combat_event_view.gd scripts/card/card_entity.gd tests/combat_presentation_coordinator_test.gd tests/combat_event_ui_scene_test.gd tests/board_scene_composition_test.gd tests/helpers/combat_presentation_test_fixture.gd
@@ -1572,22 +1572,22 @@ git commit -m "feat: route combat batches to board presentation"
 
 ---
 
-## Task 11: Wire encounter lifecycle, scheduler, drag operations, and final settlement
+## 任务 11：接入遭遇战生命周期、调度器、拖拽操作与最终结算
 
-**Files**
+**文件**
 
-- Modify: `scripts/game/event/encounter/encounter_combat_flow_coordinator.gd`
-- Modify: `scripts/game/event/event_interaction_controller.gd`
-- Modify: `scripts/game/event/event_modal_coordinator.gd`
-- Modify: `scripts/game/run/run_flow_coordinator.gd`
-- Modify: `scripts/game/event/encounter/combat_event_view.gd`
-- Test: `tests/event_interaction_controller_test.gd`
-- Test: `tests/event_modal_coordinator_test.gd`
-- Test: `tests/encounter_resolution_coordinator_test.gd`
-- Test: `tests/run_flow_coordinator_test.gd`
-- Test: `tests/game_manager_combat_routing_test.gd`
+- 修改：`scripts/game/event/encounter/encounter_combat_flow_coordinator.gd`
+- 修改：`scripts/game/event/event_interaction_controller.gd`
+- 修改：`scripts/game/event/event_modal_coordinator.gd`
+- 修改：`scripts/game/run/run_flow_coordinator.gd`
+- 修改：`scripts/game/event/encounter/combat_event_view.gd`
+- 测试：`tests/event_interaction_controller_test.gd`
+- 测试：`tests/event_modal_coordinator_test.gd`
+- 测试：`tests/encounter_resolution_coordinator_test.gd`
+- 测试：`tests/run_flow_coordinator_test.gd`
+- 测试：`tests/game_manager_combat_routing_test.gd`
 
-**Consumes**
+**输入接口**
 
 ```gdscript
 EncounterCombatFlowCoordinator.create_session(player_stats: CombatStats, chain: Array[CardInstance], monster: MobInstance, operation_cards: Array[CardInstance], resources: Dictionary) -> CombatSession
@@ -1597,7 +1597,7 @@ EventInteractionController.submit_combat_command(command: CombatCommand) -> Comb
 EventInteractionController.set_combat_speed(multiplier: float) -> void
 ```
 
-**Produces**
+**输出接口**
 
 ```gdscript
 EventInteractionController.combat_started(instance: EventInstance, monster: MobInstance)
@@ -1607,9 +1607,9 @@ EventInteractionController.combat_speed_changed(multiplier: float)
 EventInteractionController.get_active_combat_session() -> CombatSession
 ```
 
-### Step 1: Replace the synchronous controller expectation with a failing session test
+### 步骤 1：用失败的会话测试替换同步控制器预期
 
-Update `tests/event_interaction_controller_test.gd` so the combat test asserts incremental behavior:
+修改 `tests/event_interaction_controller_test.gd`，使战斗测试验证增量式行为：
 
 ```gdscript
 func _test_monster_event_streams_batches_before_result() -> void:
@@ -1633,11 +1633,11 @@ func _test_monster_event_streams_batches_before_result() -> void:
     assert(results.is_empty())
 ```
 
-Add a terminal case that repeatedly ACKs/advances, asserts exactly one final `combat_result_ready`, then calls `confirm_combat_settlement()` and observes `interaction_finished`.
+增加终局用例：反复执行 ACK/推进，断言最终只发出一次 `combat_result_ready`，随后调用 `confirm_combat_settlement()` 并观察到 `interaction_finished`。
 
-### Step 2: Add a failing modal wiring test
+### 步骤 2：添加失败的模态层接线测试
 
-Update `tests/event_modal_coordinator_test.gd`:
+修改 `tests/event_modal_coordinator_test.gd`：
 
 ```gdscript
 func _test_modal_passes_hand_operation_cards_and_gold_to_combat() -> void:
@@ -1649,20 +1649,20 @@ func _test_modal_passes_hand_operation_cards_and_gold_to_combat() -> void:
     assert(fixture.interaction.last_resources == {&"gold": 8})
 ```
 
-### Step 3: Run tests and verify failure
+### 步骤 3：运行测试并确认失败
 
 ```powershell
 & $godot --headless --path . --script res://tests/event_interaction_controller_test.gd
 & $godot --headless --path . --script res://tests/event_modal_coordinator_test.gd
 ```
 
-Expected: tests fail because the controller still calls synchronous `resolve()` and immediately emits a full result.
+预期：测试失败，因为控制器仍在调用同步的 `resolve()`，并立即发出完整结果。
 
-### Step 4: Implement incremental orchestration
+### 步骤 4：实现增量式编排
 
-`EncounterCombatFlowCoordinator.begin(instance)` still creates/returns the encounter monster. Replace `resolve(...)` at runtime call sites with `create_session(...)`. Keep settlement ownership in the existing encounter resolution layer.
+`EncounterCombatFlowCoordinator.begin(instance)` 仍负责创建并返回遭遇怪物。将运行时调用点的 `resolve(...)` 替换为 `create_session(...)`，结算职责仍保留在现有遭遇结算层。
 
-`EventInteractionController` owns:
+`EventInteractionController` 持有：
 
 ```gdscript
 var _active_combat_session: CombatSession
@@ -1671,7 +1671,7 @@ var _advance_gate := CombatAdvanceGate.new()
 var _scheduler := CombatScheduler.new(_combat_speed, _advance_gate)
 ```
 
-Controller loop:
+控制器循环：
 
 ```gdscript
 func acknowledge_combat_batch(sequence: int) -> void:
@@ -1695,25 +1695,25 @@ func advance_combat_if_ready(delta: float) -> void:
     combat_batch_ready.emit(_active_event, batch)
 ```
 
-When the ACKed terminal batch leaves the session finished, build the result once, store it as `_pending_combat_result`, clear `_active_combat_session`, and emit `combat_result_ready`. `confirm_combat_settlement()` retains its existing responsibility of ending the event interaction after board/player/monster settlement succeeds.
+当终局批次完成 ACK 且会话进入结束状态时，只构建一次结果，将其保存到 `_pending_combat_result`，清空 `_active_combat_session`，并发出 `combat_result_ready`。`confirm_combat_settlement()` 保持现有职责：在棋盘、玩家和怪物结算成功后结束事件交互。
 
-`EventModalCoordinator` gathers operation cards from `_hand_zone.get_cards()`, maps them to `card_instance`, and passes `{&"gold": _player.gold}`. It connects:
+`EventModalCoordinator` 从 `_hand_zone.get_cards()` 收集操作卡牌，将其映射为 `card_instance`，并传入 `{&"gold": _player.gold}`。它负责连接：
 
-- `combat_batch_ready` → `CombatEventView.show_batch()` / presentation coordinator.
-- presentation `batch_presented` → `acknowledge_combat_batch()`.
-- drag adapter command → `submit_combat_command()`.
-- drag hold → advancement gate interaction hold.
-- combat-speed control → `set_combat_speed()`.
+- `combat_batch_ready` → `CombatEventView.show_batch()` / 表现协调器。
+- 表现层的 `batch_presented` → `acknowledge_combat_batch()`。
+- 拖拽适配器命令 → `submit_combat_command()`。
+- 拖拽保持状态 → 推进门控的交互保持状态。
+- 战斗速度控件 → `set_combat_speed()`。
 
-Keep `RunFlowCoordinator`'s external call shape unchanged if possible:
+尽可能保持 `RunFlowCoordinator` 的外部调用形式不变：
 
 ```gdscript
 _modal.begin(instance, _context.player_stats, _board.board_zone.get_combat_card_chain())
 ```
 
-The modal already owns hand/player dependencies and should not add scene nodes to domain protocol.
+模态层已经持有手牌和玩家依赖，不应向领域协议中加入场景节点。
 
-### Step 5: Run integration regressions
+### 步骤 5：运行集成回归测试
 
 ```powershell
 & $godot --headless --path . --script res://tests/event_interaction_controller_test.gd
@@ -1724,9 +1724,9 @@ The modal already owns hand/player dependencies and should not add scene nodes t
 & $godot --headless --editor --path . --quit
 ```
 
-Expected: all commands exit `0`; final result is not published before the terminal batch is presented and ACKed.
+预期：所有命令均以 `0` 状态退出；在终局批次完成表现并被 ACK 之前，不会发布最终结果。
 
-### Step 6: Commit
+### 步骤 6：提交
 
 ```powershell
 git add scripts/game/event/encounter/encounter_combat_flow_coordinator.gd scripts/game/event/event_interaction_controller.gd scripts/game/event/event_modal_coordinator.gd scripts/game/run/run_flow_coordinator.gd scripts/game/event/encounter/combat_event_view.gd tests/event_interaction_controller_test.gd tests/event_modal_coordinator_test.gd tests/encounter_resolution_coordinator_test.gd tests/run_flow_coordinator_test.gd tests/game_manager_combat_routing_test.gd
@@ -1735,30 +1735,30 @@ git commit -m "refactor: stream encounter combat sessions"
 
 ---
 
-## Task 12: Remove legacy full replay, harden faults, and run the complete regression suite
+## 任务 12：移除旧的完整回放、强化故障处理并运行完整回归测试
 
-**Files**
+**文件**
 
-- Modify: `scripts/combatv2/combat_service.gd`
-- Modify: `scripts/game/event/encounter/combat_event_view.gd`
-- Modify: `scripts/game/event/event_interaction_controller.gd`
-- Modify: `scripts/game/event/event_modal_coordinator.gd`
-- Create: `tests/helpers/combat_session_test_fixture.gd`
-- Test: `tests/combat_fault_handling_test.gd`
-- Test: `tests/combat_session_end_to_end_test.gd`
-- Modify tests as required by deleted legacy APIs:
+- 修改：`scripts/combatv2/combat_service.gd`
+- 修改：`scripts/game/event/encounter/combat_event_view.gd`
+- 修改：`scripts/game/event/event_interaction_controller.gd`
+- 修改：`scripts/game/event/event_modal_coordinator.gd`
+- 新建：`tests/helpers/combat_session_test_fixture.gd`
+- 测试：`tests/combat_fault_handling_test.gd`
+- 测试：`tests/combat_session_end_to_end_test.gd`
+- 根据已删除的旧 API 按需修改测试：
   - `tests/combatv2_service_test.gd`
   - `tests/combat_event_ui_scene_test.gd`
   - `tests/game_manager_combat_routing_test.gd`
 
-**Consumes**
+**输入接口**
 
 ```gdscript
 CombatSession.fail(reason: StringName, details: Dictionary = {}) -> CombatEventBatch
 EventInteractionController.cancel_combat(reason: StringName) -> void
 ```
 
-**Produces**
+**输出接口**
 
 ```gdscript
 CombatSession.get_fault() -> Dictionary
@@ -1767,9 +1767,9 @@ No runtime caller of CombatService.resolve_encounter()
 No runtime caller of CombatEventView.show_combat(..., result)
 ```
 
-### Step 1: Write the failing fault-handling test
+### 步骤 1：编写失败的故障处理测试
 
-Create `tests/combat_fault_handling_test.gd`:
+新建 `tests/combat_fault_handling_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -1788,11 +1788,11 @@ func _init() -> void:
     quit(0)
 ```
 
-Expose `commit_test_intents()` only from a test subclass/fixture; do not add it to the production session API.
+仅通过测试子类/夹具暴露 `commit_test_intents()`；不要将其加入生产环境的会话 API。
 
-### Step 2: Write the failing end-to-end scenario test
+### 步骤 2：编写失败的端到端场景测试
 
-Create `tests/combat_session_end_to_end_test.gd`:
+新建 `tests/combat_session_end_to_end_test.gd`：
 
 ```gdscript
 extends SceneTree
@@ -1824,39 +1824,39 @@ func _init() -> void:
     quit(0)
 ```
 
-The fixture values must make the exact sequence deterministic and non-lethal until after the monster attack.
+夹具数值必须保证该精确序列具有确定性，并且在怪物攻击完成之前不会产生致死结果。
 
-### Step 3: Run tests and verify failure
+### 步骤 3：运行测试并确认失败
 
 ```powershell
 & $godot --headless --path . --script res://tests/combat_fault_handling_test.gd
 & $godot --headless --path . --script res://tests/combat_session_end_to_end_test.gd
 ```
 
-Expected: fault conversion and complete event ordering are not yet enforced.
+预期：测试失败，因为故障转换和完整事件顺序尚未得到强制保证。
 
-### Step 4: Harden session failure behavior and remove legacy runtime paths
+### 步骤 4：强化会话失败行为并移除旧运行时路径
 
-On internal resolution error:
+发生内部结算错误时：
 
-1. Stop accepting commands.
-2. Clear pending command/trigger requests.
-3. Record a structured fault dictionary.
-4. Emit one terminal/fault `COMBAT_END` batch if no batch is already pending.
-5. Do not apply additional state mutation.
-6. Allow the UI/controller to leave combat safely after presenting the terminal batch.
+1. 停止接受命令。
+2. 清空待处理的命令请求和触发请求。
+3. 记录结构化故障字典。
+4. 若当前没有待确认批次，则发出一个终局/故障 `COMBAT_END` 批次。
+5. 不再应用任何额外状态变更。
+6. 在终局批次完成表现后，允许 UI/控制器安全退出战斗。
 
-Search and remove runtime uses:
+搜索并移除以下运行时用法：
 
 ```powershell
 rg "resolve_encounter\(|\.resolve\(player_stats|show_combat\(" scripts scenes
 ```
 
-Expected after migration: no encounter runtime call computes a complete fight synchronously and no view replays a precomputed `CombatResult`. A narrow compatibility method may remain only if a still-valued isolated service test requires it; annotate it `@deprecated` in prose and ensure no scene/controller references it.
+迁移后的预期结果：任何遭遇运行时调用都不会同步计算完整战斗，任何视图都不会回放预先计算的 `CombatResult`。只有仍有价值的独立服务测试确有需要时，才可保留范围受限的兼容方法；应在说明中将其标记为 `@deprecated`，并确保没有场景或控制器引用它。
 
-Ensure command rejection is a normal `COMMAND_REJECTED` batch, not a session fault. A stale view target during presentation is a warning and immediate visual completion, not a session fault.
+确保命令拒绝表现为普通的 `COMMAND_REJECTED` 批次，而不是会话故障。表现过程中遇到过期视图目标时，应记录警告并立即视为视觉完成，而不是将其判定为会话故障。
 
-### Step 5: Run the complete combat and integration suite
+### 步骤 5：运行完整战斗与集成测试套件
 
 ```powershell
 $tests = @(
@@ -1902,9 +1902,9 @@ foreach ($test in $tests) {
 if ($LASTEXITCODE -ne 0) { throw 'Godot import/compile check failed' }
 ```
 
-Expected: every test and the final import/compile check exit `0`.
+预期：所有测试以及最终导入/编译检查均以 `0` 状态退出。
 
-### Step 6: Inspect architecture invariants
+### 步骤 6：检查架构不变量
 
 ```powershell
 rg "resolve_encounter\(|show_combat\(" scripts scenes
@@ -1913,18 +1913,18 @@ rg "combat_speed|speed_multiplier" scripts/combatv2 scripts/game/event
 rg "CUT_CHAIN_FROM_TARGET|ADD_CARD_SHIELD" scripts/combatv2
 ```
 
-Confirm manually:
+手动确认：
 
-- Player and monster attacks are created in separate request handlers and separate batches.
-- No operation drag adapter performs domain mutation.
-- Preview DTO exposes target presentation only.
-- Every accepted operation is revalidated at dequeue time.
-- ACK is required before another batch is committed.
-- Speed affects settlement delay, presentation calls, and operation-window real duration.
-- Active drag blocks advancement.
-- Final settlement starts only after terminal batch ACK.
+- 玩家攻击与怪物攻击由不同的请求处理器创建，并分别进入独立批次。
+- 任何操作卡拖拽适配器都不直接修改领域状态。
+- 预览 DTO 只暴露目标表现信息。
+- 每个已接受的操作都必须在出队时重新校验。
+- 提交下一批次前必须完成当前批次的 ACK。
+- 战斗速度会影响结算延迟、表现调用以及操作窗口的实际持续时间。
+- 正在进行的拖拽会阻止战斗推进。
+- 只有终局批次完成 ACK 后才开始最终结算。
 
-### Step 7: Commit
+### 步骤 7：提交
 
 ```powershell
 git add scripts/combatv2/combat_service.gd scripts/game/event/encounter/combat_event_view.gd scripts/game/event/event_interaction_controller.gd scripts/game/event/event_modal_coordinator.gd tests/helpers/combat_session_test_fixture.gd tests/combat_fault_handling_test.gd tests/combat_session_end_to_end_test.gd tests/combatv2_service_test.gd tests/combat_event_ui_scene_test.gd tests/game_manager_combat_routing_test.gd
@@ -1933,44 +1933,44 @@ git commit -m "test: complete stateful combat migration"
 
 ---
 
-## Final acceptance checklist
+## 最终验收清单
 
-### Protocol and sequencing
+### 协议与时序
 
-- [ ] `CombatSession` is the only authoritative combat state machine.
-- [ ] `advance_one_event()` commits at most one major atomic behavior.
-- [ ] Batches are immutable copies with monotonically increasing sequence IDs.
-- [ ] The next batch cannot commit before the current batch is ACKed.
-- [ ] Player and monster attacks use separate phases, intent sets, and batches.
-- [ ] A lethal player attack prevents monster attack creation.
-- [ ] Trigger requests explicitly represent combat start, attack completion, trigger completion, and front-card depletion.
+- [ ] `CombatSession` 是唯一权威的战斗状态机。
+- [ ] `advance_one_event()` 每次最多提交一个主要原子行为。
+- [ ] 批次是不可变副本，并拥有单调递增的序列 ID。
+- [ ] 当前批次完成 ACK 前不能提交下一批次。
+- [ ] 玩家攻击和怪物攻击使用独立阶段、意图集合及批次。
+- [ ] 玩家攻击造成致死结果时，不会再创建怪物攻击。
+- [ ] 触发请求会显式表示战斗开始、攻击完成、触发完成以及头部卡牌耗尽。
 
-### Player operations
+### 玩家操作
 
-- [ ] Operation cards use shared definition, target, cost, disposition, effect, command, and resolver types.
-- [ ] Commands affect only future uncommitted requests.
-- [ ] Submission order is deterministic; dequeue-time revalidation is mandatory.
-- [ ] Invalid fixed targets reject without automatic retargeting.
-- [ ] Rejected operations cause no partial mutation or card consumption.
-- [ ] Retreat cuts from the selected card toward the head, consumes itself, skips remaining combat, and enhances the monster once.
-- [ ] Gold-for-shield spends and updates shield atomically.
-- [ ] Preview exposes target/validity/highlight/reason only.
+- [ ] 操作卡牌共用定义、目标、消耗、处置、效果、命令和解析器类型。
+- [ ] 命令只影响未来尚未提交的请求。
+- [ ] 提交顺序必须确定；出队时必须重新校验。
+- [ ] 固定目标失效时应拒绝命令，不得自动改选目标。
+- [ ] 被拒绝的操作不会造成部分状态变更，也不会消耗卡牌。
+- [ ] 撤退会从选中卡牌向头部方向切断牌链、消耗自身、跳过剩余战斗，并仅强化怪物一次。
+- [ ] 金币换护盾操作会以原子方式扣除金币并更新护盾。
+- [ ] 预览只暴露目标、有效性、高亮和原因。
 
-### Presentation and timing
+### 表现与时间控制
 
-- [ ] Board card IDs map domain events to the correct `CardEntity`.
-- [ ] Point, shield, and trigger animation hooks exist even if animation bodies are minimal.
-- [ ] Missing presentation targets cannot deadlock ACK.
-- [ ] The setting is named “combat speed” / “战斗速度”.
-- [ ] Live speed changes preserve elapsed progress and rescale remaining real time.
-- [ ] Settlement delay, presentation animation requests, and operation-window duration use combat speed.
-- [ ] Active dragging holds session advancement.
+- [ ] 棋盘卡牌 ID 能将领域事件映射到正确的 `CardEntity`。
+- [ ] 即使动画主体仍是最小实现，也已提供点数、护盾和触发动画钩子。
+- [ ] 缺失的表现目标不会导致 ACK 死锁。
+- [ ] 设置名称统一使用“战斗速度”（`combat speed`）。
+- [ ] 实时调整战斗速度时会保留已完成进度，并重新缩放剩余实际时间。
+- [ ] 结算延迟、表现动画请求和操作窗口持续时间均使用战斗速度。
+- [ ] 正在进行的拖拽会暂停会话推进。
 
-### Integration and safety
+### 集成与安全性
 
-- [ ] Domain protocol contains no scene `Node` references.
-- [ ] Encounter controller emits batches incrementally and emits the final result once.
-- [ ] Final result/settlement occurs only after terminal presentation ACK.
-- [ ] No runtime path replays a precomputed full combat result.
-- [ ] Unrelated user working-tree changes remain untouched and unstaged.
-- [ ] Complete combat, drag, board, event, and run-flow regressions pass.
+- [ ] 领域协议中不包含场景 `Node` 引用。
+- [ ] 遭遇控制器以增量方式发出批次，并且只发出一次最终结果。
+- [ ] 只有终局表现完成 ACK 后才生成最终结果并执行结算。
+- [ ] 不存在回放预计算完整战斗结果的运行时路径。
+- [ ] 用户工作区中无关的修改保持原样且不被暂存。
+- [ ] 完整战斗、拖拽、棋盘、事件和运行流程回归测试全部通过。
