@@ -42,6 +42,7 @@ func _ready() -> void:
 		resized.connect(_sync_hover_pivot)
 		
 	target_position  = position
+	card_inst=CardInstance.create_debug_card()
 	refresh_display()
 
 func _process(delta: float) -> void:

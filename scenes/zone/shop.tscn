@@ -2,13 +2,13 @@
 
 [ext_resource type="StyleBox" uid="uid://d26o07b1e6h87" path="res://assert/ui/info_panel.tres" id="1_dlaha"]
 [ext_resource type="PackedScene" uid="uid://cv8gd4mpryvt5" path="res://scenes/zone/shop_zone.tscn" id="2_ukpqw"]
-[ext_resource type="Script" path="res://scripts/zone/shop.gd" id="3_shop"]
+[ext_resource type="Script" uid="uid://d3kcl6c3cih7h" path="res://scripts/zone/shop.gd" id="3_shop"]
 
-[node name="Panel" type="Panel" unique_id=1350690558]
-script = ExtResource("3_shop")
+[node name="Shop" type="Panel" unique_id=1350690558]
 offset_right = 300.0
 offset_bottom = 323.0
 theme_override_styles/panel = ExtResource("1_dlaha")
+script = ExtResource("3_shop")
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=639470385]
 layout_mode = 1

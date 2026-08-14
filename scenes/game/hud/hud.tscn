@@ -4,6 +4,7 @@
 [ext_resource type="PackedScene" uid="uid://cmx2eoh6dx87s" path="res://scenes/zone/handzone.tscn" id="2_7lo7q"]
 [ext_resource type="PackedScene" path="res://scenes/zone/reclaim_zone.tscn" id="3_etamk"]
 [ext_resource type="PackedScene" uid="uid://bycj0468jvuyd" path="res://scenes/zone/shop.tscn" id="4_spx7p"]
+[ext_resource type="PackedScene" uid="uid://df5d4pnr0do38" path="res://scenes/card/card.tscn" id="5_7lo7q"]
 
 [node name="Hud" type="Control" unique_id=1402589845]
 layout_mode = 3
@@ -12,20 +13,28 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="BoardZone" parent="." unique_id=1056622751 instance=ExtResource("1_4h4qe")]
 layout_mode = 0
-offset_left = 93.0
-offset_top = 58.0
-offset_right = 1509.0
-offset_bottom = 702.0
+offset_left = 173.0
+offset_top = 18.0
+offset_right = 1199.0
+offset_bottom = 802.0
 
 [node name="Handzone" parent="." unique_id=278593251 instance=ExtResource("2_7lo7q")]
 layout_mode = 1
-offset_left = 359.0
-offset_top = 761.0
-offset_right = -822.0
-offset_bottom = -135.0
+offset_left = 305.0
+offset_top = 841.0
+offset_right = -876.0
+offset_bottom = -15.0
+
+[node name="Card" parent="Handzone" unique_id=188510074 instance=ExtResource("5_7lo7q")]
+layout_mode = 1
+offset_left = 18.927002
+offset_top = -26.840004
+offset_right = 122.926994
+offset_bottom = 158.15997
 
 [node name="ReclaimZone" parent="." unique_id=2127958039 instance=ExtResource("3_etamk")]
 layout_mode = 0
@@ -36,7 +45,7 @@ offset_bottom = 878.0
 
 [node name="Panel" parent="." unique_id=1350690558 instance=ExtResource("4_spx7p")]
 layout_mode = 0
-offset_left = 1550.0
-offset_top = 265.0
-offset_right = 1850.0
-offset_bottom = 588.0
+offset_left = 1425.0
+offset_top = 249.0
+offset_right = 1816.0
+offset_bottom = 599.0

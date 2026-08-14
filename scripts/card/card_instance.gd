@@ -92,5 +92,5 @@ func record_rule_trigger(rule_index: int) -> void:
 
 # ========== 调试专用：生成默认测试卡牌 ==========
 static func create_debug_card() -> CardInstance:
-	var data = load("res://data/cards/AllThingsRevival.tres") as CardData
+	var data = load("res://data/cards/walking_stick.tres") as CardData
 	return CardInstance.new(data)

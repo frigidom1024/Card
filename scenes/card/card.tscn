@@ -36,8 +36,8 @@ anchor_right = 0.10700001
 anchor_bottom = 0.16000001
 offset_left = -0.4400177
 offset_top = 0.19998169
-offset_right = 91.55998
-offset_bottom = 164.19998
+offset_right = 103.55998
+offset_bottom = 185.19998
 theme_override_styles/normal = SubResource("StyleBoxEmpty_hdy3g")
 theme_override_styles/pressed = SubResource("StyleBoxEmpty_qmeae")
 theme_override_styles/hover = SubResource("StyleBoxEmpty_ridm3")
@@ -52,8 +52,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = 4.0
-offset_bottom = 4.0
+offset_top = 8.0
+offset_bottom = 8.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -72,7 +72,7 @@ mouse_filter = 2
 [node name="SubViewport" type="SubViewport" parent="CardTexture" unique_id=1726947309]
 transparent_bg = true
 handle_input_locally = false
-size = Vector2i(92, 164)
+size = Vector2i(104, 185)
 render_target_update_mode = 4
 
 [node name="Card" type="Panel" parent="CardTexture/SubViewport" unique_id=1466109767]
@@ -86,17 +86,18 @@ mouse_filter = 2
 theme_override_styles/panel = ExtResource("4_frame")
 
 [node name="Artwork" type="TextureRect" parent="CardTexture/SubViewport" unique_id=2021746234]
-visible = false
 texture_filter = 1
 anchors_preset = -1
-anchor_left = 0.119
-anchor_top = 0.082
-anchor_right = 0.88100004
-anchor_bottom = 0.91800004
-offset_left = 3.0520039
-offset_top = 10.552
-offset_right = -3.052002
-offset_bottom = -30.552002
+anchor_left = -0.33600003
+anchor_top = 0.055000003
+anchor_right = -0.33600003
+anchor_bottom = 0.055000003
+offset_left = 48.944
+offset_top = 2.8249998
+offset_right = 124.944
+offset_bottom = 137.825
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("5_artwork")
 expand_mode = 1
@@ -108,10 +109,10 @@ anchor_left = 0.007
 anchor_top = 0.044000003
 anchor_right = 0.007
 anchor_bottom = 0.044000003
-offset_left = 53.356003
-offset_top = 110.784
-offset_right = 85.356
-offset_bottom = 142.784
+offset_left = 60.271988
+offset_top = 134.85999
+offset_right = 92.27199
+offset_bottom = 166.85999
 
 [node name="TextureRect" type="TextureRect" parent="CardTexture/SubViewport/AttackLabel" unique_id=2135152970]
 layout_mode = 1
@@ -141,10 +142,10 @@ anchor_left = 0.007
 anchor_top = 0.044000003
 anchor_right = 0.007
 anchor_bottom = 0.044000003
-offset_left = 5.3560038
-offset_top = 110.784
-offset_right = 37.356
-offset_bottom = 142.784
+offset_left = 10.272004
+offset_top = 134.85999
+offset_right = 42.272
+offset_bottom = 166.85999
 
 [node name="TextureRect" type="TextureRect" parent="CardTexture/SubViewport/DefenseLabel" unique_id=1033969887]
 layout_mode = 1

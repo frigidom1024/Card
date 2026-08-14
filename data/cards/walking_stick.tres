@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardData" format=3 uid="uid://c6au044ae8jrd"]
+
+[ext_resource type="Script" uid="uid://bvx1h805ben8h" path="res://scripts/combatv2/card/card_rule.gd" id="1_08td1"]
+[ext_resource type="Script" uid="uid://d4h6gd4uq8aux" path="res://scripts/card/card_data.gd" id="2_lswth"]
+
+[resource]
+script = ExtResource("2_lswth")
+card_id = 9999
+card_name = "Walking Stick"
+value = 2
+artwork_path = "uid://bqodcnk1j67dc"
+card_type = 0
+max_points = 2
+description = "根的开始"
+metadata/_custom_type_script = "uid://d4h6gd4uq8aux"
