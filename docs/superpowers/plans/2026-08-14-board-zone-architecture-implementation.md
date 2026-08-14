@@ -26,6 +26,48 @@
 - Shop pricing, refresh, purchase, registration, and restock rules stay unchanged; Reclaim gold rules stay unchanged.
 - The active game page contains exactly one `DraggerLayer`; HandZone, BoardZone, ShopZone, and ReclaimZone all register with it and every visible Card binds to it.
 - `Board.card_return_requested` has exactly one active page-level handler, and that handler calls `HandZone.add_card(card, true)` synchronously.
+- Every new or materially refactored component script and scene root must include a Chinese Godot documentation block that states its responsibility, explicitly lists what it manages, what it does not manage, how callers use it, and its direct dependencies.
+- Component comments must describe the actual final API and ownership boundary; do not copy a legacy component's responsibilities into the new component documentation.
+
+---
+
+## Component Documentation Standard
+
+Every component introduced or substantially refactored by this plan must begin with a documentation block in the component's primary script. Use this structure, adapting the content to the actual component:
+
+```gdscript
+## 卡牌区域组件
+##
+## 负责管理卡牌在本区域中的稳定成员关系与拖拽事务。
+## 包括：
+## - 区域成员登记与所有权查询
+## - 拖拽开始、取消和提交
+## - CardInstance 的区域状态同步
+##
+## 不负责：
+## - 其他区域的成员管理
+## - 手牌回收或金币结算
+## - 跨系统业务流程协调
+##
+## 使用方式：
+## 先注入 DraggerLayer，再通过 add_card() 或拖拽协议接收 Card。
+##
+## 依赖：
+## Card：提供卡牌视图与拖拽交互。
+## CardInstance：保存卡牌的唯一业务状态。
+## DraggerLayer：协调区域间的同步拖拽提交。
+```
+
+The implementation must provide equivalent documentation for these components:
+
+- `Card` and `CardInstance`;
+- `CardZone`, `HandZone`, `ShopZone`, and `ReclaimZone`;
+- `DraggerLayer`;
+- `BoardZone` and `BoardEventZone`;
+- `Board`;
+- `RunCardService` and the active `GameManager` page composition.
+
+For scene-only composition files, document the root component in the attached script and add a concise scene comment or node metadata when the scene has a non-obvious child wiring requirement. Each task's implementation step must update comments at the same time as code, and its commit step must include a documentation review.
 
 ---
 
@@ -176,7 +218,10 @@ Run the two commands from Step 2.
 
 Expected: both tests pass and no script parser error references `Card.cur_zone` in these focused files.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Review component documentation and commit**
+
+Before staging, verify every new or materially refactored component in this task has the required Chinese responsibility block and that the text matches the final ownership boundary. Confirm the block names its managed responsibilities, explicit non-responsibilities, usage entry point, and direct dependencies.
+
 
 ```powershell
 git add scripts/card/card_instance.gd scenes/card/card.gd tests/card_instance_binding_test.gd tests/card_drag_coordinate_test.gd
@@ -305,7 +350,10 @@ Run all four commands from Step 2.
 
 Expected: all pass; Hand → Hand contains the card once, and canceled drags restore the exact pre-drag state.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Review component documentation and commit**
+
+Before staging, verify every new or materially refactored component in this task has the required Chinese responsibility block and that the text matches the final ownership boundary. Confirm the block names its managed responsibilities, explicit non-responsibilities, usage entry point, and direct dependencies.
+
 
 ```powershell
 git add scripts/zone/card_zone.gd scripts/zone/handzone.gd tests/card_zone_test.gd tests/hand_zone_drop_transfer_test.gd tests/hand_zone_insert_test.gd tests/hand_zone_rotation_test.gd
@@ -441,7 +489,10 @@ Run all three commands from Step 2.
 
 Expected: all pass; target commit is recorded before source commit, and rotated-card targeting remains unchanged.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Review component documentation and commit**
+
+Before staging, verify every new or materially refactored component in this task has the required Chinese responsibility block and that the text matches the final ownership boundary. Confirm the block names its managed responsibilities, explicit non-responsibilities, usage entry point, and direct dependencies.
+
 
 ```powershell
 git add scripts/game/drag_layer/dragger_layer.gd tests/dragger_layer_test.gd tests/dragger_layer_rotated_card_center_test.gd tests/drag_layer_retraction_test.gd
@@ -563,7 +614,10 @@ Run all three commands from Step 2.
 
 Expected: all pass; Shop → Hand/Board keeps target membership and exact instance, while Reclaim stays a stateless target.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Review component documentation and commit**
+
+Before staging, verify every new or materially refactored component in this task has the required Chinese responsibility block and that the text matches the final ownership boundary. Confirm the block names its managed responsibilities, explicit non-responsibilities, usage entry point, and direct dependencies.
+
 
 ```powershell
 git add scripts/zone/shop_zone.gd scripts/zone/shop.gd scripts/zone/reclaim_zone.gd tests/shop_zone_purchase_test.gd tests/shop_scene_test.gd tests/reclaim_zone_test.gd
@@ -693,7 +747,10 @@ Run both commands from Step 2.
 
 Expected: both pass with no CardEntity type errors.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Review component documentation and commit**
+
+Before staging, verify every new or materially refactored component in this task has the required Chinese responsibility block and that the text matches the final ownership boundary. Confirm the block names its managed responsibilities, explicit non-responsibilities, usage entry point, and direct dependencies.
+
 
 ```powershell
 git add scripts/game/board_card_placement.gd scripts/game/board_card_retraction.gd scripts/game/board_placement_result.gd scripts/game/chain_retraction_transaction.gd tests/board_operation_dto_test.gd tests/board_placement_transaction_test.gd
@@ -816,7 +873,10 @@ Run all four commands from Step 2.
 
 Expected: all pass; BoardZone owns only stable Board cards, updates CardInstance coordinates/direction, emits one operation per successful action, and never directly returns cards to HandZone.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Review component documentation and commit**
+
+Before staging, verify every new or materially refactored component in this task has the required Chinese responsibility block and that the text matches the final ownership boundary. Confirm the block names its managed responsibilities, explicit non-responsibilities, usage entry point, and direct dependencies.
+
 
 ```powershell
 git add scripts/zone/board_zone.gd tests/board_zone_test.gd tests/board_direction_test.gd tests/guide_card_test.gd tests/board_placement_transaction_test.gd
@@ -923,7 +983,10 @@ Run all three commands from Step 2.
 
 Expected: all pass and event placement behavior is unchanged.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Review component documentation and commit**
+
+Before staging, verify every new or materially refactored component in this task has the required Chinese responsibility block and that the text matches the final ownership boundary. Confirm the block names its managed responsibilities, explicit non-responsibilities, usage entry point, and direct dependencies.
+
 
 ```powershell
 git add scripts/zone/board_event_zone.gd scenes/zone/board_event_zone.tscn tests/board_event_zone_test.gd tests/event_trigger_test.gd tests/event_spawn_candidate_test.gd
@@ -1044,7 +1107,10 @@ Godot_v4.7.1-stable_win64_console.exe --headless --path . --script res://tests/g
 
 Expected: all pass; Board is only the business coordinator and preserves signal ordering.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Review component documentation and commit**
+
+Before staging, verify every new or materially refactored component in this task has the required Chinese responsibility block and that the text matches the final ownership boundary. Confirm the block names its managed responsibilities, explicit non-responsibilities, usage entry point, and direct dependencies.
+
 
 ```powershell
 git add scripts/game/board.gd scenes/game/board.tscn tests/board_placement_transaction_test.gd tests/event_trigger_test.gd tests/board_scene_composition_test.gd
@@ -1180,7 +1246,10 @@ Godot_v4.7.1-stable_win64_console.exe --headless --path . --script res://tests/g
 
 Expected: all pass; `Card.cur_zone` and removed Board proxy references are absent from the active production path.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Review component documentation and commit**
+
+Before staging, verify every new or materially refactored component in this task has the required Chinese responsibility block and that the text matches the final ownership boundary. Confirm the block names its managed responsibilities, explicit non-responsibilities, usage entry point, and direct dependencies.
+
 
 ```powershell
 git add scripts/card/card_chain_coordinator.gd scripts/game/exploration/boss_pressure_service.gd scripts/game/exploration/exploration_event_service.gd scripts/game/exploration/exploration_coordinator.gd scripts/game/event/core/event_placement_service.gd scripts/game/event/hover/event_hover_preview_coordinator.gd scripts/game/event/encounter/encounter_resolution_coordinator.gd scripts/game/run/run_flow_coordinator.gd scripts/game/run/run_card_service.gd scripts/game/run/run_setup_coordinator.gd scripts/game/placement/placement_pipeline_coordinator.gd scripts/game_manager.gd tests/card_chain_coordinator_test.gd tests/boss_pressure_board_test.gd tests/exploration_event_spawn_test.gd tests/event_hover_preview_coordinator_test.gd tests/encounter_resolution_coordinator_test.gd tests/run_card_service_test.gd tests/run_card_service_existing_instance_test.gd tests/run_card_service_destroy_existing_instance_test.gd tests/placement_pipeline_coordinator_test.gd tests/run_flow_coordinator_test.gd
@@ -1320,7 +1389,10 @@ rg -n "card\.cur_zone|board\.get_(card_cells|event_cells|cards|combat_card_chain
 
 Expected: no active new-flow production references remain. Legacy-only tests may mention `PersistentMarket`, but the active page must not instantiate it. Every focused and integration test passes without parser errors, invalid NodePaths, duplicate signal handling, or stale CardInstance display values.
 
-- [ ] **Step 5: Commit**
+- [ ] **Step 5: Review component documentation and commit**
+
+Before staging, verify every new or materially refactored component in this task has the required Chinese responsibility block and that the text matches the final ownership boundary. Confirm the block names its managed responsibilities, explicit non-responsibilities, usage entry point, and direct dependencies.
+
 
 ```powershell
 git add scripts/game_manager.gd scenes/game/game_manager.tscn scenes/game/hud/hud.tscn scripts/zone/shop.gd tests/game_manager_architecture_test.gd tests/game_manager_run_setup_test.gd tests/game_manager_event_contact_test.gd tests/game_manager_persistent_market_test.gd tests/game_page_zone_composition_test.gd tests/persistent_market_scene_test.gd tests/persistent_market_drag_test.gd
@@ -1374,7 +1446,8 @@ git commit -m "refactor: reassemble persistent game zones"
 
 ### Placeholder and type consistency checks
 
-- Every task names exact files, interfaces, failing tests, commands, implementation behavior, passing tests, and commit commands.
+- Every task names exact files, interfaces, failing tests, commands, implementation behavior, passing tests, component documentation review, and commit commands.
+- Every component task explicitly requires the Chinese responsibility block to be written or updated together with the implementation.
 - DTO names and property types are consistent across Tasks 5, 6, 8, and 9.
 - `Card` is the public view type; `CardInstance` is the persistent state type; `BoardEvent` and `EventInstance` remain event types.
 - The plan contains no unresolved placeholder instructions.
