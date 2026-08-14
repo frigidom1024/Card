@@ -5,7 +5,7 @@
 ## - 注册和注销可交互区域
 ## - 根据卡牌变换后的中心点解析目标区域
 ## - 在拖拽开始时解析并缓存唯一来源区域
-## - 按目标先提交、来源后提交的顺序结束拖拽
+## - 按来源先提交、目标后提交的顺序结束拖拽
 ##
 ## 不负责：
 ## - 卡牌节点的位置运动与视觉反馈
@@ -111,24 +111,18 @@ func end_drag(card: Card) -> bool:
 	update_drag(card)
 	var target := _preview_target
 	var target_valid := target != null and target.can_trans_to_target(card)
-	var target_committed := false
-	if target_valid:
-		target_committed = target.drag_end_target(card, true)
-	else:
-		if target != null:
-			target.drag_end_target(card, false)
 
-	if target_committed:
-		if _drag_source != null:
-			_drag_source.drag_end_source(card, true)
-	else:
-		if _drag_source != null:
-			_drag_source.drag_end_source(card, false)
+	if _drag_source!=null and !_drag_source.can_trans_from_source(card):
+		target_valid=false
+	if _drag_source:
+		_drag_source.drag_end_source(card,target_valid)
+	if target:
+		target.drag_end_target(card,target_valid)
 
 	dragging_card = null
 	_drag_source = null
 	_preview_target = null
-	return target_committed
+	return true
 
 
 func _find_card_owners(card: Card) -> Array[CardZone]:

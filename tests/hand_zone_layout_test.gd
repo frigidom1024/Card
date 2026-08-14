@@ -20,9 +20,9 @@ func _run() -> void:
 	zone.float_amplitude = 0.0
 	root.add_child(zone)
 
-	var first := CARD_SCENE.instantiate() as Card
-	var second := CARD_SCENE.instantiate() as Card
-	var third := CARD_SCENE.instantiate() as Card
+	var first := _make_card()
+	var second := _make_card()
+	var third := _make_card()
 	_expect(zone.add_card(first), "HandZone accepts the first Card")
 	_expect(zone.add_card(second), "HandZone accepts the second Card")
 	_expect(zone.add_card(third), "HandZone accepts the third Card")
@@ -31,18 +31,27 @@ func _run() -> void:
 	_expect(zone.cards.size() == 3, "HandZone registers Cards already present in the scene")
 	_expect(first.target_position != Vector2.ZERO or second.target_position != Vector2.ZERO or third.target_position != Vector2.ZERO, "HandZone lays out existing Cards")
 
-	var card_width := first.size.x
+	var first_member := zone.cards[0]
+	var second_member := zone.cards[1]
+	var third_member := zone.cards[2]
+	var card_width := first_member.size.x
 	var step := card_width - zone.card_overlap
 	var total_width := card_width + step * 2.0
 	var start_x := (zone.size.x - total_width) * 0.5
-	_expect(first.target_position.distance_to(Vector2(start_x, zone.card_row_y)) <= TOLERANCE, "first Card is centered as part of the overlapped hand layout")
-	_expect(absf(second.target_position.x - first.target_position.x - step) <= TOLERANCE, "second Card advances by card width minus overlap")
-	_expect(absf(third.target_position.x - second.target_position.x - step) <= TOLERANCE, "third Card advances by card width minus overlap")
-	_expect(first.target_position.y == zone.card_row_y and second.target_position.y == zone.card_row_y and third.target_position.y == zone.card_row_y, "Cards share the configured hand row")
+	_expect(first_member.target_position.distance_to(Vector2(start_x, zone.card_row_y)) <= TOLERANCE, "first hand member is centered as part of the overlapped layout")
+	_expect(absf(second_member.target_position.x - first_member.target_position.x - step) <= TOLERANCE, "second hand member advances by card width minus overlap")
+	_expect(absf(third_member.target_position.x - second_member.target_position.x - step) <= TOLERANCE, "third hand member advances by card width minus overlap")
+	_expect(first_member.target_position.y == zone.card_row_y and second_member.target_position.y == zone.card_row_y and third_member.target_position.y == zone.card_row_y, "hand members share the configured row")
 
 	zone.free()
 	quit(1 if _failures > 0 else 0)
 
+
+func _make_card() -> Card:
+	var data := CardData.new()
+	var card := CARD_SCENE.instantiate() as Card
+	card.bind_card_inst(CardInstance.new(data))
+	return card
 
 func _expect(condition: bool, message: String) -> void:
 	if condition:

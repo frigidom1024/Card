@@ -17,19 +17,35 @@ func _run() -> void:
 	await process_frame
 
 	_expect(board != null, "BoardZone scene instantiates with the Card protocol")
-	_expect(board.has_signal("placement_applied"), "BoardZone publishes structured placement operations")
-	_expect(board.has_signal("chain_segment_detached"), "BoardZone publishes structured chain retractions")
+	_expect(board.has_signal("card_placed"), "BoardZone publishes committed placement facts")
+	_expect(board.has_signal("chain_detached"), "BoardZone publishes committed chain detach facts")
 
-	var placements: Array[BoardCardPlacement] = []
-	var retractions: Array[BoardCardRetraction] = []
-	if board.has_signal("placement_applied"):
-		board.placement_applied.connect(func(operation: BoardCardPlacement) -> void:
-			placements.append(operation)
-		)
-	if board.has_signal("chain_segment_detached"):
-		board.chain_segment_detached.connect(func(operation: BoardCardRetraction) -> void:
-			retractions.append(operation)
-		)
+	var placements: Array[Dictionary] = []
+	var retractions: Array[Dictionary] = []
+	board.card_placed.connect(func(
+		card: Card,
+		occupied_cells: Array[Vector2i],
+		affected_cards: Array[Card],
+		guide_resolved: bool
+	) -> void:
+		placements.append({
+			"card": card,
+			"occupied_cells": occupied_cells,
+			"affected_cards": affected_cards,
+			"guide_resolved": guide_resolved,
+		})
+	)
+	board.chain_detached.connect(func(
+		removed_card: Card,
+		followers_to_return: Array[Card],
+		original_chain_size: int
+	) -> void:
+		retractions.append({
+			"removed_card": removed_card,
+			"followers_to_return": followers_to_return,
+			"original_chain_size": original_chain_size,
+		})
+	)
 
 	var unbound_card := CARD_SCENE.instantiate() as Card
 	root.add_child(unbound_card)
@@ -48,17 +64,23 @@ func _run() -> void:
 	_expect(root_card.get_card_inst().cur_zone == CardInstance.ZONE.BOARD, "stable ROOT state is BOARD")
 	_expect(root_card.get_card_inst().battlefield_pos == Vector2i(4, 4), "stable ROOT stores its anchor")
 	_expect(root_card.get_card_inst().direction == 0, "stable ROOT stores its direction")
-	_expect(placements.size() == 1, "ROOT emits one placement operation")
+	_expect(placements.size() == 1, "ROOT emits one placement fact")
 	if placements.size() == 1:
-		_expect(placements[0].kind == BoardCardPlacement.Kind.CHAIN_EXTENDED, "ROOT placement is CHAIN_EXTENDED")
 		_expect(placements[0].card == root_card, "placement keeps the exact Card")
-		_expect(placements[0].card_inst == root_card.get_card_inst(), "placement keeps the exact CardInstance")
+		_expect(
+			placements[0].occupied_cells == [Vector2i(4, 4), Vector2i(4, 5)],
+			"placement reports the committed cells"
+		)
+		_expect(placements[0].affected_cards == [root_card], "placement reports affected Cards")
+		_expect(not placements[0].guide_resolved, "regular placement is not a GUIDE resolution")
 
 	board.start_drag(root_card)
-	_expect(not board.owns_card(root_card), "a dragging board card temporarily loses stable ownership")
+	_expect(board.owns_card(root_card), "starting a drag keeps the board Card as a stable member")
+	_expect(board.can_trans_from_source(root_card), "dragging board Card remains a valid source")
+	_expect(board.get_cards() == [root_card], "starting a drag preserves stable chain membership")
 	root_card.get_card_inst().direction = 2
 	root_card.global_position += Vector2(100.0, 80.0)
-	_expect(board.drag_end_source(root_card, false), "cancelled drag restores the source snapshot")
+	_expect(board.drag_end_source(root_card, false), "cancelled drag restores the source cell layout")
 	_expect(board.owns_card(root_card), "cancelled drag restores stable ownership")
 	_expect(root_card.get_card_inst().battlefield_pos == Vector2i(4, 4), "cancelled drag restores battlefield_pos")
 	_expect(root_card.get_card_inst().direction == 0, "cancelled drag restores direction")
@@ -90,12 +112,14 @@ func _run() -> void:
 
 	var tail_saved_position := tail.global_position
 	board.start_drag(tail)
-	_expect(not board.owns_card(tail), "dragging tail is removed from stable members")
+	_expect(board.owns_card(tail), "starting a tail drag keeps stable BoardZone membership")
+	_expect(board.can_trans_from_source(tail), "dragging tail remains a valid source")
+	_expect(board.get_cards() == [root_card, middle, tail], "starting a tail drag preserves chain order")
 	_move_card_to_anchor(board, tail, Vector2i(3, 1), 1)
 	board.update_drag(tail)
 	_expect(board.can_trans_to_target(tail), "tail can move within BoardZone while staying connected")
-	_expect(board.drag_end_target(tail, true), "same-zone target commits the moved tail")
-	_expect(board.drag_end_source(tail, true), "same-zone source finalizes without deleting the target membership")
+	_expect(board.drag_end_source(tail, true), "same-zone source releases the old placement first")
+	_expect(board.drag_end_target(tail, true), "same-zone target commits the moved tail after source release")
 	_expect(board.owns_card(tail), "same-zone move keeps stable ownership")
 	_expect(tail.global_position.distance_to(tail_saved_position) > TOLERANCE, "same-zone move changes the tail position")
 	_expect(retractions.is_empty(), "same-zone tail movement does not emit a chain retraction")

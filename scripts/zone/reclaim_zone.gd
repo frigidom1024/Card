@@ -146,9 +146,6 @@ func drag_end_target(card: Card, ok: bool) -> bool:
 	if not ok:
 		_clear_preview()
 		return false
-	if not can_reclaim(card):
-		_clear_preview()
-		return false
 
 	var card_inst := card.get_card_inst()
 	var reclaim_price := get_reclaim_price(card)

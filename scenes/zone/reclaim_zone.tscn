@@ -1,8 +1,8 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://d2kllwp3bo802"]
 
-[ext_resource type="Script" path="res://scripts/zone/reclaim_zone.gd" id="1_reclaim"]
+[ext_resource type="Script" uid="uid://v1x5umb6s2sn" path="res://scripts/zone/reclaim_zone.gd" id="1_reclaim"]
 
-[node name="ReclaimZone" type="Control"]
+[node name="ReclaimZone" type="Control" unique_id=1798956692]
 custom_minimum_size = Vector2(220, 120)
 layout_mode = 3
 anchors_preset = 0
@@ -11,7 +11,7 @@ offset_bottom = 120.0
 mouse_filter = 2
 script = ExtResource("1_reclaim")
 
-[node name="Background" type="Panel" parent="."]
+[node name="Background" type="Panel" parent="." unique_id=889666426]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -20,7 +20,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Content" type="VBoxContainer" parent="."]
+[node name="Content" type="VBoxContainer" parent="." unique_id=1616910175]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -31,22 +31,22 @@ offset_right = -12.0
 offset_bottom = -12.0
 grow_horizontal = 2
 grow_vertical = 2
-alignment = 1
 mouse_filter = 2
+alignment = 1
 
-[node name="ReclaimTitle" type="Label" parent="Content"]
+[node name="ReclaimTitle" type="Label" parent="Content" unique_id=1518329017]
 layout_mode = 2
 size_flags_horizontal = 4
 text = "回收区"
 horizontal_alignment = 1
 
-[node name="ReclaimValue" type="Label" parent="Content"]
+[node name="ReclaimValue" type="Label" parent="Content" unique_id=359618375]
 layout_mode = 2
 size_flags_horizontal = 4
 text = "拖入手牌以回收"
 horizontal_alignment = 1
 
-[node name="HoverOverlay" type="ColorRect" parent="."]
+[node name="HoverOverlay" type="ColorRect" parent="." unique_id=500728285]
 visible = false
 layout_mode = 1
 anchors_preset = 15

@@ -1,0 +1,7 @@
+[gd_resource type="AtlasTexture" format=3 uid="uid://c4sf8a8gix18f"]
+
+[ext_resource type="Texture2D" uid="uid://c7r6iuo2ggx30" path="res://assert/ui/icon/Heart_red.png" id="1_rg0nw"]
+
+[resource]
+atlas = ExtResource("1_rg0nw")
+region = Rect2(256, 255, 482, 386)

@@ -4,16 +4,17 @@
 [ext_resource type="PackedScene" uid="uid://l6y5b6xdcyha" path="res://scenes/drag_layer/dragger_layer.tscn" id="1_yiji6"]
 [ext_resource type="PackedScene" uid="uid://cmx2eoh6dx87s" path="res://scenes/zone/handzone.tscn" id="2_dngke"]
 [ext_resource type="PackedScene" uid="uid://df5d4pnr0do38" path="res://scenes/card/card.tscn" id="4_eb1ss"]
+[ext_resource type="PackedScene" uid="uid://dxqav0xg4yyfc" path="res://scenes/zone/board_zone.tscn" id="5_eb1ss"]
 
 [node name="Test" type="Node2D" unique_id=280158251]
 script = ExtResource("1_wlhed")
 
 [node name="Handzone" parent="." unique_id=278593251 instance=ExtResource("2_dngke")]
 custom_minimum_size = Vector2(100, 200)
-offset_left = 458.0
-offset_top = 201.0
-offset_right = 1565.0
-offset_bottom = 401.0
+offset_left = 955.0
+offset_top = 38.0
+offset_right = 1820.0
+offset_bottom = 238.0
 
 [node name="Card2" parent="Handzone" unique_id=188510074 instance=ExtResource("4_eb1ss")]
 layout_mode = 1
@@ -24,10 +25,10 @@ offset_bottom = 151.00003
 
 [node name="Handzone2" parent="." unique_id=843316998 instance=ExtResource("2_dngke")]
 custom_minimum_size = Vector2(100, 200)
-offset_left = 502.0
-offset_top = 540.0
-offset_right = 1609.0
-offset_bottom = 740.0
+offset_left = 1004.0
+offset_top = 510.0
+offset_right = 1713.0
+offset_bottom = 710.0
 
 [node name="Card2" parent="Handzone2" unique_id=178968031 instance=ExtResource("4_eb1ss")]
 layout_mode = 1
@@ -37,3 +38,5 @@ offset_right = 118.55102
 offset_bottom = 151.00003
 
 [node name="DraggerLayer" parent="." unique_id=1128574065 instance=ExtResource("1_yiji6")]
+
+[node name="BoardZone" parent="." unique_id=1056622751 instance=ExtResource("5_eb1ss")]

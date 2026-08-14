@@ -5,11 +5,4 @@
 
 [resource]
 script = ExtResource("2_lswth")
-card_id = 9999
-card_name = "Walking Stick"
-value = 2
-artwork_path = "uid://bqodcnk1j67dc"
-card_type = 0
-max_points = 2
-description = "根的开始"
 metadata/_custom_type_script = "uid://d4h6gd4uq8aux"

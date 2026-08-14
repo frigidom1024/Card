@@ -1,10 +1,16 @@
 [gd_scene format=3 uid="uid://txjxkqmuwx5"]
 
 [ext_resource type="StyleBox" uid="uid://d26o07b1e6h87" path="res://assert/ui/info_panel.tres" id="1_1hsyp"]
+[ext_resource type="Texture2D" uid="uid://c4sf8a8gix18f" path="res://assert/ui/icon/heart_red.tres" id="2_t2rr5"]
 
 [node name="GameInfo" type="Panel" unique_id=1925670509]
-offset_left = 50.0
-offset_top = 241.0
-offset_right = 450.0
-offset_bottom = 441.0
+offset_left = 1457.0
+offset_top = 94.0
+offset_right = 1841.0
+offset_bottom = 221.0
 theme_override_styles/panel = ExtResource("1_1hsyp")
+
+[node name="HeartRed" type="Sprite2D" parent="." unique_id=1119677468]
+position = Vector2(64.999954, 61.999996)
+scale = Vector2(0.14367194, 0.14637303)
+texture = ExtResource("2_t2rr5")

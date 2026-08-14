@@ -35,7 +35,10 @@ func _test_cancelled_board_drag_does_not_spend_gold() -> void:
 
 	_expect(fixture.drag_layer.start_drag(fixture.middle), "DraggerLayer starts a board-card drag")
 	fixture.middle.global_position = Vector2(1750.0, 850.0)
-	_expect(not fixture.drag_layer.end_drag(fixture.middle), "dropping outside every zone cancels the drag")
+	_expect(
+		fixture.drag_layer.end_drag(fixture.middle),
+		"dropping outside every zone completes the cancelled drag lifecycle"
+	)
 
 	_expect(player.gold == 10, "a cancelled board drag does not spend gold")
 	_expect(transactions.is_empty(), "a cancelled board drag does not publish a retraction transaction")

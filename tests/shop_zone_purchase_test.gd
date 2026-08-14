@@ -53,6 +53,9 @@ func _run() -> void:
 	zone.start_drag(second)
 	_expect(zone.has_active_product_drag(), "ShopZone tracks the active product drag")
 	_expect(zone.get_dragging_product() == second, "ShopZone exposes the dragging product")
+	_expect(zone.get_product(1) == second, "starting a product drag keeps the stable slot")
+	_expect(zone.owns_card(second), "starting a product drag keeps stable ShopZone ownership")
+	_expect(zone.can_trans_from_source(second), "dragging product remains a valid source")
 	var original_target := second.target_position
 	second.target_position += Vector2(100.0, 50.0)
 	_expect(zone.drag_end_source(second, false), "ShopZone handles a failed source drag")
@@ -62,12 +65,14 @@ func _run() -> void:
 
 	zone.product_purchased.connect(_on_product_purchased)
 	zone.start_drag(second)
+	_expect(zone.get_product(1) == second, "purchase drag keeps the product in its stable slot until commit")
+	_expect(zone.can_trans_from_source(second), "purchase drag remains valid during end-of-drag validation")
 	var target_zone := HAND_ZONE_SCENE.instantiate() as HandZone
 	root.add_child(target_zone)
 	await process_frame
-	_expect(target_zone.add_card(second), "target HandZone commits the product before source completion")
-	_expect(zone.drag_end_source(second, true), "ShopZone handles a committed source drag")
-	_expect(zone.get_product_slot(second) == -1, "committed purchase removes only the internal product reference")
+	_expect(zone.drag_end_source(second, true), "ShopZone commits the source before the target")
+	_expect(zone.get_product_slot(second) == -1, "source commit vacates only the purchased slot")
+	_expect(target_zone.add_card(second), "target HandZone commits the product after source completion")
 	_expect(second.get_parent() == target_zone and target_zone.owns_card(second) and second.get_card_inst().cur_zone == CardInstance.ZONE.HAND, "ShopZone preserves the target's committed Card ownership")
 	_expect(_purchased_card == second and _purchased_inst == second.get_card_inst(), "purchase signal carries exact Card and CardInstance")
 	_expect(_purchased_slot == 1, "purchase signal carries the vacated slot")

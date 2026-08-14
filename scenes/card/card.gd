@@ -93,7 +93,29 @@ func refresh_shadow(delta:float)->void:
 	var distance:float = global_position.x-center.x
 	
 	shadow.position.x = lerp(0.0,-sign(distance)*max_offset_shadow,abs(distance/center.x))
-	
+
+var card_direction: int = 0
+var rotation_tween: Tween
+
+
+func rotate_card() -> void:
+	card_direction = (card_direction + 1) % 4
+
+	var target_rotation := card_direction * 90.0
+
+	if rotation_tween and rotation_tween.is_running():
+		rotation_tween.kill()
+
+	rotation_tween = create_tween()
+	rotation_tween.set_trans(Tween.TRANS_QUAD)
+	rotation_tween.set_ease(Tween.EASE_OUT)
+
+	rotation_tween.tween_property(
+		self,
+		"rotation_degrees",
+		target_rotation,
+		0.2
+	)
 
 func _on_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -103,7 +125,10 @@ func _on_gui_input(event: InputEvent) -> void:
 			
 			else:
 				_end_drag()
-	
+		elif event.button_index==MOUSE_BUTTON_RIGHT:
+			if event.pressed:
+				if  dragging:
+					rotate_card()
 	
 	if event is InputEventMouseMotion:
 		if dragging:
@@ -137,6 +162,13 @@ func _start_drag(mouse_position: Vector2) -> void:
 		z_index = 0
 		return
 
+func normalize_card()->void:
+	var shader_material := card_texture.material as ShaderMaterial
+	if shader_material == null:
+		return
+	shader_material.set_shader_parameter("x_rot", 0)
+	shader_material.set_shader_parameter("y_rot", 0)
+	return
 
 func _update_drag(mouse_position: Vector2) -> void:
 	update_drag_target_from_global_pointer(get_global_mouse_position())

@@ -55,7 +55,7 @@ func _run() -> void:
 	await _test_unique_owner_is_cached_after_membership_changes()
 	await _test_duplicate_owners_reject_drag()
 	await _test_zero_source_can_be_accepted_by_target()
-	await _test_same_zone_commits_target_before_source()
+	await _test_same_zone_commits_source_before_target()
 	quit(1 if _failures > 0 else 0)
 
 
@@ -122,8 +122,8 @@ func _test_unique_owner_is_cached_after_membership_changes() -> void:
 	target.owned.append(card)
 	_expect(dragger.end_drag(card), "the target accepts a drag after membership changes")
 	_expect(
-		shared_calls == ["source:start", "target:target:true", "source:source:true"],
-		"target commits before the cached source even when target membership changes"
+		shared_calls == ["source:start", "source:source:true", "target:target:true"],
+		"cached source commits before the target even when membership changes"
 	)
 	_expect(source.owns_query_count == 1, "DraggerLayer does not resolve source ownership again")
 	_free_drag_fixture(fixture)
@@ -162,7 +162,7 @@ func _test_zero_source_can_be_accepted_by_target() -> void:
 	_free_drag_fixture(fixture)
 
 
-func _test_same_zone_commits_target_before_source() -> void:
+func _test_same_zone_commits_source_before_target() -> void:
 	var fixture := await _make_drag_fixture()
 	var dragger: DraggerLayer = fixture.dragger
 	var source: RecordingZone = fixture.source
@@ -177,8 +177,8 @@ func _test_same_zone_commits_target_before_source() -> void:
 	_expect(dragger.start_drag(card), "same-zone Card starts from its stable owner")
 	_expect(dragger.end_drag(card), "same-zone target accepts the drop")
 	_expect(
-		shared_calls == ["source:start", "source:target:true", "source:source:true"],
-		"same-zone drag commits target before source without a finalize phase"
+		shared_calls == ["source:start", "source:source:true", "source:target:true"],
+		"same-zone drag commits source before target without a finalize phase"
 	)
 	_free_drag_fixture(fixture)
 

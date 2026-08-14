@@ -192,8 +192,7 @@ func start_drag(card: Card) -> void:
 	_dragging_product = card
 	_drag_slot = slot_index
 	_drag_original_target = card.target_position
-	_products[slot_index] = null
-	_schedule_layout()
+	# 拖拽期间保留稳定槽位；只有购买成功提交后才移除商品引用。
 
 
 func drag_end_source(card: Card, ok: bool) -> bool:
@@ -202,13 +201,15 @@ func drag_end_source(card: Card, ok: bool) -> bool:
 	var slot_index := _drag_slot
 	var card_inst := card.get_card_inst()
 	if ok:
+		if slot_index >= _products.size() or _products[slot_index] != card:
+			return false
+		_products[slot_index] = null
 		_clear_drag_state()
 		product_purchased.emit(card, card_inst, slot_index)
+		_schedule_layout()
 		return true
 
 	card.target_position = _drag_original_target
-	if slot_index < _products.size() and _products[slot_index] == null:
-		_products[slot_index] = card
 	_set_shop_state(card)
 	_clear_drag_state()
 	_schedule_layout()

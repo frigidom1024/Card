@@ -1,14 +1,15 @@
 ## 牌桌业务协调组件
 ##
-## 负责连接卡牌牌桌区域与事件牌桌区域，并把空间操作转换为业务信号。
+## 负责连接卡牌牌桌区域与事件牌桌区域，并把已提交的空间事实转换为业务信号。
 ## 包括：
-## - 转发 BoardZone 的放置与拆链结果
+## - 接收 BoardZone 的直接放置与拆链事实
 ## - 组织 GUIDE 返回手牌和牌链后继卡牌回收
 ## - 管理事件挂载、移动、删除等业务入口
 ## - 发布放置、回手、拆链确认和事件生命周期信号
 ##
 ## 不负责：
 ## - 卡牌格子索引、占用判断或拖拽来源解析
+## - 保存或恢复卡牌视觉快照
 ## - 事件格子索引、缓冲区判断或事件生成
 ## - 手牌、商店、回收区的成员管理
 ## - DraggerLayer 注册和页面级回手处理
@@ -18,10 +19,10 @@
 ## 并通过 attach_event()、move_event()、remove_event() 管理事件节点。
 ##
 ## 依赖：
-## BoardZone：执行卡牌空间事务并发布结构化操作。
+## BoardZone：执行卡牌空间事务并发布直接事实参数。
 ## BoardEventZone：执行事件空间事务并提供重叠查询。
-## BoardPlacementResult / ChainRetractionTransaction：承载业务结果。
-## Card / CardInstance / BoardEvent / EventInstance：业务对象类型。
+## BoardPlacementResult / ChainRetractionTransaction：对外业务结果。
+## Card / BoardEvent / EventInstance：业务对象类型。
 
 class_name Board
 extends Node2D
@@ -45,10 +46,10 @@ func _ready() -> void:
 	if event_zone == null or not is_instance_valid(event_zone):
 		push_error("Board requires a BoardEventZone child")
 		return
-	if not board_zone.placement_applied.is_connected(_on_placement_applied):
-		board_zone.placement_applied.connect(_on_placement_applied)
-	if not board_zone.chain_segment_detached.is_connected(_on_chain_segment_detached):
-		board_zone.chain_segment_detached.connect(_on_chain_segment_detached)
+	if not board_zone.card_placed.is_connected(_on_card_placed):
+		board_zone.card_placed.connect(_on_card_placed)
+	if not board_zone.chain_detached.is_connected(_on_chain_detached):
+		board_zone.chain_detached.connect(_on_chain_detached)
 
 
 func attach_event(event_node: BoardEvent) -> bool:
@@ -88,49 +89,55 @@ func _resolve_child_dependencies() -> void:
 		event_zone.card_zone = board_zone
 
 
-func _on_placement_applied(operation: BoardCardPlacement) -> void:
-	if operation == null or operation.card == null:
+func _on_card_placed(
+	card: Card,
+	occupied_cells: Array[Vector2i],
+	affected_cards: Array[Card],
+	guide_resolved: bool
+) -> void:
+	if card == null or not is_instance_valid(card):
 		return
-	var result_kind := BoardPlacementResult.Kind.CHAIN_EXTENDED
-	if operation.kind == BoardCardPlacement.Kind.GUIDE_SHIFTED:
-		result_kind = BoardPlacementResult.Kind.GUIDE_RESOLVED
+	var result_kind := (
+		BoardPlacementResult.Kind.GUIDE_RESOLVED
+		if guide_resolved
+		else BoardPlacementResult.Kind.CHAIN_EXTENDED
+	)
 	var overlapped_event: EventInstance = null
 	if event_zone != null and is_instance_valid(event_zone):
-		overlapped_event = event_zone.get_overlapping_unresolved_event(operation.occupied_cells)
+		overlapped_event = event_zone.get_overlapping_unresolved_event(occupied_cells)
+	var chain_tail := affected_cards.back() if not affected_cards.is_empty() else card
 	var result := BoardPlacementResult.new(
 		result_kind,
-		operation.card,
-		operation.chain_tail,
-		operation.affected_cards,
-		operation.occupied_cells,
+		card,
+		chain_tail,
+		affected_cards,
+		occupied_cells,
 		overlapped_event
 	)
 	placement_committed.emit(result)
-	if result_kind == BoardPlacementResult.Kind.GUIDE_RESOLVED:
-		card_return_requested.emit(operation.card)
+	if guide_resolved:
+		card_return_requested.emit(card)
 	if overlapped_event != null:
 		event_triggered.emit(overlapped_event)
 
 
-func _on_chain_segment_detached(operation: BoardCardRetraction) -> void:
-	if operation == null:
-		return
+func _on_chain_detached(
+	removed_card: Card,
+	followers_to_return: Array[Card],
+	original_chain_size: int
+) -> void:
 	var transaction := ChainRetractionTransaction.new(
-		operation.removed_card,
-		operation.followers_to_return,
-		operation.original_chain_size
+		removed_card,
+		followers_to_return,
+		original_chain_size
 	)
 	for follower: Card in transaction.returned_followers:
 		if follower == null or not is_instance_valid(follower):
 			return
 		card_return_requested.emit(follower)
-	var all_followers_in_hand := true
 	for follower: Card in transaction.returned_followers:
 		var card_inst := follower.get_card_inst() if follower != null and is_instance_valid(follower) else null
 		if card_inst == null or card_inst.cur_zone != CardInstance.ZONE.HAND:
-			all_followers_in_hand = false
-			break
-	if all_followers_in_hand:
-		chain_retraction_confirmed.emit(transaction)
-	else:
-		push_error("Board chain retraction did not return every follower to Hand")
+			push_error("Board chain retraction did not return every follower to Hand")
+			return
+	chain_retraction_confirmed.emit(transaction)
