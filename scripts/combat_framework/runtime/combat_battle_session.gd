@@ -5,6 +5,7 @@ const FlowScript = preload("res://scripts/combat_framework/runtime/combat_linear
 const BattleOutcomeScript = preload("res://scripts/combat_framework/protocol/combat_battle_outcome.gd")
 
 signal battle_started()
+signal battle_speed_changed(speed: float)
 signal automatic_batch_submitted(batch: CombatEffectBatch)
 signal batch_completed(result: CombatEffectBatchResult)
 signal state_events_emitted(events: Array[CombatStateEvent])
@@ -35,7 +36,15 @@ func advance(real_delta: float) -> void:
 
 
 func set_battle_speed(speed: float) -> void:
+	var before := driver.get_battle_speed()
 	driver.set_battle_speed(speed)
+	var after := driver.get_battle_speed()
+	if not is_equal_approx(before, after):
+		battle_speed_changed.emit(after)
+
+
+func get_battle_speed() -> float:
+	return driver.get_battle_speed()
 
 
 func submit_player_operation(batch: CombatEffectBatch) -> bool:
