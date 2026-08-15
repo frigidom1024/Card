@@ -1,5 +1,8 @@
 # 有状态战斗会话实施计划
 
+> **架构更新（2026-08-15）：** 本文中的多队列 `CombatSession` 方案已由“战斗驱动 + 统一效果批次处理器”方案取代。当前实现与后续接入以 `docs/design/2026-08-15-combat-batch-driver-architecture.md` 为准。
+
+
 > **给 Codex：** 使用 `superpowers:test-driven-development` 逐项执行本计划，不要合并多个任务。每完成一个任务，都要运行对应测试、检查差异，并创建该任务列出的提交。
 
 **目标：** 用按事件逐步推进的有状态战斗会话替代同步计算整场战斗的方式，并提供明确的触发时序、彼此独立的玩家/怪物攻击批次、通用战斗操作卡、面向棋盘的表现事件，以及由玩家控制的战斗速度。
@@ -46,13 +49,13 @@ git diff -- <paths owned by the task>
 **文件**
 
 - 修改：`scripts/card/card_instance.gd`
-- 新建：`scripts/combatv2/protocol/combat_command.gd`
-- 新建：`scripts/combatv2/protocol/play_combat_operation_command.gd`
-- 新建：`scripts/combatv2/protocol/combat_trigger_request.gd`
-- 新建：`scripts/combatv2/protocol/combat_intent.gd`
-- 新建：`scripts/combatv2/protocol/combat_domain_event.gd`
-- 新建：`scripts/combatv2/protocol/combat_event_batch.gd`
-- 新建：`scripts/combatv2/protocol/combat_command_result.gd`
+- 新建：`scripts/combat_framework/protocol/combat_command.gd`
+- 新建：`scripts/combat_framework/protocol/play_combat_operation_command.gd`
+- 新建：`scripts/combat_framework/protocol/combat_trigger_request.gd`
+- 新建：`scripts/combat_framework/protocol/combat_intent.gd`
+- 新建：`scripts/combat_framework/protocol/combat_domain_event.gd`
+- 新建：`scripts/combat_framework/protocol/combat_event_batch.gd`
+- 新建：`scripts/combat_framework/protocol/combat_command_result.gd`
 - 测试：`tests/combat_protocol_test.gd`
 
 **输入接口**
@@ -82,9 +85,9 @@ extends SceneTree
 
 const CardDataScript = preload("res://scripts/card/card_data.gd")
 const CardInstanceScript = preload("res://scripts/card/card_instance.gd")
-const BatchScript = preload("res://scripts/combatv2/protocol/combat_event_batch.gd")
-const EventScript = preload("res://scripts/combatv2/protocol/combat_domain_event.gd")
-const CommandScript = preload("res://scripts/combatv2/protocol/play_combat_operation_command.gd")
+const BatchScript = preload("res://scripts/combat_framework/protocol/combat_event_batch.gd")
+const EventScript = preload("res://scripts/combat_framework/protocol/combat_domain_event.gd")
+const CommandScript = preload("res://scripts/combat_framework/protocol/play_combat_operation_command.gd")
 
 var _failures := 0
 
@@ -224,7 +227,7 @@ func duplicate_for_combat() -> CardInstance:
 ### 步骤 5：提交
 
 ```powershell
-git add scripts/card/card_instance.gd scripts/combatv2/protocol tests/combat_protocol_test.gd
+git add scripts/card/card_instance.gd scripts/combat_framework/protocol tests/combat_protocol_test.gd
 git commit -m "feat: define combat session protocol"
 ```
 
@@ -304,8 +307,8 @@ static func make_monster(display_name: String, health: int) -> MobInstance:
 ```gdscript
 extends SceneTree
 
-const IntentScript = preload("res://scripts/combatv2/protocol/combat_intent.gd")
-const EventScript = preload("res://scripts/combatv2/protocol/combat_domain_event.gd")
+const IntentScript = preload("res://scripts/combat_framework/protocol/combat_intent.gd")
+const EventScript = preload("res://scripts/combat_framework/protocol/combat_domain_event.gd")
 const ResolverScript = preload("res://scripts/combatv2/session/combat_intent_resolver.gd")
 const StateScript = preload("res://scripts/combatv2/session/combat_session_state.gd")
 
@@ -422,7 +425,7 @@ extends SceneTree
 const SessionScript = preload("res://scripts/combatv2/session/combat_session.gd")
 const StateScript = preload("res://scripts/combatv2/session/combat_session_state.gd")
 const ResolverScript = preload("res://scripts/combatv2/session/combat_intent_resolver.gd")
-const BatchScript = preload("res://scripts/combatv2/protocol/combat_event_batch.gd")
+const BatchScript = preload("res://scripts/combat_framework/protocol/combat_event_batch.gd")
 
 func _init() -> void:
     var fixtures := load("res://tests/helpers/combat_test_fixtures.gd")
@@ -546,8 +549,8 @@ extends SceneTree
 const SessionScript = preload("res://scripts/combatv2/session/combat_session.gd")
 const StateScript = preload("res://scripts/combatv2/session/combat_session_state.gd")
 const ResolverScript = preload("res://scripts/combatv2/session/combat_intent_resolver.gd")
-const BatchScript = preload("res://scripts/combatv2/protocol/combat_event_batch.gd")
-const EventScript = preload("res://scripts/combatv2/protocol/combat_domain_event.gd")
+const BatchScript = preload("res://scripts/combat_framework/protocol/combat_event_batch.gd")
+const EventScript = preload("res://scripts/combat_framework/protocol/combat_domain_event.gd")
 
 func _init() -> void:
     _test_attacks_are_distinct_batches()
@@ -663,7 +666,7 @@ git commit -m "refactor: separate combat attack phases"
 - 新建：`scripts/combatv2/session/combat_rule_dispatcher.gd`
 - 修改：`scripts/combatv2/session/combat_trigger_queue.gd`
 - 修改：`scripts/combatv2/session/combat_session.gd`
-- 修改：`scripts/combatv2/protocol/combat_trigger_request.gd`
+- 修改：`scripts/combat_framework/protocol/combat_trigger_request.gd`
 - 修改：`scripts/combatv2/card/card_rule.gd`
 - 修改：`scripts/combatv2/card/rules/armored_next_card_point_bonus_rule.gd`
 - 修改：`scripts/combatv2/card/rules/behind_head_pre_trigger_rule.gd`
@@ -715,7 +718,7 @@ MobEffect.build_intents(context: Dictionary) -> Array[CombatIntent]
 extends SceneTree
 
 const QueueScript = preload("res://scripts/combatv2/session/combat_trigger_queue.gd")
-const TriggerScript = preload("res://scripts/combatv2/protocol/combat_trigger_request.gd")
+const TriggerScript = preload("res://scripts/combat_framework/protocol/combat_trigger_request.gd")
 
 func _init() -> void:
     var queue := QueueScript.new()
@@ -825,7 +828,7 @@ func collect(state: CombatSessionState, request: CombatTriggerRequest) -> Array[
 ### 步骤 5：提交
 
 ```powershell
-git add scripts/combatv2/session/combat_rule_dispatcher.gd scripts/combatv2/session/combat_trigger_queue.gd scripts/combatv2/session/combat_session.gd scripts/combatv2/protocol/combat_trigger_request.gd scripts/combatv2/card/card_rule.gd scripts/combatv2/card/rules scripts/combatv2/mob_effect.gd scripts/combatv2/mob_effects tests/combat_trigger_queue_test.gd tests/combatv2_card_rule_test.gd
+git add scripts/combatv2/session/combat_rule_dispatcher.gd scripts/combatv2/session/combat_trigger_queue.gd scripts/combatv2/session/combat_session.gd scripts/combat_framework/protocol/combat_trigger_request.gd scripts/combatv2/card/card_rule.gd scripts/combatv2/card/rules scripts/combatv2/mob_effect.gd scripts/combatv2/mob_effects tests/combat_trigger_queue_test.gd tests/combatv2_card_rule_test.gd
 git commit -m "refactor: make combat trigger timing explicit"
 ```
 
@@ -874,8 +877,8 @@ CombatOperationEffect.build_intents(context: Dictionary) -> Array[CombatIntent]
 extends SceneTree
 
 const ResolverScript = preload("res://scripts/combatv2/operation/combat_operation_resolver.gd")
-const CommandScript = preload("res://scripts/combatv2/protocol/play_combat_operation_command.gd")
-const BatchScript = preload("res://scripts/combatv2/protocol/combat_event_batch.gd")
+const CommandScript = preload("res://scripts/combat_framework/protocol/play_combat_operation_command.gd")
+const BatchScript = preload("res://scripts/combat_framework/protocol/combat_event_batch.gd")
 
 func _init() -> void:
     var fixture := load("res://tests/helpers/combat_operation_test_fixture.gd").new()
@@ -904,8 +907,8 @@ func _init() -> void:
 ```gdscript
 extends SceneTree
 
-const CommandScript = preload("res://scripts/combatv2/protocol/play_combat_operation_command.gd")
-const BatchScript = preload("res://scripts/combatv2/protocol/combat_event_batch.gd")
+const CommandScript = preload("res://scripts/combat_framework/protocol/play_combat_operation_command.gd")
+const BatchScript = preload("res://scripts/combat_framework/protocol/combat_event_batch.gd")
 
 func _init() -> void:
     var fixture := load("res://tests/helpers/combat_operation_test_fixture.gd").new()
@@ -1040,8 +1043,8 @@ CombatSessionState.retreat_requested: bool
 ```gdscript
 extends SceneTree
 
-const CommandScript = preload("res://scripts/combatv2/protocol/play_combat_operation_command.gd")
-const BatchScript = preload("res://scripts/combatv2/protocol/combat_event_batch.gd")
+const CommandScript = preload("res://scripts/combat_framework/protocol/play_combat_operation_command.gd")
+const BatchScript = preload("res://scripts/combat_framework/protocol/combat_event_batch.gd")
 
 func _init() -> void:
     var fixture := load("res://tests/helpers/combat_operation_test_fixture.gd").new()
@@ -1077,8 +1080,8 @@ func _init() -> void:
 ```gdscript
 extends SceneTree
 
-const CommandScript = preload("res://scripts/combatv2/protocol/play_combat_operation_command.gd")
-const EventScript = preload("res://scripts/combatv2/protocol/combat_domain_event.gd")
+const CommandScript = preload("res://scripts/combat_framework/protocol/play_combat_operation_command.gd")
+const EventScript = preload("res://scripts/combat_framework/protocol/combat_domain_event.gd")
 
 func _init() -> void:
     var fixture := load("res://tests/helpers/combat_operation_test_fixture.gd").new()
@@ -1160,9 +1163,9 @@ git commit -m "feat: add in-combat retreat and shield operations"
 
 **文件**
 
-- 新建：`scripts/combatv2/runtime/combat_speed_controller.gd`
-- 新建：`scripts/combatv2/runtime/combat_advance_gate.gd`
-- 新建：`scripts/combatv2/runtime/combat_scheduler.gd`
+- 新建：`scripts/combat_framework/runtime/combat_speed_controller.gd`
+- 新建：`scripts/combat_framework/runtime/combat_advance_gate.gd`
+- 新建：`scripts/combat_framework/runtime/combat_scheduler.gd`
 - 测试：`tests/combat_speed_controller_test.gd`
 - 测试：`tests/combat_scheduler_test.gd`
 
@@ -1193,7 +1196,7 @@ CombatScheduler.delay_ready: bool
 ```gdscript
 extends SceneTree
 
-const SpeedScript = preload("res://scripts/combatv2/runtime/combat_speed_controller.gd")
+const SpeedScript = preload("res://scripts/combat_framework/runtime/combat_speed_controller.gd")
 
 func _init() -> void:
     var speed := SpeedScript.new()
@@ -1214,9 +1217,9 @@ func _init() -> void:
 ```gdscript
 extends SceneTree
 
-const SpeedScript = preload("res://scripts/combatv2/runtime/combat_speed_controller.gd")
-const GateScript = preload("res://scripts/combatv2/runtime/combat_advance_gate.gd")
-const SchedulerScript = preload("res://scripts/combatv2/runtime/combat_scheduler.gd")
+const SpeedScript = preload("res://scripts/combat_framework/runtime/combat_speed_controller.gd")
+const GateScript = preload("res://scripts/combat_framework/runtime/combat_advance_gate.gd")
+const SchedulerScript = preload("res://scripts/combat_framework/runtime/combat_scheduler.gd")
 
 func _init() -> void:
     var speed := SpeedScript.new()
@@ -1302,7 +1305,7 @@ func can_advance() -> bool:
 ### 步骤 6：提交
 
 ```powershell
-git add scripts/combatv2/runtime tests/combat_speed_controller_test.gd tests/combat_scheduler_test.gd
+git add scripts/combat_framework/runtime tests/combat_speed_controller_test.gd tests/combat_scheduler_test.gd
 git commit -m "feat: add combat speed and advancement gates"
 ```
 
@@ -1487,8 +1490,8 @@ CombatEventView.set_combat_speed(speed_multiplier: float) -> void
 extends SceneTree
 
 const CoordinatorScript = preload("res://scripts/game/event/encounter/combat_presentation_coordinator.gd")
-const BatchScript = preload("res://scripts/combatv2/protocol/combat_event_batch.gd")
-const EventScript = preload("res://scripts/combatv2/protocol/combat_domain_event.gd")
+const BatchScript = preload("res://scripts/combat_framework/protocol/combat_event_batch.gd")
+const EventScript = preload("res://scripts/combat_framework/protocol/combat_domain_event.gd")
 
 func _init() -> void:
     var fixture := load("res://tests/helpers/combat_presentation_test_fixture.gd").new()
