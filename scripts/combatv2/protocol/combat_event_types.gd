@@ -23,3 +23,13 @@ const BATTLE_FINISHED: StringName = &"battle_finished"
 const STATE_VALUE_CHANGED: StringName = &"state_value_changed"
 const CHAIN_CHANGED: StringName = &"chain_changed"
 const PHASE_CHANGED: StringName = &"phase_changed"
+
+## 标准效果状态事件。表现层只消费这些事实，不直接写战斗状态。
+const DAMAGE_APPLIED: StringName = &"damage_applied"
+const SHIELD_CHANGED: StringName = &"shield_changed"
+const HEALTH_CHANGED: StringName = &"health_changed"
+const CARD_POINTS_CHANGED: StringName = &"card_points_changed"
+const GOLD_CHANGED: StringName = &"gold_changed"
+const CHAIN_SPLIT: StringName = &"chain_split"
+const CARD_DIED: StringName = &"card_died"
+const MONSTER_DIED: StringName = &"monster_died"

@@ -1,7 +1,7 @@
 # 战斗批次处理器与战斗驱动架构
 
 日期：2026-08-15  
-状态：已确认，第一阶段框架已实现
+状态：已确认，战斗协议、运行框架与标准效果库已实现
 
 ## 1. 目标
 
@@ -339,3 +339,201 @@ chain_changed -> 牌链断开接口
 - 战斗存档与回放。
 
 这些功能应在当前协议稳定后逐步接入，而不是绕过批次处理器直接修改状态。
+
+## 11. 标准战斗状态结构
+
+第二阶段新增 `CombatStateSchema`，将新框架使用的状态路径固定下来。协议状态只保存稳定 ID、数值和普通集合，不保存 `Node`、`Resource`、`CardInstance` 或 `MobInstance` 引用。
+
+```text
+player
+  entity_id
+  hp / max_hp
+  shield
+  gold
+  alive
+
+monster
+  entity_id
+  hp / max_hp
+  shield
+  attack
+  alive
+
+cards.<card_id>
+  entity_id
+  points / max_points
+  shield
+  alive
+
+chain
+  card_ids
+  detached_card_ids（发生拆链后记录）
+```
+
+旧模型与新状态的映射关系为：
+
+| 旧运行时字段 | 新协议字段 |
+| --- | --- |
+| `CardInstance.current_points` | `cards.<id>.points` |
+| `CardInstance.current_armor` | `cards.<id>.shield` |
+| `CombatStats.hp` | `player/monster.hp` |
+| `CombatStats.defense` | `player/monster.shield` |
+| `PlayerData.gold` | `player.gold` |
+| `BoardZone.get_combat_card_chain()` | `chain.card_ids` |
+
+当前只建立标准状态结构，尚未用它替换旧 `CombatService`。后续接入时应由独立适配层负责首次装载和提交结果同步，标准效果处理器不得直接依赖旧对象。
+
+`max_points` 表示卡牌初始配置或界面参考值，不是运行期规则强化的硬上限；状态装载和 `modify_card_points` 都会保留高于该值的合法点数。
+
+## 12. 标准效果库
+
+`CombatStandardEffectLibrary` 是默认注册入口，负责组装效果处理器和状态规则。当前标准效果如下：
+
+| 效果类型 | 作用 |
+| --- | --- |
+| `damage` | 护盾优先吸收，剩余伤害扣除生命或卡牌点数 |
+| `modify_shield` | 有符号修改玩家、怪物或卡牌护盾，最低为零 |
+| `modify_card_points` | 有符号修改卡牌点数，最低为零 |
+| `spend_gold` | 在效果执行前按最新草稿验证金币并扣费 |
+| `gain_gold` | 增加玩家金币 |
+| `split_chain` | 从目标卡牌处拆开当前牌链 |
+| `set_phase` | 通过 `CombatStateWriter` 修改战斗阶段 |
+
+所有处理器遵守以下边界：
+
+1. `validate()` 读取当前最新快照；
+2. `apply()` 只能通过 `CombatStateWriter` 修改草稿；
+3. 事件的 `source_entity_id` 保留效果来源；
+4. 事件的 `target_entity_ids` 保留效果目标；
+5. 处理器不决定下一个战斗步骤；
+6. 任一效果失败时，整个原子批次不提交。
+
+### 12.1 状态事件与表现接口
+
+标准效果会产生可供棋盘表现层消费的事实事件：
+
+```text
+damage_applied
+shield_changed
+health_changed
+card_points_changed
+gold_changed
+chain_split
+card_died
+monster_died
+```
+
+表现层可以根据这些事件预留接口：
+
+- `shield_changed`：牌面护盾数字变化动画；
+- `card_points_changed`：牌面点数变化动画；
+- `effect_applied`：卡牌触发抖动；
+- `card_died`：卡牌死亡表现；
+- `chain_split`：牌链断开表现。
+
+表现层只能消费事件，不能写回战斗状态。
+
+## 13. 死亡规则与触发时序
+
+卡牌死亡和怪物死亡不是伤害处理器的隐藏副作用，而是在每个效果应用后由 `CombatStateRule` 确认：
+
+```mermaid
+sequenceDiagram
+    participant Processor as CombatEffectBatchProcessor
+    participant Handler as EffectHandler
+    participant Writer as CombatStateWriter
+    participant Rule as CombatStateRule
+    participant Planner as CombatTriggerPlanner
+
+    Processor->>Handler: validate(effect, latest draft snapshot)
+    Processor->>Handler: apply(effect, writer)
+    Handler->>Writer: 写入点数/生命/护盾
+    Processor->>Rule: evaluate(effect, writer)
+    Rule->>Writer: 确认死亡并产生事实事件
+    Processor->>Processor: 整批原子提交
+    Processor-->>Planner: card_died / monster_died
+    Planner-->>Processor: 生成后续卡牌触发批次
+```
+
+`card_died` 事件额外保存死亡前的牌链关系：
+
+```text
+card_id
+chain_index_before
+previous_card_id_before
+next_card_id_before
+```
+
+因此“当前面卡牌死亡时触发”的规则不需要从已经变化的棋盘反推旧关系，只需消费死亡事实事件。
+
+## 14. 玩家操作批次
+
+`CombatOperationBatchFactory` 当前提供两个顶层操作框架：
+
+### 14.1 撤退操作
+
+```text
+create_retreat_batch(
+  batch_id,
+  operation_card_id,
+  target_card_id,
+  expected_chain_revision
+)
+```
+
+语义：从目标卡牌之前断开牌链，目标卡牌及其后继卡牌移入 `detached_card_ids`，不再参与后续自动战斗。目标选择由表现/输入层完成；如果拖拽碰撞同时覆盖多张牌，输入层应先选择牌链头部卡牌，再把唯一 `target_card_id` 交给工厂。
+
+### 14.2 金币强化护盾操作
+
+```text
+create_gold_shield_batch(
+  batch_id,
+  operation_card_id,
+  target_card_id,
+  gold_cost,
+  shield_amount,
+  expected_chain_revision
+)
+```
+
+该操作在同一个原子批次中按顺序执行：
+
+```text
+spend_gold
+  -> modify_shield
+```
+
+金币不足、目标离开牌链或牌链版本变化时，整个操作取消，不会出现“已扣金币但未加护盾”的部分提交。
+
+两个工厂都写入：
+
+```text
+metadata.preview_mode = target_only
+metadata.target_card_id = <目标卡牌 ID>
+```
+
+这里只提供目标预览协议，不预测撤退结果、金币结果或强化后的数值动画。
+
+## 15. 玩家操作对已排队结算的影响
+
+玩家操作可以影响已经入队但尚未执行的自动战斗批次，规则如下：
+
+```mermaid
+flowchart LR
+    A[怪物攻击已在队列中] --> B[玩家提交操作卡]
+    B --> C[当前原子批次完成]
+    C --> D[玩家操作以更高优先级执行]
+    D --> E[提交新的护盾/金币/牌链状态]
+    E --> F[怪物攻击出队]
+    F --> G[执行前重新验证版本和条件]
+    G --> H[从最新状态结算伤害]
+```
+
+不会发生的行为：
+
+- 不会中断正在执行的原子批次；
+- 不会回滚已经提交的批次；
+- 不会保存“操作前已经算好的最终伤害”；
+- 不会因为表现动画尚未结束而拒绝玩家操作入队。
+
+因此，玩家在操作窗口内增加卡牌护盾后，已经排队但尚未执行的怪物攻击会从新护盾值开始结算。

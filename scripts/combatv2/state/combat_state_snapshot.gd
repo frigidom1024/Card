@@ -22,5 +22,14 @@ func get_value(path: Array, default_value: Variant = null) -> Variant:
 
 
 func has_value(path: Array) -> bool:
-	var marker := RefCounted.new()
-	return get_value(path, marker) != marker
+	if path.is_empty():
+		return true
+	var cursor: Variant = data
+	for key in path:
+		if not cursor is Dictionary:
+			return false
+		var dictionary := cursor as Dictionary
+		if not dictionary.has(key):
+			return false
+		cursor = dictionary[key]
+	return true
