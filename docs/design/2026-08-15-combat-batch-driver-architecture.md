@@ -1,7 +1,7 @@
 # 战斗批次处理器与战斗驱动架构
 
 日期：2026-08-15  
-状态：已确认，战斗协议、运行框架与标准效果库已实现
+状态：已确认，战斗协议、标准效果库与方案 C 惰性战斗流程已实现
 
 ## 1. 目标
 
@@ -314,28 +314,31 @@ chain_changed -> 牌链断开接口
 
 ## 10. 当前实现边界
 
-本阶段已经实现：
+当前已经实现：
 
 - 批次、效果、事件和结果协议；
 - 玩家攻击与怪物攻击独立协议；
-- 统一优先级批次队列；
-- 原子效果批次处理器；
-- 效果处理器注册表；
-- 状态草稿、唯一写入器和只读快照；
-- 状态规则扩展点；
+- 统一优先级批次队列与原子效果批次处理器；
+- 效果处理器注册表、状态草稿、唯一写入器和只读快照；
+- 标准伤害、护盾、点数、金币、拆链和阶段效果；
+- 卡牌与怪物死亡状态规则；
 - 触发规划器；
-- 可插拔战斗流程提供器；
 - 受战斗速度影响的战斗驱动；
 - 玩家操作直接插入处理器的入口；
+- 撤退与金币强化护盾操作批次工厂；
+- `CombatLinearChainFlowProvider` 惰性牌链流程；
+- `CombatBattleSession` 游戏层顶层入口；
+- `running / victory / retreat / defeat` 标准结果；
 - 表现确认信号和接口边界。
 
-本阶段没有实现：
+当前没有实现：
 
-- 替换现有同步 `CombatService`；
-- 具体伤害、死亡、撤退和金币强化效果；
-- 操作卡拖拽与目标预览；
-- 棋盘动画；
-- 遭遇战场景接线；
+- 替换现有同步 `CombatService2`；
+- 替换 `EventInteractionController` 或旧遭遇入口；
+- 新状态同步写回 `CardInstance`、`MobInstance` 等旧对象；
+- 全部旧 `CardRule` 到新触发规则的迁移；
+- 操作卡拖拽碰撞与目标高亮；
+- 棋盘动画和表现桥；
 - 战斗存档与回放。
 
 这些功能应在当前协议稳定后逐步接入，而不是绕过批次处理器直接修改状态。
@@ -537,3 +540,161 @@ flowchart LR
 - 不会因为表现动画尚未结束而拒绝玩家操作入队。
 
 因此，玩家在操作窗口内增加卡牌护盾后，已经排队但尚未执行的怪物攻击会从新护盾值开始结算。
+
+
+## 16. 方案 C：可运行的惰性线性牌链流程
+
+`CombatLinearChainFlowProvider` 是 `CombatFlowProvider` 的第一个可运行实现。它只保存当前一轮所需的最小流程游标，不预计算整场战斗。
+
+牌链继续按“根部到头部”保存：
+
+```text
+chain.card_ids = [根部卡牌, ..., 头部卡牌]
+```
+
+选择当前战斗卡牌时从数组末尾向前查找，跳过已经死亡、点数不大于零或已经离开活动牌链的卡牌。
+
+### 16.1 单轮状态机
+
+```mermaid
+stateDiagram-v2
+    [*] --> 选择头部卡牌
+    选择头部卡牌 --> 撤退: 没有可战斗卡牌
+    选择头部卡牌 --> 玩家攻击: 找到存活卡牌
+    玩家攻击 --> 胜利: 怪物生命归零
+    玩家攻击 --> 重新选择: 玩家攻击批次取消或目标离链
+    玩家攻击 --> 怪物攻击: 玩家攻击提交且怪物存活
+    怪物攻击 --> 选择头部卡牌: 怪物攻击批次完成
+    重新选择 --> 选择头部卡牌
+    胜利 --> [*]
+    撤退 --> [*]
+```
+
+每个自动批次生成前，流程提供器都会重新读取 `CombatEffectBatchProcessor.create_snapshot()` 返回的最新快照。它不会缓存未来多轮伤害，也不会一次性生成整场 `CombatResult.steps`。
+
+### 16.2 玩家攻击
+
+玩家攻击批次生成时读取：
+
+```text
+当前卡牌 = 最新活动牌链中的头部存活卡牌
+玩家攻击力 = 当前卡牌在本轮开始时的 points
+目标 = 当前怪物
+```
+
+生成协议：
+
+```text
+PLAYER_ATTACK
+  -> player_attack_started
+  -> damage(amount = card.points_at_round_start)
+  -> player_attack_finished
+```
+
+玩家攻击批次带有“来源卡牌仍在活动牌链”的执行条件。若更高优先级操作先拆掉了该卡牌，攻击批次会取消，流程下一次从最新牌链重新选择目标。
+
+### 16.3 怪物反击与原始伤害规则
+
+怪物反击是另一个独立批次：
+
+```text
+MONSTER_ATTACK
+  -> monster_attack_started
+  -> damage(amount = cached_counter_damage)
+  -> monster_attack_finished
+```
+
+反击力在生成玩家攻击批次时暂存在当前轮流程游标中：
+
+```text
+cached_counter_damage = min(
+  本轮开始时卡牌的原始 points,
+  玩家攻击结算前怪物的 hp
+)
+```
+
+这里明确**不使用有效伤害计算方式**。反击力不会读取：
+
+- 怪物护盾吸收量；
+- 玩家攻击实际扣除的怪物生命；
+- `damage_applied.absorbed`；
+- `damage_applied.applied`；
+- `absorbed + applied`。
+
+怪物护盾只负责正常吸收玩家攻击，不会改变已经按上述规则取得的反击力。若玩家攻击后怪物死亡，则流程直接进入 `victory`，不会生成怪物攻击批次。
+
+怪物攻击批次真正执行时，伤害处理器读取卡牌的最新护盾和点数。因此玩家在两个攻击批次之间增加护盾，会真实改变怪物攻击的结算结果，但不会改变本轮已经确定的反击力。
+
+### 16.4 卡牌继续与切换
+
+怪物攻击提交后不缓存下一张卡牌，而是重新读取快照：
+
+- 当前头部卡牌仍存活且 `points > 0`：下一轮继续使用它；
+- 当前卡牌 `points == 0`：死亡规则将其标记为死亡，下一轮向根部选择下一张存活卡牌；
+- 玩家操作将当前卡牌拆出活动牌链：不再生成指向它的怪物攻击，立即按最新牌链重新选择；
+- 没有可战斗卡牌：结果自然变为 `retreat`。
+
+## 17. `CombatBattleSession` 顶层组合
+
+游戏层通过 `CombatBattleSession` 使用新战斗运行时，不需要直接组装驱动和处理器。
+
+```mermaid
+flowchart LR
+    Controller["游戏/场景控制器"] --> Session["CombatBattleSession"]
+    Session --> Driver["CombatDriver"]
+    Session --> Processor["CombatEffectBatchProcessor"]
+    Session --> Flow["CombatLinearChainFlowProvider"]
+
+    Driver --> Flow
+    Flow --> Processor
+    Operation["玩家操作卡"] --> Session
+    Session --> Processor
+    Processor --> State["CombatRuntimeState"]
+    Processor --> Events["事实事件 / 表现接口"]
+```
+
+公开接口：
+
+```gdscript
+start()
+advance(real_delta)
+set_battle_speed(speed)
+submit_player_operation(batch)
+acknowledge_presentation(batch_id)
+create_snapshot()
+get_outcome()
+```
+
+职责边界：
+
+- 自动流程由 `CombatDriver` 驱动；
+- 玩家操作通过会话直接进入 `CombatEffectBatchProcessor`；
+- 会话不创建状态草稿，也不持有 `CombatStateWriter`；
+- 正式状态仍然只有处理器能够原子提交；
+- 会话转发批次完成、事实事件、表现请求和战斗结束信号；
+- 同一个“战斗速度”同时控制自动批次结算间隔和推荐表现时长。
+
+## 18. 标准战斗结果
+
+`CombatBattleOutcome` 定义：
+
+| 结果 | 条件 |
+| --- | --- |
+| `running` | 怪物与玩家存活，且活动牌链仍有可战斗卡牌 |
+| `victory` | 怪物生命归零或已经被标记死亡 |
+| `defeat` | 玩家生命归零或已经被标记死亡 |
+| `retreat` | 活动牌链中没有存活且点数大于零的卡牌 |
+
+结果由流程提供器基于最新只读快照计算，不由 `CombatBattleSession` 直接写入状态。撤退操作拆掉全部剩余活动牌链后，会自然得到 `retreat`。
+
+## 19. 下一阶段接入范围
+
+基础流程验证完成后，再分阶段增加：
+
+1. 旧对象到稳定战斗 ID 和标准状态结构的适配器；
+2. `CombatStateEvent` 到棋盘及卡牌节点的表现桥；
+3. 旧卡牌规则到 `CombatTriggerRule` 的迁移；
+4. 遭遇场景从旧 `CombatService2` 正式切换到 `CombatBattleSession`；
+5. 撤退、金币强化护盾等操作卡的拖拽碰撞和目标高亮。
+
+在正式路由切换前，旧遭遇系统和新惰性运行时并存，避免一次修改过大。

@@ -23,3 +23,8 @@ func on_batch_finished(
 
 func is_finished(_snapshot: CombatStateSnapshot) -> bool:
 	return false
+
+
+## 标准流程结果；具体流程提供器应基于最新快照返回权威结果。
+func get_outcome(_snapshot: CombatStateSnapshot) -> StringName:
+	return &"running"
