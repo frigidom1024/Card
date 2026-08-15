@@ -3,14 +3,15 @@ extends PanelContainer
 
 var _current_model: EventHoverPreviewModel
 
-@onready var _title_label: Label = $MarginContainer/Content/Header/TitleLabel
-@onready var _type_label: Label = $MarginContainer/Content/Header/TypeLabel
+@onready var _title_label: Label = $MarginContainer/Content/TitlePanel/TitleLabel
+@onready var _type_label: Label = $MarginContainer/Content/BadgeRow/TypeBadge/TypeLabel
 @onready var _stats_section: Control = $MarginContainer/Content/StatsSection
 @onready var _stats_lines: Label = $MarginContainer/Content/StatsSection/Lines
 @onready var _rewards_section: Control = $MarginContainer/Content/RewardsSection
 @onready var _rewards_lines: Label = $MarginContainer/Content/RewardsSection/Lines
 @onready var _abilities_section: Control = $MarginContainer/Content/AbilitiesSection
 @onready var _abilities_lines: Label = $MarginContainer/Content/AbilitiesSection/Lines
+
 
 
 func _ready() -> void:

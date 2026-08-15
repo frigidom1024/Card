@@ -76,136 +76,125 @@ func _test_root_selection_filters_presets_and_requests_exploration_once() -> voi
 
 	var locked_deck := RevivalDeck.duplicate(true) as StartingDeckData
 	locked_deck.deck_id = "locked-revival"
-	locked_deck.display_name = "封存的复苏之根"
+	locked_deck.display_name = "SEALED RIBWOOD ROOT"
 	locked_deck.is_unlocked = false
+	var locked_root := RevivalDeck.get_root_card().duplicate(true) as CardData
+	locked_root.card_id = 987654
+	locked_root.card_name = "SEALED ROOT"
+	var locked_cards: Array[CardData] = [locked_root]
+	locked_cards.append_array(RevivalDeck.get_remaining_starter_cards())
+	locked_deck.starter_cards = locked_cards
 
 	var duplicate_root_deck := RevivalDeck.duplicate(true) as StartingDeckData
 	duplicate_root_deck.deck_id = "duplicate-revival"
-	duplicate_root_deck.display_name = "重复的复苏之根"
+	duplicate_root_deck.display_name = "DUPLICATE RIBWOOD ROOT"
 
 	var invalid_deck := StartingDeckData.new()
 	invalid_deck.deck_id = "invalid"
-	invalid_deck.display_name = "无效牌组"
+	invalid_deck.display_name = "INVALID DECK"
 
-	var screen := packed_scene.instantiate() as Control
-	_expect(screen != null, "root selection scene instantiates as Control")
+	var screen := packed_scene.instantiate() as RootSelectionScreen
+	_expect(screen != null, "root selection scene instantiates as RootSelectionScreen")
 	if screen == null:
 		return
 
-	var presets: Array[StartingDeckData] = []
-	presets.append(RevivalDeck)
-	presets.append(locked_deck)
-	presets.append(duplicate_root_deck)
-	presets.append(invalid_deck)
-	screen.call("configure", presets)
+	var presets: Array[StartingDeckData] = [RevivalDeck, locked_deck, duplicate_root_deck, invalid_deck]
+	screen.configure(presets)
 	root.size = Vector2i(1920, 1080)
 	root.add_child(screen)
 	await process_frame
 	await process_frame
 	await process_frame
 
-	var option_list := screen.find_child("RootOptionList", true, false)
-	var root_preview_slot := screen.find_child("RootPreviewSlot", true, false)
-	var starter_preview_row := screen.find_child("RemainingStarterCardPreviewRow", true, false)
+	var root_preview_slot := screen.find_child("RootPreviewSlot", true, false) as Control
+	var starter_preview_row := screen.find_child("RemainingStarterCardPreviewRow", true, false) as Control
 	var unlock_hint := screen.find_child("UnlockHintLabel", true, false) as Label
 	var start := screen.find_child("StartExplorationButton", true, false) as Button
 	var back := screen.find_child("BackButton", true, false) as Button
+	var previous := screen.find_child("PreviousDeckButton", true, false) as Button
+	var next := screen.find_child("NextDeckButton", true, false) as Button
 	var title := screen.find_child("TitleLabel", true, false) as Label
-	var section_title := screen.find_child("SectionTitle", true, false) as Label
-	var starter_title := screen.find_child("StarterTitle", true, false) as Label
-	var content := screen.get_node_or_null("SafeArea/Content") as MarginContainer
-	var choice_panel := screen.find_child("ChoicePanel", true, false) as PanelContainer
-	var preview_panel := screen.find_child("PreviewPanel", true, false) as PanelContainer
-	var background := screen.get_node_or_null("Background") as TextureRect
-	var top_gradient := screen.get_node_or_null("TopGradientOverlay") as TextureRect
+	var subtitle := screen.find_child("SubtitleLabel", true, false) as RichTextLabel
+	var deck_name := screen.find_child("DeckNameLabel", true, false) as Label
+	var selection_frame := screen.find_child("SelectionFrame", true, false) as PanelContainer
+	var carousel := screen.find_child("DeckCarousel", true, false) as HBoxContainer
+
+	_expect(title != null and title.text == "CHOOSE YOUR DECK", "root selection uses the reference heading")
 	_expect(
-		background != null and background.mouse_filter == Control.MOUSE_FILTER_IGNORE,
-		"root selection reuses the non-interactive pilgrimage illustration background"
+		subtitle != null and "PICK A" in subtitle.text and "MAKE YOUR" in subtitle.text,
+		"root selection uses the reference deck-selection tagline",
 	)
 	_expect(
-		top_gradient != null and top_gradient.mouse_filter == Control.MOUSE_FILTER_IGNORE,
-		"root selection has a non-interactive top readability gradient"
+		selection_frame != null and selection_frame.get_theme_stylebox("panel") != null,
+		"root selection places the carousel in a framed pixel panel",
 	)
-	_expect(screen.get_node_or_null("AtmosphereOverlay") == null, "root selection avoids darkening the full illustration")
-	_expect(title != null and title.text == "CHOOSE A ROOT", "root selection uses an English title")
-	_expect(section_title != null and section_title.text == "AVAILABLE ROOTS", "root list uses an English section title")
-	_expect(starter_title != null and starter_title.text == "REMAINING STARTING CARDS", "starter preview uses an English section title")
+	_expect(carousel != null, "root selection exposes a horizontal deck carousel")
+	_expect(back != null and back.text == "BACK", "root selection keeps the back action")
+	_expect(start != null and start.text == "START", "root selection uses the reference START action")
 	_expect(
-		title != null and title.get_theme_color("font_color").is_equal_approx(Color(0.95, 0.69, 0.17, 1)),
-		"root selection title uses the home screen antique gold"
-	)
-	_expect(
-		choice_panel != null and choice_panel.get_theme_stylebox("panel") != null
-			and preview_panel != null and preview_panel.get_theme_stylebox("panel") != null,
-		"root selection uses framed pilgrimage panels for choice and preview"
+		previous != null and next != null
+			and previous.text == "<" and next.text == ">"
+			and previous.get_theme_color("font_color").r > 0.7
+			and next.get_theme_color("font_color").r > 0.7,
+		"deck carousel exposes red previous and next buttons",
 	)
 	_expect(
-		content != null and content.size_flags_horizontal == Control.SIZE_EXPAND_FILL,
-		"root selection content expands across the available wide-screen space"
+		previous != null and next != null and not previous.disabled and not next.disabled,
+		"carousel arrows are enabled when two valid decks remain after filtering",
 	)
-	_expect(
-		choice_panel != null and preview_panel != null
-			and preview_panel.size_flags_stretch_ratio > choice_panel.size_flags_stretch_ratio,
-		"root selection allocates additional wide-screen space to the card previews"
-	)
-	_expect(back != null and back.text == "BACK", "root selection uses an understated English back action")
-	_expect(start != null and start.text == "BEGIN EXPEDITION", "root selection uses the English pilgrimage CTA")
-	_expect(
-		start != null and start.get_theme_stylebox("normal") != null
-			and start.get_theme_stylebox("hover") != null
-			and start.get_theme_stylebox("pressed") != null
-			and start.get_theme_stylebox("disabled") != null
-			and start.get_theme_stylebox("focus") != null,
-		"root selection CTA exposes every interaction state"
-	)
-	_expect(option_list != null and option_list.get_child_count() == 2, "valid unlocked and locked presets are visible; invalid and duplicate entries are suppressed")
-	if option_list != null and option_list.get_child_count() > 0:
-		var selected_option := option_list.get_child(0) as RootOptionEntry
-		var selected_option_button := selected_option.get_node_or_null("Button") as Button if selected_option != null else null
-		var selected_option_name := selected_option.find_child("NameLabel", true, false) as Label if selected_option != null else null
-		var selected_option_tag_badge := selected_option.find_child("TagBadge", true, false) as PanelContainer if selected_option != null else null
-		var selected_option_tag_label := selected_option.find_child("TagLabel", true, false) as Label if selected_option != null else null
-		_expect(
-			selected_option_name != null and selected_option_name.text == "RIBWOOD ROOT",
-			"root option renders its name separately from playstyle tags"
-		)
-		_expect(
-			selected_option_tag_badge != null and selected_option_tag_badge.get_theme_stylebox("panel") != null
-				and selected_option_tag_label != null
-				and selected_option_tag_label.text == "HEALING · ENDURANCE · WEAPON CHAIN"
-				and selected_option_tag_label.get_theme_font_size("font_size") == 12,
-			"root option renders compact playstyle tags in a muted badge"
-		)
-		_expect(
-			selected_option_button != null and selected_option_button.get_theme_stylebox("normal") != null
-				and selected_option_button.get_theme_stylebox("hover") != null
-				and selected_option_button.get_theme_stylebox("pressed") != null,
-			"root option uses the gilt interaction treatment"
-		)
-	_expect(screen.get("selected_preset") == RevivalDeck, "first valid unlocked preset is selected")
-	_expect(root_preview_slot != null and root_preview_slot.get_child_count() == 1, "selected root has one real card preview")
+	_expect(screen.selected_preset == RevivalDeck, "first valid unlocked deck is initially selected")
+	_expect(deck_name != null and deck_name.text == RevivalDeck.display_name, "selected deck name is shown above the root card")
+	_expect(root_preview_slot != null and root_preview_slot.get_child_count() == 1, "central slot owns one root card")
 	if root_preview_slot != null and root_preview_slot.get_child_count() == 1:
-		_expect(root_preview_slot.get_child(0).call("is_display_only"), "root preview uses display-only CardEntity")
-	_expect(
-		starter_preview_row != null and starter_preview_row.get_child_count() == RevivalDeck.get_remaining_starter_cards().size(),
-		"remaining complete starting deck is previewed without the root"
-	)
-	if starter_preview_row != null and starter_preview_row.get_child_count() == RevivalDeck.get_remaining_starter_cards().size():
-		var first_starter_preview := starter_preview_row.get_child(0) as Node2D
-		var last_starter_preview := starter_preview_row.get_child(starter_preview_row.get_child_count() - 1) as Node2D
+		var root_card := root_preview_slot.get_child(0) as Card
 		_expect(
-			first_starter_preview != null and last_starter_preview != null
-				and is_equal_approx(
-					(first_starter_preview.position.x + last_starter_preview.position.x) * 0.5,
-					starter_preview_row.size.x * 0.5
-				),
-			"remaining starter card previews stay centered after the layout settles"
+			root_card != null and root_card.get_card_inst().card_data == RevivalDeck.get_root_card(),
+			"central preview is the selected deck root using the new Card model",
+		)
+		_expect(
+			is_equal_approx(root_card.position.x + root_card.size.x * 0.5, root_preview_slot.size.x * 0.5),
+			"central root card remains horizontally centered after layout",
+		)
+	_expect(
+		starter_preview_row != null
+			and starter_preview_row.get_child_count() == RevivalDeck.get_remaining_starter_cards().size(),
+		"bottom row previews all other cards from the selected deck",
+	)
+
+	if starter_preview_row != null and starter_preview_row.get_child_count() > 1:
+		var first_preview := starter_preview_row.get_child(0) as Card
+		var last_preview := starter_preview_row.get_child(starter_preview_row.get_child_count() - 1) as Card
+		_expect(
+			first_preview != null and last_preview != null
+				and absf(
+					(first_preview.position.x + first_preview.size.x * 0.5
+						+ last_preview.position.x + last_preview.size.x * 0.5) * 0.5
+						- starter_preview_row.size.x * 0.5
+				) <= 8.0,
+			"bottom deck cards remain centered as a group after scattered layout",
 		)
 
-	var locked_entry = screen.call("_entry_for_preset", locked_deck)
-	screen.call("_on_root_option_pressed", locked_entry)
-	_expect(screen.get("selected_preset") == RevivalDeck, "locked option cannot replace valid selection")
-	_expect(unlock_hint != null and unlock_hint.text.begins_with("THIS ROOT"), "locked option shows an English unlock hint")
+	if next != null:
+		next.emit_signal("pressed")
+	await process_frame
+	await process_frame
+	_expect(screen.selected_preset == locked_deck, "next arrow selects the next deck")
+	_expect(deck_name != null and deck_name.text == locked_deck.display_name, "carousel refreshes the selected deck name")
+	_expect(start != null and start.disabled, "locked decks cannot start exploration")
+	_expect(unlock_hint != null and unlock_hint.text.begins_with("THIS DECK"), "locked carousel entries show an unlock hint")
+	if root_preview_slot != null and root_preview_slot.get_child_count() == 1:
+		var locked_preview := root_preview_slot.get_child(0) as Card
+		_expect(
+			locked_preview != null and locked_preview.get_card_inst().card_data == locked_root,
+			"changing decks replaces the central root card",
+		)
+
+	if next != null:
+		next.emit_signal("pressed")
+	await process_frame
+	await process_frame
+	_expect(screen.selected_preset == RevivalDeck, "next arrow wraps from the last deck to the first")
+	_expect(start != null and not start.disabled, "returning to an unlocked deck enables START")
 
 	var requests := {"count": 0, "preset": null}
 	_expect(screen.has_signal("exploration_requested"), "root selection exposes exploration_requested signal")
@@ -219,26 +208,20 @@ func _test_root_selection_filters_presets_and_requests_exploration_once() -> voi
 		start.emit_signal("pressed")
 	_expect(
 		requests["count"] == 1 and requests["preset"] == RevivalDeck and start.disabled,
-		"exploration request is emitted once for the selected unlocked preset"
+		"START emits one exploration request for the selected unlocked deck",
 	)
-
-	var main_area := screen.find_child("MainArea", true, false) as BoxContainer
-	screen.call("_apply_responsive_layout", Vector2(1920, 1080))
-	_expect(main_area != null and not main_area.vertical, "wide root selection layout keeps its columns side by side")
-	screen.call("_apply_responsive_layout", Vector2(900, 1200))
-	_expect(main_area != null and main_area.vertical, "narrow root selection layout stacks its columns vertically")
 
 	var back_requests := {"count": 0}
 	_expect(screen.has_signal("back_requested"), "root selection exposes back_requested signal")
 	if screen.has_signal("back_requested"):
 		screen.connect("back_requested", func() -> void: back_requests["count"] += 1)
-
 	if back != null:
 		back.emit_signal("pressed")
 	_expect(back_requests["count"] == 1, "back button delegates navigation through a signal")
 
 	screen.queue_free()
 	await process_frame
+
 
 func _test_debug_build_starts_configured_deck_directly() -> void:
 	if not OS.is_debug_build():

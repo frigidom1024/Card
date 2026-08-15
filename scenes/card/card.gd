@@ -35,6 +35,7 @@ class_name Card
 
 var tween_rot: Tween
 var tween_hover: Tween
+var _base_scale: Vector2 = Vector2.ONE
 var _shadow_base_screen_offset: Vector2 = Vector2.ZERO
 
 
@@ -55,6 +56,7 @@ var card_inst: CardInstance
 
 
 func _ready() -> void:
+	_base_scale = scale
 	# 每个卡牌实例拥有独立材质；否则一个实例的鼠标倾斜会影响其它卡牌。
 	var shader_material := card_texture.material as ShaderMaterial
 	if shader_material != null:
@@ -198,6 +200,9 @@ func _handle_3D_effect(event:InputEvent)->void:
 	
 
 func _start_drag(mouse_position: Vector2) -> void:
+	if not draggable:
+		return
+
 	_hide_hover_info()
 	dragging = true
 	z_index = 100
@@ -259,7 +264,7 @@ func _on_mouse_exited() -> void:
 	if tween_hover and tween_hover.is_running():
 		tween_hover.kill()
 	tween_hover = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
-	tween_hover.tween_property(self, "scale", Vector2.ONE, 0.25)
+	tween_hover.tween_property(self, "scale", _base_scale, 0.25)
 	z_index-=100
 
 
@@ -270,7 +275,7 @@ func _on_mouse_entered() -> void:
 	if tween_hover and tween_hover.is_running():
 		tween_hover.kill()
 	tween_hover = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_ELASTIC)
-	tween_hover.tween_property(self, "scale", Vector2(1.2, 1.2), 0.5)
+	tween_hover.tween_property(self, "scale", _base_scale * 1.2, 0.5)
 	z_index+=100
 	
 func _show_hover_info() -> void:

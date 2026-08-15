@@ -1,145 +1,339 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/game/event/hover/event_hover_preview.gd" id="1_script"]
+[ext_resource type="StyleBox" path="res://assert/ui/card_info_panel.tres" id="2_panel"]
+[ext_resource type="FontFile" path="res://assert/font/press_start_2p/PressStart2P.ttf" id="3_pixel_font"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
-bg_color = Color(0.0470588, 0.0745098, 0.109804, 0.98)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.596078, 0.454902, 0.211765, 1)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
-shadow_color = Color(0, 0, 0, 0.42)
-shadow_size = 6
-shadow_offset = Vector2(1, 2)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_type_badge"]
+bg_color = Color(0.105882, 0.101961, 0.117647, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.690196, 0.34902, 0.968627, 1)
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+anti_aliasing = false
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_type"]
-content_margin_left = 7.0
-content_margin_top = 2.0
-content_margin_right = 7.0
-content_margin_bottom = 2.0
-bg_color = Color(0.207843, 0.12549, 0.0705882, 0.95)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.709804, 0.552941, 0.278431, 0.8)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_category_badge"]
+bg_color = Color(0.105882, 0.101961, 0.117647, 1)
+border_width_left = 3
+border_width_top = 3
+border_width_right = 3
+border_width_bottom = 3
+border_color = Color(0.776471, 0.760784, 0.741176, 1)
+content_margin_left = 12.0
+content_margin_top = 8.0
+content_margin_right = 12.0
+content_margin_bottom = 8.0
+anti_aliasing = false
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_title"]
+bg_color = Color(0.968627, 0.968627, 0.94902, 1)
+border_width_left = 4
+border_width_top = 4
+border_width_right = 4
+border_width_bottom = 4
+border_color = Color(1, 1, 1, 1)
+content_margin_left = 14.0
+content_margin_top = 14.0
+content_margin_right = 14.0
+content_margin_bottom = 14.0
+anti_aliasing = false
 
 [node name="EventHoverPreview" type="PanelContainer"]
-custom_minimum_size = Vector2(292, 0)
+custom_minimum_size = Vector2(440, 0)
+offset_right = 440.0
 mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+theme_override_styles/panel = ExtResource("2_panel")
 script = ExtResource("1_script")
 
 [node name="MarginContainer" type="MarginContainer" parent="."]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 12
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 12
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
 [node name="Content" type="VBoxContainer" parent="MarginContainer"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 7
+theme_override_constants/separation = 14
 
-[node name="Header" type="HBoxContainer" parent="MarginContainer/Content"]
+[node name="BadgeRow" type="HBoxContainer" parent="MarginContainer/Content"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 10
 
-[node name="TitleLabel" type="Label" parent="MarginContainer/Content/Header"]
-layout_mode = 2
-size_flags_horizontal = 3
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.945098, 0.909804, 0.811765, 1)
-theme_override_font_sizes/font_size = 18
-text = "事件"
-autowrap_mode = 3
-max_lines_visible = 2
-
-[node name="TypeLabel" type="Label" parent="MarginContainer/Content/Header"]
+[node name="TypeBadge" type="PanelContainer" parent="MarginContainer/Content/BadgeRow"]
+custom_minimum_size = Vector2(132, 0)
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.94902, 0.792157, 0.435294, 1)
-theme_override_font_sizes/font_size = 11
-theme_override_styles/normal = SubResource("StyleBoxFlat_type")
+theme_override_styles/panel = SubResource("StyleBoxFlat_type_badge")
+
+[node name="TypeLabel" type="Label" parent="MarginContainer/Content/BadgeRow/TypeBadge"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.776471, 0.45098, 1, 1)
+theme_override_font_sizes/font_size = 15
 text = "事件"
 horizontal_alignment = 1
 vertical_alignment = 1
+text_overrun_behavior = 3
 
-[node name="Rule" type="ColorRect" parent="MarginContainer/Content"]
-custom_minimum_size = Vector2(0, 1)
+[node name="CategoryBadge" type="PanelContainer" parent="MarginContainer/Content/BadgeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_category_badge")
+
+[node name="CategoryLabel" type="Label" parent="MarginContainer/Content/BadgeRow/CategoryBadge"]
 layout_mode = 2
 mouse_filter = 2
-color = Color(0.556863, 0.403922, 0.2, 0.75)
+theme_override_colors/font_color = Color(0.890196, 0.878431, 0.854902, 1)
+theme_override_fonts/font = ExtResource("3_pixel_font")
+theme_override_font_sizes/font_size = 15
+text = "EVENT"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="TitlePanel" type="PanelContainer" parent="MarginContainer/Content"]
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_title")
+
+[node name="TitleLabel" type="Label" parent="MarginContainer/Content/TitlePanel"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.0352941, 0.0352941, 0.0392157, 1)
+theme_override_font_sizes/font_size = 22
+text = "事件"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+max_lines_visible = 2
+text_overrun_behavior = 3
+
+[node name="TopDivider" type="HBoxContainer" parent="MarginContainer/Content"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="StartCap" type="ColorRect" parent="MarginContainer/Content/TopDivider"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.690196, 0.34902, 0.968627, 1)
+
+[node name="Line" type="ColorRect" parent="MarginContainer/Content/TopDivider"]
+custom_minimum_size = Vector2(0, 3)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.352941, 0.352941, 0.352941, 1)
+
+[node name="EndCap" type="ColorRect" parent="MarginContainer/Content/TopDivider"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.690196, 0.34902, 0.968627, 1)
 
 [node name="StatsSection" type="VBoxContainer" parent="MarginContainer/Content"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 8
 
-[node name="Heading" type="Label" parent="MarginContainer/Content/StatsSection"]
+[node name="Divider" type="HBoxContainer" parent="MarginContainer/Content/StatsSection"]
+custom_minimum_size = Vector2(0, 6)
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.686275, 0.733333, 0.768627, 1)
+theme_override_constants/separation = 5
+
+[node name="StartCap" type="ColorRect" parent="MarginContainer/Content/StatsSection/Divider"]
+custom_minimum_size = Vector2(6, 6)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.505882, 0.85098, 1, 1)
+
+[node name="Line" type="ColorRect" parent="MarginContainer/Content/StatsSection/Divider"]
+custom_minimum_size = Vector2(0, 2)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.27451, 0.458824, 0.545098, 0.9)
+
+[node name="HeadingRow" type="HBoxContainer" parent="MarginContainer/Content/StatsSection"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Accent" type="ColorRect" parent="MarginContainer/Content/StatsSection/HeadingRow"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.505882, 0.85098, 1, 1)
+
+[node name="Eyebrow" type="Label" parent="MarginContainer/Content/StatsSection/HeadingRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.505882, 0.85098, 1, 1)
+theme_override_fonts/font = ExtResource("3_pixel_font")
 theme_override_font_sizes/font_size = 11
+text = "ATTRIBUTES"
+vertical_alignment = 1
+
+[node name="Heading" type="Label" parent="MarginContainer/Content/StatsSection/HeadingRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.92549, 0.917647, 0.890196, 1)
+theme_override_font_sizes/font_size = 13
 text = "属性"
+horizontal_alignment = 2
+vertical_alignment = 1
 
 [node name="Lines" type="Label" parent="MarginContainer/Content/StatsSection"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.87451, 0.847059, 0.776471, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.92549, 0.917647, 0.890196, 1)
+theme_override_font_sizes/font_size = 15
 text = "生命：-"
 autowrap_mode = 3
 
 [node name="RewardsSection" type="VBoxContainer" parent="MarginContainer/Content"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 8
 
-[node name="Heading" type="Label" parent="MarginContainer/Content/RewardsSection"]
+[node name="Divider" type="HBoxContainer" parent="MarginContainer/Content/RewardsSection"]
+custom_minimum_size = Vector2(0, 6)
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.686275, 0.733333, 0.768627, 1)
+theme_override_constants/separation = 5
+
+[node name="StartCap" type="ColorRect" parent="MarginContainer/Content/RewardsSection/Divider"]
+custom_minimum_size = Vector2(6, 6)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.94902, 0.792157, 0.435294, 1)
+
+[node name="Line" type="ColorRect" parent="MarginContainer/Content/RewardsSection/Divider"]
+custom_minimum_size = Vector2(0, 2)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.556863, 0.403922, 0.2, 0.9)
+
+[node name="HeadingRow" type="HBoxContainer" parent="MarginContainer/Content/RewardsSection"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Accent" type="ColorRect" parent="MarginContainer/Content/RewardsSection/HeadingRow"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.94902, 0.792157, 0.435294, 1)
+
+[node name="Eyebrow" type="Label" parent="MarginContainer/Content/RewardsSection/HeadingRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.94902, 0.792157, 0.435294, 1)
+theme_override_fonts/font = ExtResource("3_pixel_font")
 theme_override_font_sizes/font_size = 11
+text = "REWARDS"
+vertical_alignment = 1
+
+[node name="Heading" type="Label" parent="MarginContainer/Content/RewardsSection/HeadingRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.92549, 0.917647, 0.890196, 1)
+theme_override_font_sizes/font_size = 13
 text = "奖励 / 商品"
+horizontal_alignment = 2
+vertical_alignment = 1
 
 [node name="Lines" type="Label" parent="MarginContainer/Content/RewardsSection"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.87451, 0.847059, 0.776471, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.92549, 0.917647, 0.890196, 1)
+theme_override_font_sizes/font_size = 15
 text = "无奖励"
 autowrap_mode = 3
 
 [node name="AbilitiesSection" type="VBoxContainer" parent="MarginContainer/Content"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 2
+theme_override_constants/separation = 8
 
-[node name="Heading" type="Label" parent="MarginContainer/Content/AbilitiesSection"]
+[node name="Divider" type="HBoxContainer" parent="MarginContainer/Content/AbilitiesSection"]
+custom_minimum_size = Vector2(0, 6)
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.686275, 0.733333, 0.768627, 1)
+theme_override_constants/separation = 5
+
+[node name="StartCap" type="ColorRect" parent="MarginContainer/Content/AbilitiesSection/Divider"]
+custom_minimum_size = Vector2(6, 6)
+layout_mode = 2
+mouse_filter = 2
+color = Color(0.690196, 0.34902, 0.968627, 1)
+
+[node name="Line" type="ColorRect" parent="MarginContainer/Content/AbilitiesSection/Divider"]
+custom_minimum_size = Vector2(0, 2)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.435294, 0.254902, 0.592157, 0.9)
+
+[node name="HeadingRow" type="HBoxContainer" parent="MarginContainer/Content/AbilitiesSection"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 10
+
+[node name="Accent" type="ColorRect" parent="MarginContainer/Content/AbilitiesSection/HeadingRow"]
+custom_minimum_size = Vector2(8, 8)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+color = Color(0.690196, 0.34902, 0.968627, 1)
+
+[node name="Eyebrow" type="Label" parent="MarginContainer/Content/AbilitiesSection/HeadingRow"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.776471, 0.45098, 1, 1)
+theme_override_fonts/font = ExtResource("3_pixel_font")
 theme_override_font_sizes/font_size = 11
+text = "ABILITIES"
+vertical_alignment = 1
+
+[node name="Heading" type="Label" parent="MarginContainer/Content/AbilitiesSection/HeadingRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.92549, 0.917647, 0.890196, 1)
+theme_override_font_sizes/font_size = 13
 text = "能力"
+horizontal_alignment = 2
+vertical_alignment = 1
 
 [node name="Lines" type="Label" parent="MarginContainer/Content/AbilitiesSection"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_colors/font_color = Color(0.87451, 0.847059, 0.776471, 1)
-theme_override_font_sizes/font_size = 13
+theme_override_colors/font_color = Color(0.92549, 0.917647, 0.890196, 1)
+theme_override_font_sizes/font_size = 15
 text = "无额外效果。"
 autowrap_mode = 3
-max_lines_visible = 4
+max_lines_visible = 5

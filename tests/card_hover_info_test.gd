@@ -14,6 +14,7 @@ func _init() -> void:
 func _run() -> void:
 	await _test_hud_owns_shared_hover_layer()
 	await _test_hover_info_binds_and_renders_card_instance()
+	await _test_hover_info_renders_pixel_reference_layout()
 	await _test_card_hover_shows_panel_on_the_right_and_hides()
 	await _test_card_hover_flips_panel_to_the_left_at_viewport_edge()
 	quit(1 if _failures > 0 else 0)
@@ -82,14 +83,98 @@ func _test_hover_info_binds_and_renders_card_instance() -> void:
 	hover_info.call("refresh_info")
 	await process_frame
 	var labels := _collect_labels(hover_info)
-	_expect(
-		labels.has("point:5 armor:3"),
-		"HoverInfo renders the current point and armor values",
-	)
+	_expect(labels.has("5"), "HoverInfo renders the current point value")
+	_expect(labels.has("3"), "HoverInfo renders the current armor value")
 	_expect(
 		labels.has(rule.description),
 		"HoverInfo renders each card rule description",
 	)
+
+	hover_info.free()
+	await process_frame
+
+
+func _test_hover_info_renders_pixel_reference_layout() -> void:
+	var hover_info := HOVER_INFO_SCENE.instantiate() as Control
+	root.add_child(hover_info)
+	await process_frame
+
+	var data := CardData.new()
+	data.card_name = "Ancient Amulet"
+	data.description = "An old amulet carved by forgotten hands."
+	data.rarity = CardData.Rarity.EPIC
+	data.tags = [CardData.CardTag.ITEM]
+	var rule := CardRule.new()
+	rule.description = "Magic find increased"
+	data.effect_rules.append(rule)
+	var instance := CardInstance.new(data)
+	instance.current_points = 5
+	instance.current_armor = 3
+
+	hover_info.call("set_inst", instance)
+	hover_info.call("refresh_info")
+	await process_frame
+
+	var rarity_label := hover_info.get_node_or_null(
+		"Panel/Margin/Layout/BadgeRow/RarityBadge/RarityLabel"
+	) as Label
+	var category_label := hover_info.get_node_or_null(
+		"Panel/Margin/Layout/BadgeRow/CategoryBadge/CategoryLabel"
+	) as Label
+	var title_panel := hover_info.get_node_or_null(
+		"Panel/Margin/Layout/TitlePanel"
+	) as PanelContainer
+	var title_label := hover_info.get_node_or_null(
+		"Panel/Margin/Layout/TitlePanel/TitleLabel"
+	) as Label
+	var description_label := hover_info.get_node_or_null(
+		"Panel/Margin/Layout/DescriptionLabel"
+	) as Label
+	var point_value := hover_info.get_node_or_null(
+		"Panel/Margin/Layout/Stats/PointRow/ValueLabel"
+	) as Label
+	var armor_value := hover_info.get_node_or_null(
+		"Panel/Margin/Layout/Stats/ArmorRow/ValueLabel"
+	) as Label
+
+	_expect(rarity_label != null, "HoverInfo exposes a rarity badge label")
+	_expect(category_label != null, "HoverInfo exposes a category badge label")
+	_expect(title_panel != null, "HoverInfo exposes the high-contrast title panel")
+	_expect(title_label != null, "HoverInfo exposes the card title label")
+	_expect(description_label != null, "HoverInfo exposes the description label")
+	_expect(point_value != null, "HoverInfo exposes a dedicated point value label")
+	_expect(armor_value != null, "HoverInfo exposes a dedicated armor value label")
+
+	if rarity_label != null:
+		_expect(rarity_label.text == "EPIC", "rarity badge renders the card rarity")
+	if category_label != null:
+		_expect(category_label.text == "ITEM", "category badge renders the semantic card tag")
+	if title_label != null:
+		_expect(title_label.text == data.card_name, "title panel renders the card name")
+	if description_label != null:
+		_expect(
+			description_label.text == data.description,
+			"description area renders the card description",
+		)
+		_expect(
+			description_label.autowrap_mode != TextServer.AUTOWRAP_OFF,
+			"description area wraps long text",
+		)
+	if point_value != null:
+		_expect(point_value.text == "5", "point row renders current points")
+	if armor_value != null:
+		_expect(armor_value.text == "3", "armor row renders current armor")
+	if title_panel != null:
+		var title_style := title_panel.get_theme_stylebox("panel") as StyleBoxFlat
+		_expect(title_style != null, "title panel uses a solid high-contrast style")
+		if title_style != null:
+			_expect(
+				title_style.bg_color.get_luminance() > 0.85,
+				"title panel uses the bright reference-image treatment",
+			)
+
+	var labels := _collect_labels(hover_info)
+	_expect(labels.has(rule.description), "rules remain visible in the pixel layout")
 
 	hover_info.free()
 	await process_frame

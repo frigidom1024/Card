@@ -10,7 +10,7 @@
 [ext_resource type="Script" uid="uid://cbuhf1nve87kp" path="res://scripts/home/menu_screen.gd" id="8_menu_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_i42df"]
-bg_color = Color(1, 1, 1, 1)
+bg_color = Color(0.9529412, 0.93333334, 0.87058824, 0.9607843)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ygwf5"]
 

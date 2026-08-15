@@ -2,9 +2,48 @@ extends Control
 
 const CARD_GAP := 16.0
 const VIEWPORT_MARGIN := 12.0
+const PANEL_WIDTH := 440.0
+const PIXEL_FONT := preload("res://assert/font/press_start_2p/PressStart2P.ttf")
 
-@export var attr_label: PackedScene
-@onready var attr_container: VBoxContainer = $Panel/MarginContainer/HBoxContainer
+const RARITY_NAMES := {
+	CardData.Rarity.COMMON: "COMMON",
+	CardData.Rarity.RARE: "RARE",
+	CardData.Rarity.EPIC: "EPIC",
+	CardData.Rarity.LEGENDARY: "LEGENDARY",
+}
+const RARITY_COLORS := {
+	CardData.Rarity.COMMON: Color("c6c2bd"),
+	CardData.Rarity.RARE: Color("58a6ff"),
+	CardData.Rarity.EPIC: Color("b058f7"),
+	CardData.Rarity.LEGENDARY: Color("f5ad42"),
+}
+const CATEGORY_TAGS := [
+	CardData.CardTag.LOCATION,
+	CardData.CardTag.CREATURE,
+	CardData.CardTag.ITEM,
+	CardData.CardTag.EVENT,
+]
+const CATEGORY_NAMES := {
+	CardData.CardTag.LOCATION: "LOCATION",
+	CardData.CardTag.CREATURE: "CREATURE",
+	CardData.CardTag.ITEM: "ITEM",
+	CardData.CardTag.EVENT: "EVENT",
+}
+const CARD_TYPE_NAMES := {
+	CardData.CardType.ROOT: "ROOT",
+	CardData.CardType.NORMAL: "NORMAL",
+	CardData.CardType.GUIDE: "GUIDE",
+}
+
+@onready var panel: PanelContainer = $Panel
+@onready var rarity_badge: PanelContainer = $Panel/Margin/Layout/BadgeRow/RarityBadge
+@onready var rarity_label: Label = $Panel/Margin/Layout/BadgeRow/RarityBadge/RarityLabel
+@onready var category_label: Label = $Panel/Margin/Layout/BadgeRow/CategoryBadge/CategoryLabel
+@onready var title_label: Label = $Panel/Margin/Layout/TitlePanel/TitleLabel
+@onready var description_label: Label = $Panel/Margin/Layout/DescriptionLabel
+@onready var point_value_label: Label = $Panel/Margin/Layout/Stats/PointRow/ValueLabel
+@onready var armor_value_label: Label = $Panel/Margin/Layout/Stats/ArmorRow/ValueLabel
+@onready var rules_container: VBoxContainer = $Panel/Margin/Layout/Stats/Rules
 
 var card_inst: CardInstance
 var _source_card: Control
@@ -12,6 +51,7 @@ var _source_card: Control
 
 func _ready() -> void:
 	_set_mouse_filter_recursive(self)
+	call_deferred("_fit_to_content")
 
 
 func set_inst(value: CardInstance) -> void:
@@ -19,18 +59,36 @@ func set_inst(value: CardInstance) -> void:
 
 
 func refresh_info() -> void:
-	for child in attr_container.get_children():
-		attr_container.remove_child(child)
-		child.queue_free()
+	_clear_rules()
 
 	if card_inst == null:
+		_clear_card_content()
 		return
 
-	_add_attr("point:%d armor:%d" % [card_inst.current_points, card_inst.current_armor])
-	if card_inst.card_data == null:
+	point_value_label.text = str(card_inst.current_points)
+	armor_value_label.text = str(card_inst.current_armor)
+
+	var card_data := card_inst.card_data
+	if card_data == null:
+		_clear_card_content()
+		point_value_label.text = str(card_inst.current_points)
+		armor_value_label.text = str(card_inst.current_armor)
 		return
-	for rule in card_inst.card_data.effect_rules:
-		_add_attr(rule.description)
+
+	rarity_label.text = RARITY_NAMES.get(card_data.rarity, "COMMON")
+	category_label.text = _get_category_name(card_data)
+	title_label.text = card_data.card_name if not card_data.card_name.is_empty() else "UNKNOWN CARD"
+	description_label.text = card_data.description
+	description_label.visible = not card_data.description.is_empty()
+	_update_rarity_badge(card_data.rarity)
+
+	for rule in card_data.effect_rules:
+		if rule == null or rule.description.strip_edges().is_empty():
+			continue
+		_add_rule(rule.description)
+
+	rules_container.visible = rules_container.get_child_count() > 0
+	call_deferred("_fit_to_content")
 
 
 func show_for_card(source_card: Control, instance: CardInstance) -> void:
@@ -48,11 +106,72 @@ func hide_for_card(source_card: Control) -> void:
 	_source_card = null
 
 
-func _add_attr(content: String) -> void:
-	var attr := attr_label.instantiate()
-	attr_container.add_child(attr)
-	attr.set_content(content)
-	_set_mouse_filter_recursive(attr)
+func _clear_card_content() -> void:
+	rarity_label.text = "COMMON"
+	category_label.text = "NORMAL"
+	title_label.text = "UNKNOWN CARD"
+	description_label.text = ""
+	description_label.visible = false
+	rules_container.visible = false
+	_update_rarity_badge(CardData.Rarity.COMMON)
+	call_deferred("_fit_to_content")
+
+
+func _clear_rules() -> void:
+	for child in rules_container.get_children():
+		rules_container.remove_child(child)
+		child.queue_free()
+
+
+func _add_rule(content: String) -> void:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 10)
+
+	var icon := Label.new()
+	icon.custom_minimum_size = Vector2(28.0, 0.0)
+	icon.text = "+"
+	icon.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	icon.add_theme_color_override("font_color", Color("b86cff"))
+	icon.add_theme_font_override("font", PIXEL_FONT)
+	icon.add_theme_font_size_override("font_size", 16)
+	row.add_child(icon)
+
+	var label := Label.new()
+	label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	label.text = content
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	label.add_theme_color_override("font_color", Color("eceae3"))
+	label.add_theme_font_override("font", PIXEL_FONT)
+	label.add_theme_font_size_override("font_size", 13)
+	row.add_child(label)
+
+	rules_container.add_child(row)
+	_set_mouse_filter_recursive(row)
+
+
+func _get_category_name(card_data: CardData) -> String:
+	for tag in CATEGORY_TAGS:
+		if card_data.tags.has(tag):
+			return CATEGORY_NAMES.get(tag, "NORMAL")
+	return CARD_TYPE_NAMES.get(card_data.card_type, "NORMAL")
+
+
+func _update_rarity_badge(rarity: int) -> void:
+	var rarity_color: Color = RARITY_COLORS.get(rarity, RARITY_COLORS[CardData.Rarity.COMMON])
+	rarity_label.add_theme_color_override("font_color", rarity_color)
+	var badge_style := rarity_badge.get_theme_stylebox("panel").duplicate() as StyleBoxFlat
+	if badge_style == null:
+		return
+	badge_style.border_color = rarity_color
+	rarity_badge.add_theme_stylebox_override("panel", badge_style)
+
+
+func _fit_to_content() -> void:
+	var minimum_size := get_combined_minimum_size()
+	size = Vector2(PANEL_WIDTH, minimum_size.y)
+	if _source_card != null and is_instance_valid(_source_card):
+		_position_next_to_card(_source_card)
 
 
 func _position_next_to_card(source_card: Control) -> void:

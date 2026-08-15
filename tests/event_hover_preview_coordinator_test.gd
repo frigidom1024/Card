@@ -26,7 +26,7 @@ func _run_tests() -> void:
 
 func _test_preview_position_prefers_right_then_flips_and_clamps() -> void:
 	var coordinator = EventHoverPreviewCoordinatorScript.new()
-	var panel_size := Vector2(292.0, 180.0)
+	var panel_size := Vector2(440.0, 360.0)
 	var viewport_size := Vector2(1280.0, 720.0)
 
 	var right_position := coordinator.calculate_position(
@@ -42,7 +42,10 @@ func _test_preview_position_prefers_right_then_flips_and_clamps() -> void:
 	var top_position := coordinator.calculate_position(
 		Rect2(Vector2(240.0, -40.0), Vector2(80.0, 80.0)), panel_size, viewport_size
 	)
-	_expect(top_position.y >= EventHoverPreviewCoordinatorScript.VIEWPORT_MARGIN, "preview remains inside top viewport edge")
+	_expect(
+		top_position.y >= EventHoverPreviewCoordinatorScript.VIEWPORT_MARGIN,
+		"preview remains inside top viewport edge",
+	)
 
 	var bottom_position := coordinator.calculate_position(
 		Rect2(Vector2(240.0, 680.0), Vector2(80.0, 80.0)), panel_size, viewport_size
@@ -111,9 +114,8 @@ func _make_event(origin: Vector2i, name: String) -> BoardEvent:
 
 
 func _title_of(preview) -> String:
-	var title := preview.get_node_or_null("MarginContainer/Content/Header/TitleLabel") as Label
+	var title := preview.get_node_or_null("MarginContainer/Content/TitlePanel/TitleLabel") as Label
 	return title.text if title != null else ""
-
 
 func _expect(condition: bool, message: String) -> void:
 	if condition:
