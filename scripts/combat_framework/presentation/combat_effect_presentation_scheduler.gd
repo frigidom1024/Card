@@ -9,13 +9,13 @@ var _finished_effect_keys: Dictionary = {}
 var _held_locks: Dictionary = {}
 var _active_handles: Dictionary = {}
 var _battle_speed: float = 1.0
-var _bridge: RefCounted = null
+var _bridge: Object = null
 var _is_pumping: bool = false
 var _pump_requested: bool = false
 var _canceling: bool = false
 
 
-func _init(p_bridge: RefCounted = null) -> void:
+func _init(p_bridge: Object = null) -> void:
 	_bridge = p_bridge
 
 

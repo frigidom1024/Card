@@ -98,6 +98,7 @@ func _init() -> void:
 
 func _run() -> void:
 	_setup_bridge()
+	_test_scheduler_accepts_board_bridge_node()
 	_test_routes_card_effect_clips_by_stable_id()
 	_test_routes_monster_effect_clips_by_stable_id()
 	_test_routes_chain_and_hud_clips()
@@ -122,6 +123,10 @@ func _setup_bridge() -> void:
 	_bridge.set_chain_presenter(_chain)
 	_bridge.set_hud_presenter(_hud)
 
+
+func _test_scheduler_accepts_board_bridge_node() -> void:
+	var scheduler := CombatEffectPresentationScheduler.new(_bridge)
+	_expect(scheduler != null, "Scheduler 必须接受真实棋盘 Node Bridge")
 
 func _test_routes_card_effect_clips_by_stable_id() -> void:
 	_bridge.execute_clip(_clip(CombatPresentationClipTypes.CARD_TRIGGER, "card_a"), 0.2)
