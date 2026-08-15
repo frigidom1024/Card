@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://cfqi8kubbs4aj"]
+
+[ext_resource type="StyleBox" uid="uid://b17gg0cyvn1pg" path="res://assert/ui/card_info_attr_panel.tres" id="1_i0f1w"]
+[ext_resource type="Script" uid="uid://ivyi8cucp53g" path="res://scenes/card/attr.gd" id="2_11axn"]
+
+[node name="AttrContainer" type="PanelContainer" unique_id=770258938]
+offset_right = 293.0
+offset_bottom = 131.0
+theme_override_styles/panel = ExtResource("1_i0f1w")
+script = ExtResource("2_11axn")
+
+[node name="Label" type="Label" parent="." unique_id=856989208]
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(0.010090301, 0.010090301, 0.010090301, 1)
+theme_override_font_sizes/font_size = 20
+text = "hello"
+horizontal_alignment = 1
+autowrap_mode = 3

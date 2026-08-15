@@ -2,8 +2,7 @@ extends SceneTree
 
 const GameManagerScene = preload("res://scenes/game/game_manager.tscn")
 const RevivalDeck = preload("res://data/starting_decks/revival_starting_deck.tres")
-const CardEntityScene = preload("res://scenes/card_view/card_entity.tscn")
-const EventScene = preload("res://scenes/game/event.tscn")
+const CardScene = preload("res://scenes/card/card.tscn")
 
 var _failure_count := 0
 
@@ -13,140 +12,60 @@ func _init() -> void:
 
 
 func _run_tests() -> void:
-	await _test_new_run_starts_with_faith()
-	await _test_confirmed_board_card_retraction_spends_one_faith()
-	await _test_faith_is_visible_and_system_combat_settlement_is_free()
-	await _test_zero_faith_allows_manual_chain_removal_and_generates_an_encounter()
-	await _test_reaching_zero_faith_spawns_a_random_monster()
+	await _test_new_run_keeps_faith_as_hidden_domain_state()
+	await _test_confirmed_board_card_retraction_spends_gold_without_changing_faith()
 	quit(0 if _failure_count == 0 else 1)
 
 
-func _test_new_run_starts_with_faith() -> void:
+func _test_new_run_keeps_faith_as_hidden_domain_state() -> void:
 	var manager := GameManagerScene.instantiate()
 	_expect(manager.configure_run(RevivalDeck), "faith setup configures a starting deck")
 	root.add_child(manager)
 	await process_frame
 	_expect(
-		manager.player_data.get("faith") == 3, "runtime PlayerData stores a new run's three faith"
+		manager.player_data.get("faith") == PlayerData.INITIAL_FAITH,
+		"runtime PlayerData retains the run-scoped faith domain value"
 	)
 	_expect(manager.get("faith") == null, "GameManager does not keep a duplicate faith value")
-	_cleanup_manager(manager)
+	_expect(
+		manager.get_node_or_null("GameplayCanvas/Hud/GameInfo/FaithSeal") == null,
+		"GameInfo only presents vitality and gold"
+	)
+	await _cleanup_manager(manager)
 
 
-func _test_confirmed_board_card_retraction_spends_one_faith() -> void:
+func _test_confirmed_board_card_retraction_spends_gold_without_changing_faith() -> void:
 	var manager := await _make_game_manager()
-	var board: Board = manager.board
 	var root_card := _place_card(manager, Vector2i(0, 0), CardData.CardType.ROOT)
 	var tail_card := _place_card(manager, Vector2i(2, 0), CardData.CardType.NORMAL)
 	_expect(root_card != null and tail_card != null, "faith setup places a two-card chain")
+	var faith_before: int = manager.player_data.faith
+	var gold_before: int = manager.player_data.gold
 	if tail_card != null:
-		manager.drag_layer.on_card_drag_start(tail_card)
-		tail_card.global_position = Vector2(-1000, -1000)
-		manager.drag_layer.on_card_drag_end(tail_card)
+		_expect(manager.drag_layer.start_drag(tail_card), "DraggerLayer starts the chain retraction")
+		_move_card_center_to(tail_card, manager.hand_zone.get_global_rect().get_center())
+		_expect(manager.drag_layer.end_drag(tail_card), "HandZone accepts the retracted card")
 		await process_frame
 	_expect(
-		manager.player_data.get("faith") == 2,
-		"only a confirmed manual chain retraction spends PlayerData faith"
-	)
-	var faith_value := (
-		manager.get_node_or_null("GameplayCanvas/PilgrimCrestHud/FaithSeal/FaithValue") as Label
+		manager.player_data.faith == faith_before,
+		"confirmed manual retraction leaves hidden faith domain state unchanged"
 	)
 	_expect(
-		faith_value != null and faith_value.text == "FAITH · 2",
-		"faith HUD refreshes after manual chain removal"
-	)
-	_cleanup_manager(manager)
-
-
-func _test_faith_is_visible_and_system_combat_settlement_is_free() -> void:
-	var manager := await _make_game_manager()
-	var tail_card := _place_card(manager, Vector2i(0, 0), CardData.CardType.ROOT)
-	var follower := _place_card(manager, Vector2i(2, 0), CardData.CardType.NORMAL)
-	var faith_value := (
-		manager.get_node_or_null("GameplayCanvas/PilgrimCrestHud/FaithSeal/FaithValue") as Label
+		manager.player_data.gold == gold_before - CardRetractionCostService.COST_PER_RETURNED_CARD,
+		"confirmed manual retraction spends gold"
 	)
 	_expect(
-		faith_value != null and faith_value.text == "FAITH · 3", "faith HUD shows the current faith"
+		root_card in manager.board.board_zone.get_cards()
+		and tail_card not in manager.board.board_zone.get_cards()
+		and tail_card in manager.hand_zone.get_cards(),
+		"confirmed manual retraction moves only the selected tail card to HandZone"
 	)
-	var retreat_event := _attach_retreat_event(manager.board)
-	_expect(retreat_event != null, "faith retreat fixture attaches a normal encounter")
-	if retreat_event != null:
-		manager._placement_pipeline.event_interaction_requested.emit(retreat_event.event_instance)
-		_expect(
-			manager._event_modal_coordinator.confirm_combat_settlement(),
-			"Faith retreat settles through the EventModalCoordinator public path"
-		)
+	var gold_number := manager.get_node_or_null("GameplayCanvas/Hud/GameInfo/GoldNumber") as Label
 	_expect(
-		manager.player_data.get("faith") == 3,
-		"system-driven combat settlement does not spend PlayerData faith"
+		gold_number != null and gold_number.text == str(manager.player_data.gold),
+		"GameInfo refreshes the displayed gold after retraction cost"
 	)
-	_expect(
-		tail_card not in manager.board.cards and tail_card in manager.hand_area.cards,
-		"a depleted root resets and returns to hand during RETREAT"
-	)
-	_expect(
-		follower not in manager.board.cards and follower not in manager.hand_area.cards,
-		"a depleted normal card is destroyed during RETREAT instead of returning to hand"
-	)
-	_cleanup_manager(manager)
-
-
-func _test_zero_faith_allows_manual_chain_removal_and_generates_an_encounter() -> void:
-	var manager := await _make_game_manager()
-	var board: Board = manager.board
-	_place_card(manager, Vector2i(0, 0), CardData.CardType.ROOT)
-	var tail_card := _place_card(manager, Vector2i(2, 0), CardData.CardType.NORMAL)
-	manager.player_data.faith = 0
-	var events_before := board.events.size()
-	_expect(
-		manager.drag_layer.can_start_drag(tail_card),
-		"zero faith still permits manually dismantling the chain"
-	)
-	manager.drag_layer.on_card_drag_start(tail_card)
-	tail_card.global_position = Vector2(-1000, -1000)
-	manager.drag_layer.on_card_drag_end(tail_card)
-	await process_frame
-	_expect(
-		manager.player_data.faith == -1,
-		"confirmed manual retraction at zero faith can create faith debt"
-	)
-	_expect(
-		tail_card not in board.cards,
-		"manual retraction at zero faith removes the selected chain card"
-	)
-	_expect(
-		board.events.size() == events_before + 1,
-		"manual retraction at zero faith adds one map encounter"
-	)
-	_cleanup_manager(manager)
-
-
-func _test_reaching_zero_faith_spawns_a_random_monster() -> void:
-	var manager := await _make_game_manager()
-	manager.player_data.faith = 1
-	var board: Board = manager.board
-	_expect(
-		_place_card(manager, Vector2i(0, 0), CardData.CardType.ROOT) != null,
-		"residual encounter setup places root"
-	)
-	var tail_card := _place_card(manager, Vector2i(2, 0), CardData.CardType.NORMAL)
-	var events_before := board.events.size()
-	if tail_card != null:
-		manager.drag_layer.on_card_drag_start(tail_card)
-		tail_card.global_position = Vector2(-1000, -1000)
-		manager.drag_layer.on_card_drag_end(tail_card)
-	await process_frame
-	_expect(manager.player_data.faith == 0, "confirmed manual retraction reaches zero faith")
-	_expect(
-		board.events.size() == events_before + 1, "zero faith retraction adds one map encounter"
-	)
-	if board.events.size() == events_before + 1:
-		var spawned_event: EventInstance = board.events.back().event_instance
-		_expect(
-			spawned_event.get_event_type() == EventData.EventType.MONSTER,
-			"faith consequence only creates a normal monster encounter"
-		)
-	_cleanup_manager(manager)
+	await _cleanup_manager(manager)
 
 
 func _make_game_manager() -> Node:
@@ -154,78 +73,47 @@ func _make_game_manager() -> Node:
 	_expect(manager.configure_run(RevivalDeck), "faith setup configures a starting deck")
 	root.add_child(manager)
 	await process_frame
-	for event_node in manager.board.events.duplicate():
+	for event_node in manager.board.event_zone.get_events().duplicate():
 		manager.board.remove_event(event_node)
 	return manager
 
 
-func _place_card(manager: Node, left_cell: Vector2i, card_type: CardData.CardType) -> CardEntity:
+func _place_card(manager: Node, left_cell: Vector2i, card_type: CardData.CardType) -> Card:
 	var data := CardData.new()
 	data.card_type = card_type
+	data.max_points = 1
 	var instance := CardInstance.new(data)
-	var card := CardEntityScene.instantiate() as CardEntity
-	card.bind_instance(instance)
-	card.drag_layer = manager.drag_layer
+	var card := CardScene.instantiate() as Card
+	card.bind_card_inst(instance)
+	card.bind_drag_layer(manager.drag_layer)
 	root.add_child(card)
+	var card_service := manager.get_run_context().card_service as RunCardService
+	if not card_service.register_existing_instance(instance, card):
+		_expect(false, "faith test card registers in RunCardService")
+		return card
+	instance.direction = 1
 	card.global_position = manager.board.to_global(
 		_horizontal_card_center(manager.board, left_cell)
-	)
+	) - card.size * 0.5
+	card.target_position = card.position
 	card.rotation_degrees = 90.0
-	manager.cards_inst.append(instance)
-	manager.card_entities.append(card)
-	_expect(manager.board.add_card(card), "faith test card is added to the Board")
+	card.refresh_display()
+	_expect(manager.board.board_zone.add_card(card), "faith test card is added to BoardZone")
 	return card
 
 
-func _attach_retreat_event(board: Board) -> BoardEvent:
-	var content := MonsterEventContent.new()
-	content.mob = _make_mob(100)
-	var data := EventData.new()
-	data.event_id = "faith-retreat"
-	data.event_type = EventData.EventType.MONSTER
-	data.content = content
-	var instance := data.create_instance()
-	var origin := _find_attachable_event_origin(board, instance)
-	_expect(origin.x >= 0, "faith retreat fixture finds an unoccupied event slot")
-	if origin.x < 0:
-		return null
-	instance.origin = origin
-	var event_node := EventScene.instantiate() as BoardEvent
-	event_node.setup(instance, board.cell_size)
-	_expect(board.attach_event(event_node), "faith retreat event attaches to the board")
-	return event_node
-
-
-func _find_attachable_event_origin(board: Board, instance: EventInstance) -> Vector2i:
-	for y in board.height:
-		for x in board.width:
-			instance.origin = Vector2i(x, y)
-			if board.can_attach_event(instance):
-				return instance.origin
-	return Vector2i(-1, -1)
-
-
-func _make_mob(max_hp: int) -> MobData:
-	var stats := CombatStatsData.new()
-	stats.max_hp = max_hp
-	var mob := MobData.new()
-	mob.mob_name = "Faith Retreat Mob"
-	mob.base_stats = stats
-	return mob
-
-
-func _combat_stats(max_hp: int, hp: int) -> CombatStats:
-	var stats := CombatStats.new()
-	stats.max_hp = max_hp
-	stats.hp = hp
-	return stats
-
-
 func _horizontal_card_center(board: Board, left_cell: Vector2i) -> Vector2:
-	var right_cell := left_cell + Vector2i.RIGHT
-	return board.to_local(
-		(board.grid_to_world_center(left_cell) + board.grid_to_world_center(right_cell)) / 2.0
+	var background := board.board_zone.back_ground
+	var center_local := Vector2(
+		(float(left_cell.x) + 1.0) * background.cell_size,
+		(float(left_cell.y) + 0.5) * background.cell_size
 	)
+	return board.to_local(background.to_global(center_local))
+
+
+func _move_card_center_to(card: Card, global_center: Vector2) -> void:
+	card.global_position = global_center - card.size * 0.5
+	card.target_position = card.position
 
 
 func _cleanup_manager(manager: Node) -> void:

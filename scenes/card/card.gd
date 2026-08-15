@@ -35,6 +35,7 @@ class_name Card
 
 var tween_rot: Tween
 var tween_hover: Tween
+var _shadow_base_screen_offset: Vector2 = Vector2.ZERO
 
 
 @export_category("Drag")
@@ -59,6 +60,7 @@ func _ready() -> void:
 	if shader_material != null:
 		card_texture.material = shader_material.duplicate() as ShaderMaterial
 
+	_shadow_base_screen_offset = shadow.position
 	_sync_hover_pivot()
 	if not resized.is_connected(_sync_hover_pivot):
 		resized.connect(_sync_hover_pivot)
@@ -66,10 +68,11 @@ func _ready() -> void:
 	target_position = position
 	if card_inst == null:
 		card_inst = CardInstance.create_debug_card()
+	_sync_rotation_from_card_inst()
 	refresh_display()
 
 func _process(delta: float) -> void:
-	refresh_shadow(delta)
+	refresh_shadow()
 
 
 	var displacement:Vector2 = target_position - position
@@ -88,34 +91,76 @@ func _sync_hover_pivot() -> void:
 	pivot_offset = size * 0.5
 
 
-func refresh_shadow(delta:float)->void:
-	var center:Vector2 = get_viewport_rect().size/2
-	var distance:float = global_position.x-center.x
-	
-	shadow.position.x = lerp(0.0,-sign(distance)*max_offset_shadow,abs(distance/center.x))
+func refresh_shadow(_delta: float = 0.0) -> void:
+	if shadow == null:
+		return
 
-var card_direction: int = 0
+	var viewport_size: Vector2 = get_viewport_rect().size
+	var viewport_center_x: float = viewport_size.x * 0.5
+	var half_viewport_width: float = maxf(viewport_center_x, 1.0)
+	var card_transform: Transform2D = get_global_transform_with_canvas()
+	var card_screen_center: Vector2 = card_transform * (size * 0.5)
+	var horizontal_ratio: float = clampf(
+		(card_screen_center.x - viewport_center_x) / half_viewport_width,
+		-1.0,
+		1.0,
+	)
+	var desired_screen_offset: Vector2 = Vector2(
+		_shadow_base_screen_offset.x - horizontal_ratio * max_offset_shadow,
+		_shadow_base_screen_offset.y,
+	)
+	var card_screen_origin: Vector2 = card_transform * Vector2.ZERO
+	shadow.position = (
+		card_transform.affine_inverse() * (card_screen_origin + desired_screen_offset)
+	)
+
+
 var rotation_tween: Tween
 
 
 func rotate_card() -> void:
-	card_direction = (card_direction + 1) % 4
+	if card_inst == null:
+		return
 
-	var target_rotation := card_direction * 90.0
+	var next_direction: int = posmod(card_inst.direction + 1, 4)
+	card_inst.direction = next_direction
 
-	if rotation_tween and rotation_tween.is_running():
+	if rotation_tween != null and rotation_tween.is_running():
 		rotation_tween.kill()
+
+	var target_rotation: float = float(next_direction * 90)
+	while target_rotation <= rotation_degrees:
+		target_rotation += 360.0
 
 	rotation_tween = create_tween()
 	rotation_tween.set_trans(Tween.TRANS_QUAD)
 	rotation_tween.set_ease(Tween.EASE_OUT)
-
-	rotation_tween.tween_property(
-		self,
-		"rotation_degrees",
-		target_rotation,
-		0.2
+	rotation_tween.tween_property(self, "rotation_degrees", target_rotation, 0.2)
+	rotation_tween.tween_callback(
+		Callable(self, "_finish_card_rotation").bind(next_direction)
 	)
+
+
+func _finish_card_rotation(expected_direction: int) -> void:
+	if card_inst == null or posmod(card_inst.direction, 4) != expected_direction:
+		return
+	rotation_degrees = float(expected_direction * 90)
+	rotation_tween = null
+
+
+func _sync_rotation_from_card_inst() -> void:
+	if card_inst == null:
+		return
+	if rotation_tween != null and rotation_tween.is_running():
+		rotation_tween.kill()
+	rotation_tween = null
+
+	# direction 只描述牌桌上的持久化朝向。未入桌卡牌保持默认视觉方向，
+	# 避免在 BoardZone 根据当前位置计算候选格前提前旋转根 Control。
+	var visual_direction: int = 0
+	if card_inst.cur_zone == CardInstance.ZONE.BOARD:
+		visual_direction = posmod(card_inst.direction, 4)
+	rotation_degrees = float(visual_direction * 90)
 
 func _on_gui_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton:
@@ -155,7 +200,7 @@ func _handle_3D_effect(event:InputEvent)->void:
 func _start_drag(mouse_position: Vector2) -> void:
 	dragging = true
 	z_index = 100
-	drag_offset = get_global_mouse_position() - global_position
+	drag_offset = get_global_transform().basis_xform(mouse_position - size * 0.5)
 	target_position = position
 	if drag_layer and not drag_layer.start_drag(self):
 		dragging = false
@@ -177,20 +222,17 @@ func _update_drag(mouse_position: Vector2) -> void:
 
 
 func update_drag_target_from_global_pointer(global_pointer: Vector2) -> void:
-	var parent_control := get_parent() as Control
-
-	# 鼠标全局位置 - 点击时的鼠标偏移
-	var target_global_position := global_pointer - drag_offset
-
-	if parent_control == null:
-		target_position = target_global_position
+	var target_global_center: Vector2 = global_pointer - drag_offset
+	var parent_canvas := get_parent() as CanvasItem
+	if parent_canvas == null:
+		target_position = target_global_center - size * 0.5
 		return
 
-	# 全局坐标 -> 父 Control 的局部坐标
-	target_position = (
-		parent_control.get_global_transform().affine_inverse()
-		* target_global_position
+	var target_parent_center: Vector2 = (
+		parent_canvas.get_global_transform().affine_inverse()
+		* target_global_center
 	)
+	target_position = target_parent_center - size * 0.5
 
 func _end_drag()->void:
 	if not dragging:
@@ -216,6 +258,7 @@ func _on_mouse_exited() -> void:
 		tween_hover.kill()
 	tween_hover = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
 	tween_hover.tween_property(self, "scale", Vector2.ONE, 0.25)
+	z_index-=100
 
 
 func _on_mouse_entered() -> void:
@@ -225,6 +268,7 @@ func _on_mouse_entered() -> void:
 		tween_hover.kill()
 	tween_hover = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_ELASTIC)
 	tween_hover.tween_property(self, "scale", Vector2(1.2, 1.2), 0.5)
+	z_index+=100
 	
 func bind_drag_layer(drag_layer:DraggerLayer)->void:
 	self.drag_layer=drag_layer
@@ -232,6 +276,7 @@ func bind_drag_layer(drag_layer:DraggerLayer)->void:
 
 func bind_card_inst(value: CardInstance) -> void:
 	card_inst = value
+	_sync_rotation_from_card_inst()
 	refresh_display()
 
 

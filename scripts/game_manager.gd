@@ -61,7 +61,7 @@ signal faith_changed(current_faith: int)
 @onready var hand_zone: HandZone = $GameplayCanvas/Hud/HandZone
 @onready var shop: Shop = $GameplayCanvas/Hud/Shop
 @onready var reclaim_zone: ReclaimZone = $GameplayCanvas/Hud/ReclaimZone
-@onready var pilgrim_crest_hud: PilgrimCrestHud = $GameplayCanvas/PilgrimCrestHud
+@onready var game_info: GameInfo = $GameplayCanvas/Hud/GameInfo
 @onready var drag_layer: DraggerLayer = $GameplayCanvas/DragLayer
 @onready var shop_event_view = $EventModalLayer/ShopEventView
 @onready var treasure_event_view = $EventModalLayer/TreasureEventView
@@ -348,7 +348,7 @@ func _configure_encounter_resolution() -> bool:
 		_run_context.player_data,
 		_run_context.card_service,
 		Callable(_exploration_coordinator, "dismiss_defeated_boss"),
-		Callable(self, "_sync_pilgrim_crest"),
+		Callable(self, "_sync_game_info"),
 		Callable(self, "_refresh_event_display"),
 		_run_context.random.encounter_reward_rng()
 	):
@@ -402,11 +402,10 @@ func _configure_run_flow() -> bool:
 func _configure_presentation() -> bool:
 	_presentation = RunPresentationCoordinatorScript.new()
 	if not _presentation.configure(
-		pilgrim_crest_hud,
+		game_info,
 		drag_layer,
 		_run_context.player_data,
 		_run_context.player_stats,
-		_faith_service,
 		_retraction_cost_service
 	):
 		return _fail_run_initialization("GameManager could not configure run presentation")
@@ -449,13 +448,7 @@ func _forward_faith_changed(current_faith: int) -> void:
 	faith_changed.emit(current_faith)
 
 
-func set_player_temporary_status(status_text: String) -> void:
-	if pilgrim_crest_hud != null:
-		pilgrim_crest_hud.set_temporary_status(status_text)
-
-
-## Kept as a compatibility read for existing scene consumers.
-func _sync_pilgrim_crest() -> void:
+func _sync_game_info() -> void:
 	if _presentation != null:
 		_presentation.sync_all()
 

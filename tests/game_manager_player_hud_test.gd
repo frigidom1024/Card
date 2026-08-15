@@ -11,30 +11,36 @@ func _init() -> void:
 
 
 func _run_tests() -> void:
-	await _test_game_manager_syncs_pilgrim_crest()
-	await _test_player_hud_syncs_updates_and_status()
+	await _test_game_manager_syncs_game_info()
+	await _test_game_info_refreshes_after_combat()
 	quit(0 if _failure_count == 0 else 1)
 
 
-func _test_game_manager_syncs_pilgrim_crest() -> void:
+func _test_game_manager_syncs_game_info() -> void:
 	var manager := await _make_game_manager()
-	var hud := manager.get_node_or_null("GameplayCanvas/PilgrimCrestHud") as PilgrimCrestHud
-	_expect(hud != null, "game manager owns a Pilgrim Crest HUD")
-	_expect(
-		hud != null and (hud.get_node("VitalityValue") as Label).text == "%d / %d" % [manager.player_stats.hp, manager.player_stats.max_hp],
-		"HUD starts with runtime vitality"
-	)
-	_expect(
-		hud != null and (hud.get_node("FaithSeal/FaithValue") as Label).text == "FAITH · 3",
-		"HUD starts with runtime faith"
-	)
-	_expect(manager.find_child("FaithHud", true, false) == null, "legacy FaithHud is removed")
+	var game_info := manager.get_node_or_null("GameplayCanvas/Hud/GameInfo") as GameInfo
+	_expect(game_info != null, "game manager owns GameInfo inside HUD")
+	if game_info != null:
+		_expect(
+			(game_info.get_node("HeartContainer/HealthNumber") as Label).text
+			== "%d / %d" % [manager.player_stats.hp, manager.player_stats.max_hp],
+			"GameInfo starts with runtime health"
+		)
+		_expect(
+			(game_info.get_node("GoldNumber") as Label).text == str(manager.player_data.gold),
+			"GameInfo starts with runtime gold"
+		)
 	_cleanup_manager(manager)
 
 
-func _test_player_hud_syncs_updates_and_status() -> void:
+func _test_game_info_refreshes_after_combat() -> void:
 	var manager := await _make_game_manager()
-	var hud := manager.get_node("GameplayCanvas/PilgrimCrestHud") as PilgrimCrestHud
+	var game_info := manager.get_node_or_null("GameplayCanvas/Hud/GameInfo") as GameInfo
+	_expect(game_info != null, "combat fixture owns GameInfo")
+	if game_info == null:
+		_cleanup_manager(manager)
+		return
+
 	var after_combat := CombatStats.new()
 	after_combat.max_hp = manager.player_stats.max_hp
 	after_combat.hp = manager.player_stats.hp - 4
@@ -53,20 +59,15 @@ func _test_player_hud_syncs_updates_and_status() -> void:
 		[],
 		0
 	)
-	manager._on_modal_combat_settlement_confirmed(event_data.create_instance(), result)
 	_expect(
-		(hud.get_node("VitalityValue") as Label).text == "%d / %d" % [after_combat.hp, after_combat.max_hp],
-		"HUD refreshes after combat"
+		manager._encounter_resolution.apply(event_data.create_instance(), result),
+		"combat result applies through encounter resolution"
 	)
-	manager._on_faith_changed(2)
 	_expect(
-		(hud.get_node("FaithSeal/FaithValue") as Label).text == "FAITH · 2",
-		"HUD refreshes after faith signal"
+		(game_info.get_node("HeartContainer/HealthNumber") as Label).text
+		== "%d / %d" % [after_combat.hp, after_combat.max_hp],
+		"GameInfo refreshes health after combat"
 	)
-	manager.set_player_temporary_status("CURSE · BONE CHILL")
-	_expect((hud.get_node("StatusRow") as Control).visible, "manager exposes temporary status")
-	manager.set_player_temporary_status("")
-	_expect(not (hud.get_node("StatusRow") as Control).visible, "empty manager status clears row")
 	_cleanup_manager(manager)
 
 
@@ -84,6 +85,7 @@ func _cleanup_manager(manager: Node) -> void:
 
 
 func _expect(condition: bool, message: String) -> void:
-	if not condition:
-		_failure_count += 1
-		push_error(message)
+	if condition:
+		return
+	_failure_count += 1
+	push_error(message)

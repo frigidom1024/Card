@@ -1,95 +1,105 @@
-[gd_scene load_steps=3 format=3]
+[gd_scene format=3 uid="uid://4n508tlbaokg"]
 
 [ext_resource type="Script" path="res://scripts/game/pilgrim_crest_hud.gd" id="1_pilgrim_crest"]
-[ext_resource type="FontFile" path="res://assert/font/bar-sady/BAR_SADY-Medium.otf" id="2_font"]
+[ext_resource type="FontFile" uid="uid://duaeb0ij63vl6" path="res://assert/font/bar-sady/BAR_SADY-Medium.otf" id="2_font"]
 
-[node name="PilgrimCrestHud" type="Control"]
+[node name="PilgrimCrestHud" type="Control" unique_id=2143266218]
+layout_mode = 3
+anchors_preset = 0
 mouse_filter = 2
 script = ExtResource("1_pilgrim_crest")
 
-[node name="OuterPlaque" type="Panel" parent="."]
+[node name="OuterPlaque" type="Panel" parent="." unique_id=595809197]
+layout_mode = 0
 mouse_filter = 2
 
-[node name="BoneInset" type="Panel" parent="."]
+[node name="BoneInset" type="Panel" parent="." unique_id=124207931]
+layout_mode = 0
 mouse_filter = 2
 
-[node name="CrestGlyph" type="Label" parent="."]
-mouse_filter = 2
+[node name="CrestGlyph" type="Label" parent="." unique_id=1228588104]
+layout_mode = 0
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 22
 text = "✦"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="IdentityLabel" type="Label" parent="."]
-mouse_filter = 2
+[node name="IdentityLabel" type="Label" parent="." unique_id=1159162129]
+layout_mode = 0
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 20
 text = "PILGRIM"
 vertical_alignment = 1
 
-[node name="SubtitleLabel" type="Label" parent="."]
-mouse_filter = 2
+[node name="SubtitleLabel" type="Label" parent="." unique_id=1765464598]
+layout_mode = 0
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 14
 text = "LAST KNIGHT"
 vertical_alignment = 1
 
-[node name="MapLabel" type="Label" parent="."]
-mouse_filter = 2
+[node name="MapLabel" type="Label" parent="." unique_id=98756349]
+layout_mode = 0
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 15
 text = "RIBWOOD"
 vertical_alignment = 1
 
-[node name="HeaderDivider" type="ColorRect" parent="."]
+[node name="HeaderDivider" type="ColorRect" parent="." unique_id=282942280]
+layout_mode = 0
 mouse_filter = 2
 
-[node name="VitalityTitle" type="Label" parent="."]
-mouse_filter = 2
+[node name="VitalityTitle" type="Label" parent="." unique_id=450567989]
+layout_mode = 0
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 15
 text = "VITALITY"
 vertical_alignment = 1
 
-[node name="VitalityValue" type="Label" parent="."]
-mouse_filter = 2
+[node name="VitalityValue" type="Label" parent="." unique_id=617821943]
+layout_mode = 0
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 32
 text = "0 / 1"
 vertical_alignment = 1
 
-[node name="VitalityBar" type="ProgressBar" parent="."]
+[node name="VitalityBar" type="ProgressBar" parent="." unique_id=323562564]
+layout_mode = 0
 mouse_filter = 2
 show_percentage = false
 
-[node name="FaithSeal" type="Panel" parent="."]
+[node name="FaithSeal" type="Panel" parent="." unique_id=538510640]
+layout_mode = 0
 mouse_filter = 2
 
-[node name="FaithValue" type="Label" parent="FaithSeal"]
-mouse_filter = 2
+[node name="FaithValue" type="Label" parent="FaithSeal" unique_id=1135557950]
+layout_mode = 0
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 17
 text = "FAITH · 0"
 horizontal_alignment = 1
 vertical_alignment = 1
-[node name="GoldSeal" type="Panel" parent="."]
+
+[node name="GoldSeal" type="Panel" parent="." unique_id=409410516]
+layout_mode = 0
 mouse_filter = 2
 
-[node name="GoldValue" type="Label" parent="GoldSeal"]
-mouse_filter = 2
+[node name="GoldValue" type="Label" parent="GoldSeal" unique_id=555263353]
+layout_mode = 0
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 17
 text = "GOLD · 0"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="StatusRow" type="Panel" parent="."]
+[node name="StatusRow" type="Panel" parent="." unique_id=2056408565]
 visible = false
+layout_mode = 0
 mouse_filter = 2
 
-[node name="StatusLabel" type="Label" parent="StatusRow"]
-mouse_filter = 2
+[node name="StatusLabel" type="Label" parent="StatusRow" unique_id=1270786094]
+layout_mode = 0
 theme_override_fonts/font = ExtResource("2_font")
 theme_override_font_sizes/font_size = 15
 vertical_alignment = 1

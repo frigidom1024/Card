@@ -1,0 +1,10 @@
+[gd_resource type="StyleBoxTexture" format=3 uid="uid://e1wggxl8ts2x"]
+
+[ext_resource type="Texture2D" uid="uid://drdwst3ulw52h" path="res://assert/ui/card_info_panel.png" id="1_ii3vs"]
+
+[resource]
+texture = ExtResource("1_ii3vs")
+texture_margin_left = 30.0
+texture_margin_top = 30.0
+texture_margin_right = 30.0
+texture_margin_bottom = 30.0

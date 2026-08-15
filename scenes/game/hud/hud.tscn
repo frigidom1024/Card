@@ -1,9 +1,10 @@
 [gd_scene format=3 uid="uid://p6343o8pk8kq"]
 
-[ext_resource type="PackedScene" path="res://scenes/game/board.tscn" id="1_board"]
+[ext_resource type="PackedScene" uid="uid://dubisrc6ucgtl" path="res://scenes/game/board.tscn" id="1_board"]
 [ext_resource type="PackedScene" uid="uid://cmx2eoh6dx87s" path="res://scenes/zone/handzone.tscn" id="2_hand"]
-[ext_resource type="PackedScene" path="res://scenes/zone/reclaim_zone.tscn" id="3_reclaim"]
+[ext_resource type="PackedScene" uid="uid://d2kllwp3bo802" path="res://scenes/zone/reclaim_zone.tscn" id="3_reclaim"]
 [ext_resource type="PackedScene" uid="uid://bycj0468jvuyd" path="res://scenes/zone/shop.tscn" id="4_shop"]
+[ext_resource type="PackedScene" uid="uid://txjxkqmuwx5" path="res://scenes/game/hud/game_info.tscn" id="5_7lo7q"]
 
 [node name="Hud" type="Control" unique_id=1402589845]
 editor_description = "常驻玩法区域组合根：装配 Board、HandZone、Shop 与 ReclaimZone；各区域由 GameManager 接入页面唯一 DraggerLayer。"
@@ -38,3 +39,10 @@ offset_left = 1425.0
 offset_top = 249.0
 offset_right = 1816.0
 offset_bottom = 599.0
+
+[node name="GameInfo" parent="." unique_id=1925670509 instance=ExtResource("5_7lo7q")]
+layout_mode = 0
+offset_left = 1423.0
+offset_top = 21.0
+offset_right = 1814.0
+offset_bottom = 231.0

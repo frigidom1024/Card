@@ -1,0 +1,1112 @@
+Godot Engine v4.7.1.stable.official.a13da4feb - https://godotengine.org
+
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] _ready (res://scripts/card/card_view.gd:28)
+       [2] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [3] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] _ready (res://scripts/card/card_view.gd:30)
+       [2] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [3] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] _ready (res://scripts/card/card_view.gd:28)
+       [2] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [3] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] _ready (res://scripts/card/card_view.gd:30)
+       [2] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [3] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] _ready (res://scripts/card/card_view.gd:28)
+       [2] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [3] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] _ready (res://scripts/card/card_view.gd:30)
+       [2] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [3] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] _ready (res://scripts/card/card_view.gd:28)
+       [2] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [3] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] _ready (res://scripts/card/card_view.gd:30)
+       [2] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [3] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] _ready (res://scripts/card/card_view.gd:28)
+       [2] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [3] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] _ready (res://scripts/card/card_view.gd:30)
+       [2] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [3] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:23)
+       [5] _run_tests (res://tests/game_manager_faith_test.gd:15)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] _ready (res://scripts/card/card_view.gd:28)
+       [2] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [3] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [4] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [5] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [6] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] _ready (res://scripts/card/card_view.gd:30)
+       [2] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [3] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [4] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [5] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [6] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] _ready (res://scripts/card/card_view.gd:28)
+       [2] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [3] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [4] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [5] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [6] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] _ready (res://scripts/card/card_view.gd:30)
+       [2] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [3] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [4] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [5] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [6] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] _ready (res://scripts/card/card_view.gd:28)
+       [2] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [3] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [4] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [5] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [6] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] _ready (res://scripts/card/card_view.gd:30)
+       [2] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [3] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [4] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [5] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [6] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] _ready (res://scripts/card/card_view.gd:28)
+       [2] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [3] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [4] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [5] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [6] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] _ready (res://scripts/card/card_view.gd:30)
+       [2] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [3] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [4] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [5] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [6] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] _ready (res://scripts/card/card_view.gd:28)
+       [2] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [3] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [4] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [5] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [6] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] _ready (res://scripts/card/card_view.gd:30)
+       [2] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [3] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [4] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [5] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [6] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:43)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:44)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:45)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _pin_label_container (res://scripts/card/card_view.gd:70)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)
+WARNING: Nodes with non-equal opposite anchors will have their size overridden after _ready(). 
+If you want to set size, change the anchors or consider using set_deferred().
+   at: _set_size (scene/gui/control.cpp:1519)
+   GDScript backtrace (most recent call first):
+       [0] _sync_shadow (res://scripts/card/card_view.gd:82)
+       [1] apply_layout (res://scripts/card/card_display_controller.gd:46)
+       [2] _apply_layout (res://scripts/card/card_entity.gd:139)
+       [3] _ready (res://scripts/card/card_entity.gd:49)
+       [4] _make_game_manager (res://tests/game_manager_faith_test.gd:74)
+       [5] _test_confirmed_board_card_retraction_spends_gold_without_changing_faith (res://tests/game_manager_faith_test.gd:38)
+       [6] _run_tests (res://tests/game_manager_faith_test.gd:16)
+       [7] _test_new_run_keeps_faith_as_hidden_domain_state (res://tests/game_manager_faith_test.gd:34)
+       [8] _cleanup_manager (res://tests/game_manager_faith_test.gd:122)

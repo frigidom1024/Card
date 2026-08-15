@@ -1,8 +1,8 @@
 ## 运行展示协调组件
 ##
-## 负责把运行期状态与领域信号同步到玩家徽记和页面输入锁。
+## 负责把运行期状态与领域信号同步到玩家信息面板和页面输入锁。
 ## 包括：
-## - 生命、信仰与金币的展示同步
+## - 生命与金币的展示同步
 ## - 普通事件与终局状态的拖拽锁同步
 ##
 ## 不负责：
@@ -15,18 +15,17 @@
 ## 和 EventModalCoordinator，最后调用 sync_all() 完成首次刷新。
 ##
 ## 依赖：
-## PilgrimCrestHud：显示生命、信仰与金币。
+## GameInfo：显示生命与金币。
 ## DraggerLayer：应用页面交互锁。
 ## RunFlowCoordinator/EventModalCoordinator：发布运行与弹窗状态。
 
 class_name RunPresentationCoordinator
 extends RefCounted
 
-var _crest: PilgrimCrestHud
+var _game_info: GameInfo
 var _drag_layer: DraggerLayer
 var _player_data: PlayerData
 var _player_stats: CombatStats
-var _faith: FaithService
 var _retraction_cost: CardRetractionCostService
 
 var _flow: RunFlowCoordinator
@@ -39,27 +38,25 @@ var _flow_state := RunFlowCoordinator.State.UNINITIALIZED
 
 
 func configure(
-	crest: PilgrimCrestHud,
+	game_info: GameInfo,
 	drag_layer: DraggerLayer,
 	player_data: PlayerData,
 	player_stats: CombatStats,
-	faith: FaithService = null,
 	retraction_cost: CardRetractionCostService = null
 ) -> bool:
 	if _configured:
 		return false
 	if (
-		crest == null
+		game_info == null
 		or drag_layer == null
 		or player_data == null
 		or player_stats == null
 	):
 		return false
-	_crest = crest
+	_game_info = game_info
 	_drag_layer = drag_layer
 	_player_data = player_data
 	_player_stats = player_stats
-	_faith = faith
 	_retraction_cost = retraction_cost
 	_configured = true
 	_connect_presentation_signals()
@@ -83,10 +80,8 @@ func bind(flow: RunFlowCoordinator, modal: EventModalCoordinator) -> bool:
 func sync_all() -> void:
 	if not _configured:
 		return
-	_crest.set_vitality(_player_stats.hp, _player_stats.max_hp)
-	if _faith != null:
-		_crest.set_faith(_faith.get_faith())
-	_crest.set_gold(_player_data.gold)
+	_game_info.set_vitality(_player_stats.hp, _player_stats.max_hp)
+	_game_info.set_gold(_player_data.gold)
 
 
 func apply_lock_request(locked: bool) -> void:
@@ -111,8 +106,6 @@ func apply_flow_state(state: RunFlowCoordinator.State) -> void:
 
 
 func _connect_presentation_signals() -> void:
-	if _faith != null and not _faith.faith_changed.is_connected(_on_faith_changed):
-		_faith.faith_changed.connect(_on_faith_changed)
 	if (
 		_retraction_cost != null
 		and not _retraction_cost.retraction_cost_paid.is_connected(_on_retraction_cost_paid)
@@ -145,14 +138,10 @@ func _connect_optional_signal(source: Object, signal_name: String, callback: Cal
 		signal_ref.connect(callback)
 
 
-func _on_faith_changed(current_faith: int) -> void:
-	if _crest != null:
-		_crest.set_faith(current_faith)
-
 
 func _on_retraction_cost_paid(_cost: int, _returned_count: int, remaining_gold: int) -> void:
-	if _crest != null:
-		_crest.set_gold(remaining_gold)
+	if _game_info != null:
+		_game_info.set_gold(remaining_gold)
 
 
 func _on_non_combat_finished(_instance: EventInstance) -> void:

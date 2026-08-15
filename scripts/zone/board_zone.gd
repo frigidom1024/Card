@@ -50,12 +50,9 @@ var _preview_card: Card
 var _preview_cells: Array[Vector2i] = []
 var _preview_valid := false
 
+# 来源拖拽期间稳定成员与格子占用保持不变，只保存无法从稳定状态推导的原方向。
 var _drag_source_card: Card
-var _drag_source_index := -1
-var _drag_source_original_chain_size := 0
 var _drag_source_direction := 0
-var _drag_source_cells: Array[Vector2i] = []
-var _drag_followers: Array[Card] = []
 
 
 func _ready() -> void:
@@ -242,22 +239,11 @@ func get_combat_card_chain() -> Array[CardInstance]:
 
 
 func start_drag(card: Card) -> void:
-	var index := cards.find(card)
-	if index == -1 or not _is_valid_bound_card(card) or _drag_source_card != null:
+	if not cards.has(card) or not _is_valid_bound_card(card) or _drag_source_card != null:
 		return
 
 	_drag_source_card = card
-	_drag_source_index = index
-	_drag_source_original_chain_size = cards.size()
-	var card_inst := card.get_card_inst()
-	_drag_source_direction = card_inst.direction
-	_drag_source_cells = _stored_cells(card)
-	if _drag_source_cells.is_empty():
-		_drag_source_cells = _candidate_cells(card)
-	_drag_followers.clear()
-	for follower_index in range(index + 1, cards.size()):
-		_drag_followers.append(cards[follower_index])
-
+	_drag_source_direction = _card_direction(card)
 	# 拖拽期间保留稳定成员和原格占用；只有成功提交后才释放来源状态。
 	_clear_preview()
 
@@ -281,8 +267,8 @@ func can_trans_to_target(card: Card) -> bool:
 
 	var source_index := cards.find(card)
 	if _drag_source_card == card:
-		# BoardZone 只允许链尾在同区移动；校验时忽略它自己的原格占用。
-		if _drag_source_index != _drag_source_original_chain_size - 1:
+		# BoardZone 只允许链尾在同区移动；索引直接读取稳定牌链。
+		if source_index != cards.size() - 1:
 			return false
 		return _can_place_cells(card, cells, card)
 	if source_index != -1 and source_index != cards.size() - 1:
@@ -295,19 +281,28 @@ func can_trans_from_source(card: Card) -> bool:
 
 
 func drag_end_source(card: Card, ok: bool) -> bool:
+	if card != _drag_source_card or not cards.has(card):
+		return false
 	if not ok:
 		_restore_drag_source()
 		_clear_drag_source()
 		_clear_preview()
 		return true
 
+	var source_index := cards.find(card)
+	var original_chain_size := cards.size()
 	var is_same_zone_move := (
 		_preview_card == card
 		and _preview_valid
-		and _drag_source_index == _drag_source_original_chain_size - 1
+		and source_index == cards.size() - 1
 	)
+	var followers_to_return: Array[Card] = []
+	if not is_same_zone_move:
+		for follower_index in range(source_index + 1, cards.size()):
+			followers_to_return.append(cards[follower_index])
+
 	_release_card_cells(card)
-	cards.erase(card)
+	cards.remove_at(source_index)
 	var card_inst := card.get_card_inst()
 	if card_inst != null:
 		card_inst.battlefield_pos = Vector2i(-1, -1)
@@ -316,8 +311,8 @@ func drag_end_source(card: Card, ok: bool) -> bool:
 		card.refresh_display()
 
 	if not is_same_zone_move:
-		var followers_to_return := _detach_followers()
-		chain_detached.emit(card, followers_to_return, _drag_source_original_chain_size)
+		_detach_followers(followers_to_return)
+		chain_detached.emit(card, followers_to_return, original_chain_size)
 
 	_clear_drag_source()
 	_clear_preview()
@@ -366,8 +361,17 @@ func _is_valid_bound_card(card: Card) -> bool:
 	)
 
 
-func _get_card_global_center(card: Card) -> Vector2:
-	return card.get_global_transform_with_canvas() * (card.size * 0.5)
+func _get_card_candidate_global_center(card: Card) -> Vector2:
+	if _drag_layer == null or _drag_layer.dragging_card != card:
+		return card.get_global_transform() * (card.size * 0.5)
+
+	# position 是弹簧动画的瞬时表现位置，target_position 才是本次拖拽的意图位置。
+	# 候选中心统一使用世界坐标，和 BackGround.to_local() 保持同一坐标空间。
+	var target_parent_center: Vector2 = card.target_position + card.size * 0.5
+	var parent_canvas := card.get_parent() as CanvasItem
+	if parent_canvas == null:
+		return target_parent_center
+	return parent_canvas.get_global_transform() * target_parent_center
 
 
 func _card_direction(card: Card) -> int:
@@ -380,7 +384,7 @@ func _candidate_cells(card: Card) -> Array[Vector2i]:
 	if back_ground == null or back_ground.cell_size <= 0.0:
 		return result
 
-	var local_center := back_ground.to_local(_get_card_global_center(card))
+	var local_center := back_ground.to_local(_get_card_candidate_global_center(card))
 	var direction := _card_direction(card)
 	var anchor: Vector2i
 	if direction % 2 == 0:
@@ -542,9 +546,18 @@ func _commit_guide_layout(card: Card, guide_cells: Array[Vector2i]) -> void:
 func _snap_card_to_cells(card: Card, cells: Array[Vector2i]) -> void:
 	var snapped_center := Vector2.ZERO
 	for cell in cells:
-		snapped_center += back_ground.to_global((Vector2(cell) + Vector2(0.5, 0.5)) * back_ground.cell_size)
+		snapped_center += back_ground.to_global(
+			(Vector2(cell) + Vector2(0.5, 0.5)) * back_ground.cell_size
+		)
 	snapped_center /= float(cells.size())
-	card.global_position = snapped_center - card.size * 0.5
+
+	# Card 以中心为旋转轴。旋转后 global_position 是变换后的局部原点，
+	# 不能再把它当作未旋转的左上角写入；先转为 BoardZone 局部中心，
+	# 再通过 Control.position 设置布局左上角，保证四个方向都落在格子中心。
+	var local_center: Vector2 = (
+		get_global_transform().affine_inverse() * snapped_center
+	)
+	card.position = local_center - card.size * 0.5
 	card.target_position = card.position
 	card.rotation = deg_to_rad(float(_card_direction(card) * 90))
 
@@ -566,43 +579,33 @@ func _release_card_cells(card: Card) -> void:
 			_grid_owner.erase(cell)
 
 
-func _detach_followers() -> Array[Card]:
-	var result: Array[Card] = []
-	for follower: Card in _drag_followers:
+func _detach_followers(followers: Array[Card]) -> void:
+	for follower: Card in followers:
 		if not is_instance_valid(follower):
 			continue
-		if cards.has(follower):
-			_release_card_cells(follower)
-			cards.erase(follower)
+		_release_card_cells(follower)
+		cards.erase(follower)
 		var instance := follower.get_card_inst()
 		if instance != null:
 			instance.battlefield_pos = Vector2i(-1, -1)
 			# 保留 BOARD，使 HandZone 能识别来自牌桌并清理方向。
 			instance.cur_zone = CardInstance.ZONE.BOARD
 			follower.refresh_display()
-		result.append(follower)
-	return result
 
 
 func _restore_drag_source() -> void:
-	if not is_instance_valid(_drag_source_card):
+	if not is_instance_valid(_drag_source_card) or not cards.has(_drag_source_card):
 		return
 	var card := _drag_source_card
-	if card.get_parent() != self:
-		_reparent_card(card, true)
-	if not cards.has(card):
-		cards.insert(clampi(_drag_source_index, 0, cards.size()), card)
-
+	var cells := _stored_cells(card)
 	var card_inst := card.get_card_inst()
 	if card_inst != null:
 		card_inst.cur_zone = CardInstance.ZONE.BOARD
 		card_inst.direction = _drag_source_direction
-		card_inst.battlefield_pos = _placement_origin_for(_drag_source_cells)
+		card_inst.battlefield_pos = _placement_origin_for(cells)
 		card.refresh_display()
-	for cell in _drag_source_cells:
-		_grid_owner[cell] = card
-	if not _drag_source_cells.is_empty():
-		_snap_card_to_cells(card, _drag_source_cells)
+	if not cells.is_empty():
+		_snap_card_to_cells(card, cells)
 	card.bind_drag_layer(_drag_layer)
 	_reindex_cards()
 
@@ -635,11 +638,7 @@ func _clear_preview() -> void:
 
 func _clear_drag_source() -> void:
 	_drag_source_card = null
-	_drag_source_index = -1
-	_drag_source_original_chain_size = 0
 	_drag_source_direction = 0
-	_drag_source_cells.clear()
-	_drag_followers.clear()
 
 func name()->String:
 	return "board_zone"

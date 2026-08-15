@@ -9,7 +9,6 @@
 [ext_resource type="PackedScene" path="res://scenes/game/event_treasure.tscn" id="7_treasure_event"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_combat.tscn" id="8_combat_event"]
 [ext_resource type="Script" uid="uid://dkoovc0bwysbb" path="res://scripts/game/gameplay_canvas.gd" id="9_canvas"]
-[ext_resource type="PackedScene" path="res://scenes/game/pilgrim_crest_hud.tscn" id="11_crest"]
 [ext_resource type="PackedScene" path="res://scenes/game/event_hover_preview.tscn" id="12_hover_preview"]
 [ext_resource type="PackedScene" uid="uid://p6343o8pk8kq" path="res://scenes/game/hud/hud.tscn" id="13_hud"]
 [ext_resource type="PackedScene" uid="uid://l6y5b6xdcyha" path="res://scenes/drag_layer/dragger_layer.tscn" id="14_dragger"]
@@ -23,15 +22,6 @@ exploration_config = ExtResource("5_exploration")
 
 [node name="GameplayCanvas" type="Node2D" parent="." unique_id=249847659]
 script = ExtResource("9_canvas")
-
-[node name="PilgrimCrestHud" parent="GameplayCanvas" unique_id=1551093594 instance=ExtResource("11_crest")]
-z_index = -5
-layout_mode = 3
-anchors_preset = 0
-offset_left = 1267.0
-offset_top = 23.0
-offset_right = 1851.0
-offset_bottom = 247.0
 
 [node name="Hud" parent="GameplayCanvas" unique_id=1729195470 instance=ExtResource("13_hud")]
 

@@ -3,19 +3,15 @@ extends SceneTree
 const PresentationPath := "res://scripts/game/run/run_presentation_coordinator.gd"
 
 
-class RecordingCrest:
-	extends PilgrimCrestHud
+class RecordingGameInfo:
+	extends GameInfo
 	var last_hp := -1
 	var last_max_hp := -1
-	var last_faith := -1
 	var last_gold := -1
 
 	func set_vitality(current_hp: int, max_hp: int) -> void:
 		last_hp = current_hp
 		last_max_hp = max_hp
-
-	func set_faith(current_faith: int) -> void:
-		last_faith = current_faith
 
 	func set_gold(current_gold: int) -> void:
 		last_gold = current_gold
@@ -35,7 +31,7 @@ func _init() -> void:
 func _run_tests() -> void:
 	_test_unconfigured_bind_is_rejected()
 	_test_duplicate_bind_is_rejected()
-	_test_player_state_sync_updates_crest()
+	_test_player_state_sync_updates_game_info()
 	_test_retraction_cost_updates_gold_display()
 	_test_modal_lock_request_reaches_drag_layer()
 	_test_failed_flow_cannot_unlock_input()
@@ -64,11 +60,11 @@ func _test_duplicate_bind_is_rejected() -> void:
 	var fixture := _make_fixture()
 	_expect(
 		presentation.configure(
-			fixture.crest,
+			fixture.game_info,
 			fixture.drag_layer,
 			fixture.player,
 			fixture.stats,
-			fixture.faith
+			fixture.retraction
 		),
 		"configure accepts all required presentation dependencies"
 	)
@@ -80,32 +76,27 @@ func _test_duplicate_bind_is_rejected() -> void:
 	_cleanup_fixture(fixture)
 
 
-func _test_player_state_sync_updates_crest() -> void:
+func _test_player_state_sync_updates_game_info() -> void:
 	var presentation = _new_presentation()
 	if presentation == null:
 		return
 	var fixture := _make_fixture()
 	fixture.player.gold = 73
-	fixture.player.faith = 5
 	fixture.stats.hp = 18
 	fixture.stats.max_hp = 31
 	_expect(_bind(presentation, fixture), "player-state fixture binds")
 	presentation.sync_all()
 	_expect(
-		fixture.crest.last_hp == 18 and fixture.crest.last_max_hp == 31,
+		fixture.game_info.last_hp == 18 and fixture.game_info.last_max_hp == 31,
 		"sync_all synchronizes player vitality"
 	)
-	_expect(fixture.crest.last_gold == 73, "sync_all synchronizes player gold")
-	_expect(fixture.crest.last_faith == 5, "sync_all synchronizes player faith")
+	_expect(fixture.game_info.last_gold == 73, "sync_all synchronizes player gold")
 
 	fixture.player.gold = 91
-	fixture.player.faith = 2
 	fixture.stats.hp = 11
-	fixture.faith.faith_changed.emit(2)
 	presentation.sync_all()
-	_expect(fixture.crest.last_faith == 2, "faith changes synchronize the crest")
-	_expect(fixture.crest.last_gold == 91, "explicit presentation sync updates gold")
-	_expect(fixture.crest.last_hp == 11, "explicit presentation sync updates vitality")
+	_expect(fixture.game_info.last_gold == 91, "explicit presentation sync updates gold")
+	_expect(fixture.game_info.last_hp == 11, "explicit presentation sync updates vitality")
 	_cleanup_fixture(fixture)
 
 
@@ -118,19 +109,18 @@ func _test_retraction_cost_updates_gold_display() -> void:
 	fixture.retraction.configure(fixture.player)
 	_expect(
 		presentation.configure(
-			fixture.crest,
+			fixture.game_info,
 			fixture.drag_layer,
 			fixture.player,
 			fixture.stats,
-			fixture.faith,
 			fixture.retraction
 		),
 		"retraction-cost fixture configures"
 	)
 	presentation.sync_all()
-	_expect(fixture.crest.last_gold == 10, "retraction fixture starts with current gold")
+	_expect(fixture.game_info.last_gold == 10, "retraction fixture starts with current gold")
 	fixture.retraction.retraction_cost_paid.emit(2, 1, 8)
-	_expect(fixture.crest.last_gold == 8, "retraction cost updates the gold display immediately")
+	_expect(fixture.game_info.last_gold == 8, "retraction cost updates the gold display immediately")
 	_cleanup_fixture(fixture)
 
 
@@ -195,7 +185,7 @@ func _test_finished_flow_cannot_unlock_input() -> void:
 
 
 func _cleanup_fixture(fixture: Dictionary) -> void:
-	for key in ["crest", "drag_layer"]:
+	for key in ["game_info", "drag_layer"]:
 		var node = fixture.get(key)
 		if node != null and is_instance_valid(node):
 			node.free()
@@ -212,11 +202,10 @@ func _configure(presentation, fixture: Dictionary) -> bool:
 	if presentation == null:
 		return false
 	return presentation.configure(
-		fixture.crest,
+		fixture.game_info,
 		fixture.drag_layer,
 		fixture.player,
 		fixture.stats,
-		fixture.faith,
 		fixture.retraction
 	)
 
@@ -229,7 +218,7 @@ func _bind(presentation, fixture: Dictionary) -> bool:
 
 
 func _make_fixture() -> Dictionary:
-	var crest := RecordingCrest.new()
+	var game_info := RecordingGameInfo.new()
 	var drag_layer := RecordingDragLayer.new()
 	var player := PlayerData.new()
 	var stats := CombatStats.new()
@@ -241,7 +230,7 @@ func _make_fixture() -> Dictionary:
 	var modal := EventModalCoordinator.new()
 	var retraction := CardRetractionCostService.new()
 	return {
-		"crest": crest,
+		"game_info": game_info,
 		"drag_layer": drag_layer,
 		"player": player,
 		"stats": stats,

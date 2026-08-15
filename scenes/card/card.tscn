@@ -43,7 +43,7 @@ theme_override_styles/hover = SubResource("StyleBoxEmpty_ridm3")
 theme_override_styles/disabled = SubResource("StyleBoxEmpty_6jo1p")
 theme_override_styles/focus = SubResource("StyleBoxEmpty_ekuku")
 script = ExtResource("1_kaf1t")
-drag_stiffness = 210.0
+drag_stiffness = 240.0
 
 [node name="Shadow" type="Panel" parent="." unique_id=1153363669]
 modulate = Color(0.30446225, 0.30446225, 0.30446216, 1)

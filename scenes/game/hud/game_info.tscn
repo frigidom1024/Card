@@ -2,15 +2,70 @@
 
 [ext_resource type="StyleBox" uid="uid://d26o07b1e6h87" path="res://assert/ui/info_panel.tres" id="1_1hsyp"]
 [ext_resource type="Texture2D" uid="uid://c4sf8a8gix18f" path="res://assert/ui/icon/heart_red.tres" id="2_t2rr5"]
+[ext_resource type="Script" uid="uid://bm6sam4v5ieg1" path="res://scripts/game/hud/game_info.gd" id="2_wr3at"]
+
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_p5p3o"]
+thickness = 4
 
 [node name="GameInfo" type="Panel" unique_id=1925670509]
-offset_left = 1457.0
-offset_top = 94.0
-offset_right = 1841.0
-offset_bottom = 221.0
+offset_right = 391.0
+offset_bottom = 210.0
 theme_override_styles/panel = ExtResource("1_1hsyp")
+script = ExtResource("2_wr3at")
 
-[node name="HeartRed" type="Sprite2D" parent="." unique_id=1119677468]
-position = Vector2(64.999954, 61.999996)
-scale = Vector2(0.14367194, 0.14637303)
+[node name="HeartContainer" type="HBoxContainer" parent="." unique_id=803136860]
+layout_mode = 0
+offset_left = 17.0
+offset_top = 19.0
+offset_right = 379.0
+offset_bottom = 90.0
+
+[node name="Heart" type="TextureRect" parent="HeartContainer" unique_id=2097106828]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
 texture = ExtResource("2_t2rr5")
+expand_mode = 1
+stretch_mode = 4
+
+[node name="HealthNumber" type="Label" parent="HeartContainer" unique_id=2108872804]
+custom_minimum_size = Vector2(0, 71)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 50
+text = "0 / 1"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="." unique_id=1671286601]
+layout_mode = 0
+offset_left = 24.0
+offset_top = 103.0
+offset_right = 379.0
+offset_bottom = 107.0
+theme_override_styles/separator = SubResource("StyleBoxLine_p5p3o")
+
+[node name="Label" type="Label" parent="." unique_id=1560886155]
+layout_mode = 0
+offset_left = 21.0
+offset_top = 107.0
+offset_right = 160.0
+offset_bottom = 176.0
+theme_override_colors/font_color = Color(0.9253379, 0.9253379, 3.080368e-06, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 50
+text = "GOLD"
+
+[node name="GoldNumber" type="Label" parent="." unique_id=305599450]
+layout_mode = 0
+offset_left = 212.0
+offset_top = 106.0
+offset_right = 379.0
+offset_bottom = 175.0
+theme_override_colors/font_color = Color(0.9253379, 0.9253379, 3.080368e-06, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 50
+text = "64"
+horizontal_alignment = 2

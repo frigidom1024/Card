@@ -105,7 +105,7 @@ func _on_card_placed(
 	var overlapped_event: EventInstance = null
 	if event_zone != null and is_instance_valid(event_zone):
 		overlapped_event = event_zone.get_overlapping_unresolved_event(occupied_cells)
-	var chain_tail := affected_cards.back() if not affected_cards.is_empty() else card
+	var chain_tail: Card = affected_cards.back() if not affected_cards.is_empty() else card
 	var result := BoardPlacementResult.new(
 		result_kind,
 		card,
