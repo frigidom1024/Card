@@ -1,7 +1,7 @@
 class_name CombatOperationBatchFactory
 extends RefCounted
 
-const ChainContainsCardConditionScript = preload("res://scripts/combatv2/protocol/combat_chain_contains_card_condition.gd")
+const ChainContainsCardConditionScript = preload("res://scripts/combat_framework/protocol/combat_chain_contains_card_condition.gd")
 
 ## 操作预览只需要读取 metadata.target_card_id，不在协议层预测结算结果。
 static func create_retreat_batch(

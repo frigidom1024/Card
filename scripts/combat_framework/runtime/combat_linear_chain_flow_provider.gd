@@ -1,8 +1,8 @@
 class_name CombatLinearChainFlowProvider
 extends CombatFlowProvider
 
-const ChainContainsCardConditionScript = preload("res://scripts/combatv2/protocol/combat_chain_contains_card_condition.gd")
-const BattleOutcomeScript = preload("res://scripts/combatv2/protocol/combat_battle_outcome.gd")
+const ChainContainsCardConditionScript = preload("res://scripts/combat_framework/protocol/combat_chain_contains_card_condition.gd")
+const BattleOutcomeScript = preload("res://scripts/combat_framework/protocol/combat_battle_outcome.gd")
 
 enum Step {
 	PLAYER_ATTACK,

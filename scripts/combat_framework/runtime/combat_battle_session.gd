@@ -1,8 +1,8 @@
 class_name CombatBattleSession
 extends RefCounted
 
-const FlowScript = preload("res://scripts/combatv2/runtime/combat_linear_chain_flow_provider.gd")
-const BattleOutcomeScript = preload("res://scripts/combatv2/protocol/combat_battle_outcome.gd")
+const FlowScript = preload("res://scripts/combat_framework/runtime/combat_linear_chain_flow_provider.gd")
+const BattleOutcomeScript = preload("res://scripts/combat_framework/protocol/combat_battle_outcome.gd")
 
 signal battle_started()
 signal automatic_batch_submitted(batch: CombatEffectBatch)

@@ -1,7 +1,7 @@
 extends SceneTree
 
-const STATE_SCHEMA_PATH := "res://scripts/combatv2/state/combat_state_schema.gd"
-const STANDARD_LIBRARY_PATH := "res://scripts/combatv2/effects/combat_standard_effect_library.gd"
+const STATE_SCHEMA_PATH := "res://scripts/combat_framework/state/combat_state_schema.gd"
+const STANDARD_LIBRARY_PATH := "res://scripts/combat_framework/effects/combat_standard_effect_library.gd"
 
 var _failure_count := 0
 
@@ -146,7 +146,7 @@ func _test_standard_numeric_and_phase_effects() -> void:
 
 func _test_retreat_operation_splits_chain_before_target() -> void:
 	var factory = _require_script(
-		"res://scripts/combatv2/protocol/combat_operation_batch_factory.gd",
+		"res://scripts/combat_framework/protocol/combat_operation_batch_factory.gd",
 		"玩家操作批次工厂脚本必须存在"
 	)
 	var processor: CombatEffectBatchProcessor = _make_standard_processor()
@@ -167,7 +167,7 @@ func _test_retreat_operation_splits_chain_before_target() -> void:
 
 func _test_gold_shield_operation_commits_cost_and_bonus_atomically() -> void:
 	var factory = _require_script(
-		"res://scripts/combatv2/protocol/combat_operation_batch_factory.gd",
+		"res://scripts/combat_framework/protocol/combat_operation_batch_factory.gd",
 		"玩家操作批次工厂脚本必须存在"
 	)
 	var processor: CombatEffectBatchProcessor = _make_standard_processor()
@@ -191,7 +191,7 @@ func _test_gold_shield_operation_commits_cost_and_bonus_atomically() -> void:
 
 func _test_gold_shield_operation_rolls_back_when_gold_is_insufficient() -> void:
 	var factory = _require_script(
-		"res://scripts/combatv2/protocol/combat_operation_batch_factory.gd",
+		"res://scripts/combat_framework/protocol/combat_operation_batch_factory.gd",
 		"玩家操作批次工厂脚本必须存在"
 	)
 	var processor: CombatEffectBatchProcessor = _make_standard_processor()
@@ -211,7 +211,7 @@ func _test_gold_shield_operation_rolls_back_when_gold_is_insufficient() -> void:
 
 func _test_operation_target_must_still_be_in_chain() -> void:
 	var factory = _require_script(
-		"res://scripts/combatv2/protocol/combat_operation_batch_factory.gd",
+		"res://scripts/combat_framework/protocol/combat_operation_batch_factory.gd",
 		"玩家操作批次工厂脚本必须存在"
 	)
 	var processor: CombatEffectBatchProcessor = _make_standard_processor()
@@ -229,7 +229,7 @@ func _test_operation_target_must_still_be_in_chain() -> void:
 
 func _test_player_operation_changes_already_queued_attack_resolution() -> void:
 	var factory = _require_script(
-		"res://scripts/combatv2/protocol/combat_operation_batch_factory.gd",
+		"res://scripts/combat_framework/protocol/combat_operation_batch_factory.gd",
 		"玩家操作批次工厂脚本必须存在"
 	)
 	var processor: CombatEffectBatchProcessor = _make_standard_processor()

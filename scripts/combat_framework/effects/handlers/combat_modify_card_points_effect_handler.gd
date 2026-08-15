@@ -1,5 +1,5 @@
 class_name CombatModifyCardPointsEffectHandler
-extends "res://scripts/combatv2/effects/handlers/combat_target_effect_handler.gd"
+extends "res://scripts/combat_framework/effects/handlers/combat_target_effect_handler.gd"
 
 
 func _init() -> void:

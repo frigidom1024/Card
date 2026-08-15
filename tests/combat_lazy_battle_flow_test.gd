@@ -1,8 +1,8 @@
 extends SceneTree
 
-const FlowScript = preload("res://scripts/combatv2/runtime/combat_linear_chain_flow_provider.gd")
-const OutcomeScript = preload("res://scripts/combatv2/protocol/combat_battle_outcome.gd")
-const SessionScript = preload("res://scripts/combatv2/runtime/combat_battle_session.gd")
+const FlowScript = preload("res://scripts/combat_framework/runtime/combat_linear_chain_flow_provider.gd")
+const OutcomeScript = preload("res://scripts/combat_framework/protocol/combat_battle_outcome.gd")
+const SessionScript = preload("res://scripts/combat_framework/runtime/combat_battle_session.gd")
 
 var _failure_count := 0
 
