@@ -56,6 +56,11 @@ static func create_card_trigger(
 	batch.cause_event_id = cause_event_id
 	batch.started_event_type = CombatEventTypes.CARD_TRIGGER_STARTED
 	batch.finished_event_type = CombatEventTypes.CARD_TRIGGER_FINISHED
+	for effect in effects:
+		if effect == null:
+			continue
+		effect.add_tag(CombatEffectTags.PRESENTATION_CARD_TRIGGER)
+		break
 	return batch
 
 

@@ -80,6 +80,7 @@ func _build_player_attack(snapshot: CombatStateSnapshot) -> CombatEffectBatch:
 		[monster_id],
 		{"amount": card_points}
 	)
+	effect.add_tag(CombatEffectTags.PRESENTATION_CARD_ATTACK)
 	var effects: Array[CombatBatchEffect] = [effect]
 	var batch := CombatBatchFactory.create_player_attack(
 		_next_id("player_attack"),
@@ -112,6 +113,7 @@ func _build_monster_attack(snapshot: CombatStateSnapshot) -> CombatEffectBatch:
 		[_pending_card_id],
 		{"amount": _pending_counter_damage}
 	)
+	effect.add_tag(CombatEffectTags.PRESENTATION_MONSTER_ATTACK)
 	var effects: Array[CombatBatchEffect] = [effect]
 	var batch := CombatBatchFactory.create_monster_attack(
 		_next_id("monster_attack"),

@@ -108,6 +108,7 @@ func _execute_batch(batch: CombatEffectBatch) -> CombatEffectBatchResult:
 			return _create_rejected_result(batch, CombatEffectBatchResult.Status.FAILED, apply_result)
 		writer.emit_event(CombatEventTypes.EFFECT_APPLIED, effect.source_entity_id, {
 			"effect_type": effect.effect_type,
+			"effect_tags": effect.tags.duplicate(),
 		}, effect.target_entity_ids)
 		for rule in _state_rules:
 			var rule_result := rule.evaluate(effect, writer)
@@ -142,6 +143,18 @@ func _validate_batch(
 		return CombatValidationResult.rejected(&"stale_state_revision", "战斗状态版本已经变化")
 	if batch.expected_chain_revision >= 0 and batch.expected_chain_revision != snapshot.chain_revision:
 		return CombatValidationResult.rejected(&"stale_chain_revision", "牌链版本已经变化")
+	var effect_ids: Dictionary = {}
+	for effect in batch.effects:
+		if effect == null:
+			continue
+		if effect.effect_id.is_empty():
+			return CombatValidationResult.rejected(&"missing_effect_id", "批次内效果必须具有稳定 ID")
+		if effect_ids.has(effect.effect_id):
+			return CombatValidationResult.rejected(
+				&"duplicate_effect_id",
+				"同一批次内 effect_id 必须唯一：%s" % effect.effect_id
+			)
+		effect_ids[effect.effect_id] = true
 	for condition in batch.conditions:
 		var condition_result := condition.validate(snapshot)
 		if not condition_result.valid:
