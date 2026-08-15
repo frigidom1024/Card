@@ -304,6 +304,6 @@ func _layout_products() -> void:
 	for index in range(visible_cards.size()):
 		var card := visible_cards[index]
 		var target := Vector2(cursor_x, (size.y - maxf(card.size.y, fallback_card_size.y if card.size.y <= 0.0 else card.size.y)) * 0.5)
-		target.y+=20
+		target.y+=40
 		card.target_position = target
 		cursor_x += widths[index] + gap

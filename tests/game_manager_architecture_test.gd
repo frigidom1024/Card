@@ -305,6 +305,20 @@ func _run_tests() -> void:
 	)
 	var threshold_array := RegEx.new()
 	threshold_array.compile("(?m)^\\s*(?:var|const)\\s+\\w*(?:threshold|schedule)\\w*.*=\\s*\\[")
+
+	var retired_market_paths := [
+		"res://scenes/game/persistent_market.tscn",
+		"res://scripts/game/market/persistent_market.gd",
+		"res://scripts/game/market/persistent_market_state.gd",
+		"res://scripts/game/market/persistent_market_resolver.gd",
+		"res://scripts/game/market/persistent_market_coordinator.gd",
+	]
+	for retired_path in retired_market_paths:
+		_expect(
+			not FileAccess.file_exists(retired_path),
+			"Legacy persistent-market implementation is removed: %s" % retired_path
+		)
+
 	_expect(
 		threshold_array.search(source) == null, "GameManager does not own event threshold arrays"
 	)
