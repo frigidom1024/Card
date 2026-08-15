@@ -8,13 +8,17 @@ class RecordingGameInfo:
 	var last_hp := -1
 	var last_max_hp := -1
 	var last_gold := -1
+	var vitality_updates := 0
+	var gold_updates := 0
 
 	func set_vitality(current_hp: int, max_hp: int) -> void:
 		last_hp = current_hp
 		last_max_hp = max_hp
+		vitality_updates += 1
 
 	func set_gold(current_gold: int) -> void:
 		last_gold = current_gold
+		gold_updates += 1
 
 
 class RecordingDragLayer:
@@ -31,8 +35,9 @@ func _init() -> void:
 func _run_tests() -> void:
 	_test_unconfigured_bind_is_rejected()
 	_test_duplicate_bind_is_rejected()
-	_test_player_state_sync_updates_game_info()
-	_test_retraction_cost_updates_gold_display()
+	_test_player_signals_update_game_info()
+	_test_retraction_event_does_not_update_gold_display()
+	_test_flow_completion_does_not_pull_player_state()
 	_test_modal_lock_request_reaches_drag_layer()
 	_test_failed_flow_cannot_unlock_input()
 	_test_flow_terminal_signals_keep_input_locked()
@@ -63,8 +68,7 @@ func _test_duplicate_bind_is_rejected() -> void:
 			fixture.game_info,
 			fixture.drag_layer,
 			fixture.player,
-			fixture.stats,
-			fixture.retraction
+			fixture.stats
 		),
 		"configure accepts all required presentation dependencies"
 	)
@@ -76,7 +80,7 @@ func _test_duplicate_bind_is_rejected() -> void:
 	_cleanup_fixture(fixture)
 
 
-func _test_player_state_sync_updates_game_info() -> void:
+func _test_player_signals_update_game_info() -> void:
 	var presentation = _new_presentation()
 	if presentation == null:
 		return
@@ -84,43 +88,59 @@ func _test_player_state_sync_updates_game_info() -> void:
 	fixture.player.gold = 73
 	fixture.stats.hp = 18
 	fixture.stats.max_hp = 31
-	_expect(_bind(presentation, fixture), "player-state fixture binds")
-	presentation.sync_all()
+	_expect(_bind(presentation, fixture), "player-signal fixture binds")
 	_expect(
 		fixture.game_info.last_hp == 18 and fixture.game_info.last_max_hp == 31,
-		"sync_all synchronizes player vitality"
+		"configuration immediately synchronizes player vitality"
 	)
-	_expect(fixture.game_info.last_gold == 73, "sync_all synchronizes player gold")
+	_expect(fixture.game_info.last_gold == 73, "configuration immediately synchronizes player gold")
 
-	fixture.player.gold = 91
-	fixture.stats.hp = 11
-	presentation.sync_all()
-	_expect(fixture.game_info.last_gold == 91, "explicit presentation sync updates gold")
-	_expect(fixture.game_info.last_hp == 11, "explicit presentation sync updates vitality")
+	fixture.player.add_gold(18)
+	fixture.stats.set_vitality(11, 31)
+	_expect(fixture.game_info.last_gold == 91, "gold signal updates GameInfo")
+	_expect(fixture.game_info.last_hp == 11, "vitality signal updates GameInfo")
 	_cleanup_fixture(fixture)
 
 
-func _test_retraction_cost_updates_gold_display() -> void:
+func _test_retraction_event_does_not_update_gold_display() -> void:
 	var presentation = _new_presentation()
 	if presentation == null:
 		return
 	var fixture := _make_fixture()
 	fixture.player.gold = 10
 	fixture.retraction.configure(fixture.player)
-	_expect(
-		presentation.configure(
-			fixture.game_info,
-			fixture.drag_layer,
-			fixture.player,
-			fixture.stats,
-			fixture.retraction
-		),
-		"retraction-cost fixture configures"
-	)
-	presentation.sync_all()
+	_expect(_configure(presentation, fixture), "retraction fixture configures")
 	_expect(fixture.game_info.last_gold == 10, "retraction fixture starts with current gold")
 	fixture.retraction.retraction_cost_paid.emit(2, 1, 8)
-	_expect(fixture.game_info.last_gold == 8, "retraction cost updates the gold display immediately")
+	_expect(
+		fixture.game_info.last_gold == 10,
+		"business payment events do not write GameInfo directly"
+	)
+	fixture.player.spend_gold(2)
+	_expect(fixture.game_info.last_gold == 8, "player gold signal updates the display")
+	_cleanup_fixture(fixture)
+
+
+func _test_flow_completion_does_not_pull_player_state() -> void:
+	var presentation = _new_presentation()
+	if presentation == null:
+		return
+	var fixture := _make_fixture()
+	fixture.player.gold = 10
+	_expect(_bind(presentation, fixture), "flow-completion fixture binds")
+	var initial_gold_updates: int = fixture.game_info.gold_updates
+	var initial_vitality_updates: int = fixture.game_info.vitality_updates
+	fixture.player.gold = 99
+	fixture.stats.hp = 1
+	fixture.modal.non_combat_interaction_finished.emit(null)
+	fixture.flow.combat_resolved.emit(null, null)
+	_expect(fixture.game_info.last_gold == 10, "flow completion does not pull gold")
+	_expect(fixture.game_info.last_hp == 20, "flow completion does not pull vitality")
+	_expect(
+		fixture.game_info.gold_updates == initial_gold_updates
+		and fixture.game_info.vitality_updates == initial_vitality_updates,
+		"flow completion publishes no redundant HUD updates"
+	)
 	_cleanup_fixture(fixture)
 
 
@@ -205,8 +225,7 @@ func _configure(presentation, fixture: Dictionary) -> bool:
 		fixture.game_info,
 		fixture.drag_layer,
 		fixture.player,
-		fixture.stats,
-		fixture.retraction
+		fixture.stats
 	)
 
 

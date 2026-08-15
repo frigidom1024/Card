@@ -5,8 +5,12 @@
 [ext_resource type="PackedScene" uid="uid://cfqi8kubbs4aj" path="res://scenes/card/attr.tscn" id="2_yrbkw"]
 
 [node name="HoverInfo" type="Control" unique_id=2138759681]
+custom_minimum_size = Vector2(327, 331)
 layout_mode = 3
 anchors_preset = 0
+offset_right = 327.0
+offset_bottom = 331.0
+mouse_filter = 2
 script = ExtResource("1_3co03")
 attr_label = ExtResource("2_yrbkw")
 

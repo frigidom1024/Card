@@ -248,6 +248,14 @@ func _run_tests() -> void:
 		"GameManager owns the run-presentation composition root reference"
 	)
 	_expect(
+		not source.contains("_presentation.sync_all()"),
+		"GameManager does not pull player data into the HUD"
+	)
+	_expect(
+		not source.contains("func _sync_game_info()"),
+		"GameManager does not own a manual HUD synchronization callback"
+	)
+	_expect(
 		source.contains("func get_run_context() -> RunContext:"),
 		"GameManager exposes the run context compatibility getter"
 	)

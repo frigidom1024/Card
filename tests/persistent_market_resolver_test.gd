@@ -23,6 +23,10 @@ func _run_tests() -> void:
 func _test_purchase_deducts_gold_and_replaces_only_bought_slot() -> void:
 	var state := _state_with_cards()
 	var player := _player(20)
+	var published_gold: Array[int] = []
+	player.gold_changed.connect(func(value: int) -> void:
+		published_gold.append(value)
+	)
 	var resolver: Object = PersistentMarketResolverScript.new(MarketPricingServiceScript.new())
 	var context: Object = _context(player, state)
 	var bought: CardData = state.call("get_offer", 1)
@@ -32,6 +36,7 @@ func _test_purchase_deducts_gold_and_replaces_only_bought_slot() -> void:
 	_expect(result.get("success"), "purchase succeeds with gold and hand capacity")
 	_expect(result.get("card_data") == bought, "result returns purchased card")
 	_expect(player.gold == 20 - 2, "purchase deducts the common rarity price")
+	_expect(published_gold == [18], "purchase publishes the new gold balance")
 	_expect(state.call("get_offer", 0) == left and state.call("get_offer", 2) == right, "purchase leaves other slots unchanged")
 
 
@@ -49,21 +54,31 @@ func _test_rejected_purchase_preserves_gold_and_offers() -> void:
 
 func _test_reclaim_credits_half_value() -> void:
 	var player := _player(0)
+	var published_gold: Array[int] = []
+	player.gold_changed.connect(func(value: int) -> void:
+		published_gold.append(value)
+	)
 	var resolver: Object = PersistentMarketResolverScript.new(MarketPricingServiceScript.new())
 	var card := _card("Sold Card", 7)
 	var result: Object = resolver.call("reclaim", card, player, _context(player, null))
 	_expect(result.get("success"), "reclaim accepts a card")
 	_expect(result.get("gold_delta") == 1, "reclaim returns half the common rarity price")
 	_expect(player.gold == 1, "reclaim credits player gold")
+	_expect(published_gold == [1], "reclaim publishes the new gold balance")
 
 
 func _test_refresh_costs_gold_and_rerolls_offers() -> void:
 	var state := _state_with_cards()
 	var player := _player(1)
+	var published_gold: Array[int] = []
+	player.gold_changed.connect(func(value: int) -> void:
+		published_gold.append(value)
+	)
 	var resolver: Object = PersistentMarketResolverScript.new(MarketPricingServiceScript.new())
 	var result: Object = resolver.call("refresh", state, player, _context(player, state))
 	_expect(result.get("success"), "refresh succeeds with one gold")
 	_expect(player.gold == 0, "refresh costs one gold")
+	_expect(published_gold == [0], "refresh publishes the new gold balance")
 
 
 func _state_with_cards() -> Object:

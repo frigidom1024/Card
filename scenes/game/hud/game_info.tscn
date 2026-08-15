@@ -3,6 +3,7 @@
 [ext_resource type="StyleBox" uid="uid://d26o07b1e6h87" path="res://assert/ui/info_panel.tres" id="1_1hsyp"]
 [ext_resource type="Texture2D" uid="uid://c4sf8a8gix18f" path="res://assert/ui/icon/heart_red.tres" id="2_t2rr5"]
 [ext_resource type="Script" uid="uid://bm6sam4v5ieg1" path="res://scripts/game/hud/game_info.gd" id="2_wr3at"]
+[ext_resource type="FontFile" uid="uid://5qd1jdkfevdl" path="res://assert/font/press_start_2p/PressStart2P.ttf" id="4_muvco"]
 
 [sub_resource type="StyleBoxLine" id="StyleBoxLine_p5p3o"]
 thickness = 4
@@ -34,7 +35,8 @@ size_flags_horizontal = 3
 size_flags_vertical = 1
 theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_font_sizes/font_size = 50
+theme_override_fonts/font = ExtResource("4_muvco")
+theme_override_font_sizes/font_size = 35
 text = "0 / 1"
 horizontal_alignment = 2
 vertical_alignment = 1
@@ -50,22 +52,24 @@ theme_override_styles/separator = SubResource("StyleBoxLine_p5p3o")
 [node name="Label" type="Label" parent="." unique_id=1560886155]
 layout_mode = 0
 offset_left = 21.0
-offset_top = 107.0
-offset_right = 160.0
-offset_bottom = 176.0
+offset_top = 115.0
+offset_right = 221.0
+offset_bottom = 184.0
 theme_override_colors/font_color = Color(0.9253379, 0.9253379, 3.080368e-06, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("4_muvco")
 theme_override_font_sizes/font_size = 50
 text = "GOLD"
 
 [node name="GoldNumber" type="Label" parent="." unique_id=305599450]
 layout_mode = 0
 offset_left = 212.0
-offset_top = 106.0
+offset_top = 114.0
 offset_right = 379.0
-offset_bottom = 175.0
+offset_bottom = 183.0
 theme_override_colors/font_color = Color(0.9253379, 0.9253379, 3.080368e-06, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("4_muvco")
 theme_override_font_sizes/font_size = 50
 text = "64"
 horizontal_alignment = 2

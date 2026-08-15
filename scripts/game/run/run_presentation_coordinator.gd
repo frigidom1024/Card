@@ -11,22 +11,19 @@
 ## - 运行流程状态的推进
 ##
 ## 使用方式：
-## 先通过 configure() 注入展示节点与运行数据，再通过 bind() 订阅 RunFlowCoordinator
-## 和 EventModalCoordinator，最后调用 sync_all() 完成首次刷新。
+## 先通过 configure() 注入展示节点与运行数据，GameInfo 会绑定玩家数据信号并立即刷新；
+## 再通过 bind() 订阅 RunFlowCoordinator 和 EventModalCoordinator 的输入锁与终局状态。
 ##
 ## 依赖：
-## GameInfo：显示生命与金币。
+## GameInfo：监听玩家数据并显示生命与金币。
 ## DraggerLayer：应用页面交互锁。
-## RunFlowCoordinator/EventModalCoordinator：发布运行与弹窗状态。
+## RunFlowCoordinator/EventModalCoordinator：发布输入锁与终局状态。
 
 class_name RunPresentationCoordinator
 extends RefCounted
 
 var _game_info: GameInfo
 var _drag_layer: DraggerLayer
-var _player_data: PlayerData
-var _player_stats: CombatStats
-var _retraction_cost: CardRetractionCostService
 
 var _flow: RunFlowCoordinator
 var _modal: EventModalCoordinator
@@ -41,8 +38,7 @@ func configure(
 	game_info: GameInfo,
 	drag_layer: DraggerLayer,
 	player_data: PlayerData,
-	player_stats: CombatStats,
-	retraction_cost: CardRetractionCostService = null
+	player_stats: CombatStats
 ) -> bool:
 	if _configured:
 		return false
@@ -55,11 +51,8 @@ func configure(
 		return false
 	_game_info = game_info
 	_drag_layer = drag_layer
-	_player_data = player_data
-	_player_stats = player_stats
-	_retraction_cost = retraction_cost
+	_game_info.bind_player(player_data, player_stats)
 	_configured = true
-	_connect_presentation_signals()
 	return true
 
 
@@ -75,13 +68,6 @@ func bind(flow: RunFlowCoordinator, modal: EventModalCoordinator) -> bool:
 	if _flow.has_method("get_state"):
 		apply_flow_state(_flow.get_state())
 	return true
-
-
-func sync_all() -> void:
-	if not _configured:
-		return
-	_game_info.set_vitality(_player_stats.hp, _player_stats.max_hp)
-	_game_info.set_gold(_player_data.gold)
 
 
 func apply_lock_request(locked: bool) -> void:
@@ -105,21 +91,9 @@ func apply_flow_state(state: RunFlowCoordinator.State) -> void:
 		apply_lock_request(true)
 
 
-func _connect_presentation_signals() -> void:
-	if (
-		_retraction_cost != null
-		and not _retraction_cost.retraction_cost_paid.is_connected(_on_retraction_cost_paid)
-	):
-		_retraction_cost.retraction_cost_paid.connect(_on_retraction_cost_paid)
-
-
 func _connect_domain_signals() -> void:
 	if not _modal.interaction_lock_changed.is_connected(apply_lock_request):
 		_modal.interaction_lock_changed.connect(apply_lock_request)
-	if not _modal.non_combat_interaction_finished.is_connected(_on_non_combat_finished):
-		_modal.non_combat_interaction_finished.connect(_on_non_combat_finished)
-	if not _flow.combat_resolved.is_connected(_on_combat_resolved):
-		_flow.combat_resolved.connect(_on_combat_resolved)
 	if not _flow.exploration_failed.is_connected(_on_flow_failed):
 		_flow.exploration_failed.connect(_on_flow_failed)
 	if not _flow.run_finished.is_connected(_on_flow_finished):
@@ -137,19 +111,6 @@ func _connect_optional_signal(source: Object, signal_name: String, callback: Cal
 	if not signal_ref.is_connected(callback):
 		signal_ref.connect(callback)
 
-
-
-func _on_retraction_cost_paid(_cost: int, _returned_count: int, remaining_gold: int) -> void:
-	if _game_info != null:
-		_game_info.set_gold(remaining_gold)
-
-
-func _on_non_combat_finished(_instance: EventInstance) -> void:
-	sync_all()
-
-
-func _on_combat_resolved(_instance: EventInstance, _result: CombatResult) -> void:
-	sync_all()
 
 
 func _on_flow_failed(_result: CombatResult) -> void:

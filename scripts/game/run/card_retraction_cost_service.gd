@@ -33,5 +33,6 @@ func resolve_confirmed_chain_retraction(transaction: ChainRetractionTransaction)
     if returned_count <= 0:
         return
     var cost := get_cost(transaction)
-    _player.gold -= cost
+    if not _player.spend_gold(cost):
+        return
     retraction_cost_paid.emit(cost, returned_count, _player.gold)

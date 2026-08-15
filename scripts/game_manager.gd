@@ -348,7 +348,6 @@ func _configure_encounter_resolution() -> bool:
 		_run_context.player_data,
 		_run_context.card_service,
 		Callable(_exploration_coordinator, "dismiss_defeated_boss"),
-		Callable(self, "_sync_game_info"),
 		Callable(self, "_refresh_event_display"),
 		_run_context.random.encounter_reward_rng()
 	):
@@ -405,13 +404,11 @@ func _configure_presentation() -> bool:
 		game_info,
 		drag_layer,
 		_run_context.player_data,
-		_run_context.player_stats,
-		_retraction_cost_service
+		_run_context.player_stats
 	):
 		return _fail_run_initialization("GameManager could not configure run presentation")
 	if not _presentation.bind(_run_flow, _event_modal_coordinator):
 		return _fail_run_initialization("GameManager could not bind run presentation")
-	_presentation.sync_all()
 	return true
 
 
@@ -446,11 +443,6 @@ func _forward_run_finished() -> void:
 
 func _forward_faith_changed(current_faith: int) -> void:
 	faith_changed.emit(current_faith)
-
-
-func _sync_game_info() -> void:
-	if _presentation != null:
-		_presentation.sync_all()
 
 
 func _refresh_event_display(instance: EventInstance) -> void:

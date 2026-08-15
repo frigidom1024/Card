@@ -5,6 +5,7 @@
 [ext_resource type="PackedScene" uid="uid://d2kllwp3bo802" path="res://scenes/zone/reclaim_zone.tscn" id="3_reclaim"]
 [ext_resource type="PackedScene" uid="uid://bycj0468jvuyd" path="res://scenes/zone/shop.tscn" id="4_shop"]
 [ext_resource type="PackedScene" uid="uid://txjxkqmuwx5" path="res://scenes/game/hud/game_info.tscn" id="5_7lo7q"]
+[ext_resource type="PackedScene" uid="uid://emd7id2qptll" path="res://scenes/card/hover_info.tscn" id="6_etamk"]
 
 [node name="Hud" type="Control" unique_id=1402589845]
 editor_description = "常驻玩法区域组合根：装配 Board、HandZone、Shop 与 ReclaimZone；各区域由 GameManager 接入页面唯一 DraggerLayer。"
@@ -21,28 +22,42 @@ position = Vector2(237, 16)
 
 [node name="HandZone" parent="." unique_id=278593251 instance=ExtResource("2_hand")]
 layout_mode = 1
-offset_left = 305.0
-offset_top = 841.0
+offset_left = 110.0
+offset_top = 842.0
 offset_right = -436.0
 offset_bottom = -15.0
 
 [node name="ReclaimZone" parent="." unique_id=2127958039 instance=ExtResource("3_reclaim")]
 layout_mode = 0
-offset_left = 1432.0
-offset_top = 622.0
-offset_right = 1813.0
-offset_bottom = 828.0
+offset_left = 1504.0
+offset_top = 626.0
+offset_right = 1885.0
+offset_bottom = 832.0
 
 [node name="Shop" parent="." unique_id=1350690558 instance=ExtResource("4_shop")]
 layout_mode = 0
-offset_left = 1425.0
-offset_top = 249.0
-offset_right = 1816.0
-offset_bottom = 599.0
+offset_left = 1492.0
+offset_top = 256.0
+offset_right = 1883.0
+offset_bottom = 606.0
 
 [node name="GameInfo" parent="." unique_id=1925670509 instance=ExtResource("5_7lo7q")]
 layout_mode = 0
-offset_left = 1423.0
-offset_top = 21.0
-offset_right = 1814.0
-offset_bottom = 231.0
+offset_left = 1489.0
+offset_top = 24.0
+offset_right = 1880.0
+offset_bottom = 234.0
+
+[node name="CardHoverLayer" type="Control" parent="." unique_id=325004401]
+z_index = 1000
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="HoverInfo" parent="CardHoverLayer" unique_id=2138759681 groups=["card_hover_info"] instance=ExtResource("6_etamk")]
+visible = false
+layout_mode = 0

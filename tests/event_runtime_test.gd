@@ -207,10 +207,15 @@ func _test_resolve_marks_event_revealed_and_resolved() -> void:
 func _test_shop_purchase_changes_only_successful_state() -> void:
 	var player := PlayerDataScript.new()
 	player.gold = 10
+	var published_gold: Array[int] = []
+	player.gold_changed.connect(func(value: int) -> void:
+		published_gold.append(value)
+	)
 	var instance = _make_shop_instance([_offer("Twig Blade", 2)])
 	var result = shop_resolver.purchase_item(instance, 0, player, true)
 	_expect(result.success, "shop purchase succeeds")
 	_expect(player.gold == 8, "deducts the common rarity price")
+	_expect(published_gold == [8], "shop purchase publishes the new gold balance")
 	_expect(result.granted_card.card_name == "Twig Blade", "returns purchased card")
 	var state := instance.runtime_state as ShopRuntimeStateScript
 	_expect(state != null, "shop instance creates shop runtime state")
@@ -613,6 +618,10 @@ func _test_treasure_rejects_non_treasure_content() -> void:
 func _test_full_hand_rejects_card_but_allows_gold() -> void:
 	var player := PlayerDataScript.new()
 	player.gold = 30
+	var published_gold: Array[int] = []
+	player.gold_changed.connect(func(value: int) -> void:
+		published_gold.append(value)
+	)
 	var instance = _make_treasure_instance([_card("A"), _card("B")], Vector2i(7, 7))
 	treasure_resolver.ensure_options(instance, RandomNumberGenerator.new())
 	var state := instance.runtime_state as TreasureRuntimeStateScript
@@ -625,6 +634,7 @@ func _test_full_hand_rejects_card_but_allows_gold() -> void:
 		gold_result.success and player.gold == 37 and instance.is_resolved,
 		"gold resolves treasure"
 	)
+	_expect(published_gold == [37], "gold treasure publishes the new gold balance")
 	_expect(instance.is_revealed and instance.is_resolved, "treasure claim resolves the event")
 	_expect(state.selected_option_index == 2, "treasure records the chosen option in runtime state")
 	_expect(gold_result.granted_card == null, "gold never creates a card instance")

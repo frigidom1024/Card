@@ -8,7 +8,6 @@ const CardScene = preload("res://scenes/card/card.tscn")
 const DraggerLayerScene = preload("res://scenes/drag_layer/dragger_layer.tscn")
 
 var _failure_count := 0
-var _player_state_change_count := 0
 var _boss_dismissal_count := 0
 var _event_display_refresh_count := 0
 var _boss_dismissal_succeeds := true
@@ -36,6 +35,10 @@ func _test_victory_discards_depleted_normal_card_and_grants_rewards() -> void:
 		await _free_fixture(fixture)
 		return
 	_add_guaranteed_gold_and_card_drops(fixture.content)
+	var published_gold: Array[int] = []
+	fixture.player_data.gold_changed.connect(func(value: int) -> void:
+		published_gold.append(value)
+	)
 	_expect(_place_anchor_root(fixture, Vector2i(0, 0)) != null, "victory fixture places anchor root")
 	var exhausted := _place_owned_card(fixture, false, Vector2i(2, 0), 2)
 	_expect(exhausted != null, "victory fixture places an owned normal card")
@@ -52,6 +55,7 @@ func _test_victory_discards_depleted_normal_card_and_grants_rewards() -> void:
 	_expect(fixture.instance.is_resolved, "victory resolves the encounter")
 	_expect(fixture.monster.stats.hp == 0, "victory writes echo HP")
 	_expect(fixture.player_data.gold == 38, "victory grants configured gold")
+	_expect(published_gold == [38], "victory publishes the rewarded gold balance")
 	_expect(exhausted not in fixture.board.board_zone.get_cards(), "victory removes exhausted normal card from board")
 	_expect(
 		exhausted.get_card_inst() not in fixture.card_service.get_instances(),
@@ -76,15 +80,24 @@ func _test_retreat_keeps_surviving_cards_and_strengthens_echo() -> void:
 	if coordinator == null:
 		await _free_fixture(fixture)
 		return
+	var published_vitality: Array[Vector2i] = []
+	fixture.player_stats.vitality_changed.connect(func(current_hp: int, maximum_hp: int) -> void:
+		published_vitality.append(Vector2i(current_hp, maximum_hp))
+	)
 	_expect(_place_anchor_root(fixture, Vector2i(0, 0)) != null, "retreat fixture places anchor root")
 	var survivor := _place_owned_card(fixture, false, Vector2i(2, 0), 3)
 	_expect(survivor != null, "retreat fixture places a surviving card")
 
 	_expect(
-		coordinator.apply(fixture.instance, _result(CombatResult.Outcome.RETREAT, 20, 16)),
+		coordinator.apply(fixture.instance, _result(CombatResult.Outcome.RETREAT, 14, 16)),
 		"retreat applies"
 	)
 	_expect(not fixture.instance.is_resolved, "retreat leaves encounter unresolved")
+	_expect(fixture.player_stats.hp == 14, "retreat applies the resulting player vitality")
+	_expect(
+		published_vitality == [Vector2i(14, 20)],
+		"retreat publishes the resulting player vitality"
+	)
 	_expect(survivor in fixture.board.board_zone.get_cards(), "retreat keeps a card with remaining points on board")
 	_expect(survivor not in fixture.hand_zone.get_cards(), "retreat does not return surviving cards to hand")
 	_expect(
@@ -198,7 +211,6 @@ func _test_boss_dismissal_failure_is_atomic() -> void:
 	_expect(not fixture.instance.is_resolved, "failed boss dismissal leaves instance unresolved")
 	_expect(fixture.player_data.gold == 30, "failed boss dismissal grants no rewards")
 	_expect(fixture.monster.stats.hp == 20, "failed boss dismissal does not mutate echo state")
-	_expect(_player_state_change_count == 0, "failed boss dismissal does not publish player state")
 
 	await _free_fixture(fixture)
 
@@ -217,7 +229,6 @@ func _configure_coordinator(fixture: Dictionary):
 			fixture.player_data,
 			fixture.card_service,
 			Callable(self, "_on_boss_dismissed"),
-			Callable(self, "_on_player_state_changed"),
 			Callable(self, "_on_event_display_refresh"),
 			fixture.reward_rng
 		),
@@ -395,7 +406,6 @@ func _reset_ports(fixture: Dictionary) -> void:
 	_boss_dismissal_succeeds = true
 	_boss_dismissal_count = 0
 	_event_display_refresh_count = 0
-	_player_state_change_count = 0
 
 
 func _on_boss_dismissed(_instance: EventInstance) -> bool:
@@ -407,10 +417,6 @@ func _on_boss_dismissed(_instance: EventInstance) -> bool:
 
 func _on_event_display_refresh(_instance: EventInstance) -> void:
 	_event_display_refresh_count += 1
-
-
-func _on_player_state_changed() -> void:
-	_player_state_change_count += 1
 
 
 func _free_fixture(fixture: Dictionary) -> void:

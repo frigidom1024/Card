@@ -198,6 +198,7 @@ func _handle_3D_effect(event:InputEvent)->void:
 	
 
 func _start_drag(mouse_position: Vector2) -> void:
+	_hide_hover_info()
 	dragging = true
 	z_index = 100
 	drag_offset = get_global_transform().basis_xform(mouse_position - size * 0.5)
@@ -244,6 +245,7 @@ func _end_drag()->void:
 		drag_layer.end_drag(self)
 
 func _on_mouse_exited() -> void:
+	_hide_hover_info()
 	if dragging:
 		return 
 	if tween_rot and tween_rot.is_running():
@@ -263,13 +265,28 @@ func _on_mouse_exited() -> void:
 
 func _on_mouse_entered() -> void:
 	if dragging:
-		return 
+		return
+	_show_hover_info()
 	if tween_hover and tween_hover.is_running():
 		tween_hover.kill()
 	tween_hover = create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_ELASTIC)
 	tween_hover.tween_property(self, "scale", Vector2(1.2, 1.2), 0.5)
 	z_index+=100
 	
+func _show_hover_info() -> void:
+	if card_inst == null:
+		return
+	var hover_info := get_tree().get_first_node_in_group("card_hover_info")
+	if hover_info != null and hover_info.has_method("show_for_card"):
+		hover_info.call("show_for_card", self, card_inst)
+
+
+func _hide_hover_info() -> void:
+	var hover_info := get_tree().get_first_node_in_group("card_hover_info")
+	if hover_info != null and hover_info.has_method("hide_for_card"):
+		hover_info.call("hide_for_card", self)
+
+
 func bind_drag_layer(drag_layer:DraggerLayer)->void:
 	self.drag_layer=drag_layer
 

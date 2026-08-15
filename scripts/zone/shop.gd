@@ -118,7 +118,7 @@ func refresh_shop() -> bool:
 		return false
 
 	var refresh_cost := _get_refresh_cost()
-	if _player.gold < refresh_cost:
+	if not _player.can_afford(refresh_cost):
 		refresh_display()
 		return false
 
@@ -131,7 +131,7 @@ func refresh_shop() -> bool:
 		refresh_display()
 		return false
 
-	_player.gold -= refresh_cost
+	_player.spend_gold(refresh_cost)
 	_clear_purchase_validation()
 	shop_zone.clear_products(true)
 	_offers = refreshed_offers
@@ -207,7 +207,7 @@ func _can_purchase_product(
 		return false
 
 	var purchase_price := _pricing.get_purchase_price(card_inst.card_data, _make_price_context())
-	if _player.gold < purchase_price:
+	if not _player.can_afford(purchase_price):
 		return false
 
 	_validated_card = card
@@ -241,7 +241,7 @@ func _on_product_purchased(
 		or _validated_slot != slot_index
 	):
 		purchase_price = _pricing.get_purchase_price(card_inst.card_data, _make_price_context())
-	if _player.gold < purchase_price:
+	if not _player.can_afford(purchase_price):
 		_clear_purchase_validation()
 		refresh_display()
 		return
@@ -250,7 +250,7 @@ func _on_product_purchased(
 		refresh_display()
 		return
 
-	_player.gold -= purchase_price
+	_player.spend_gold(purchase_price)
 	var replacement_inst := _create_replacement_offer(slot_index)
 	_offers[slot_index] = replacement_inst
 	if replacement_inst != null:
@@ -377,7 +377,7 @@ func _update_refresh_button_state() -> void:
 	refresh_button.disabled = (
 		not _is_configured()
 		or shop_zone.has_active_product_drag()
-		or _player.gold < _get_refresh_cost()
+		or not _player.can_afford(_get_refresh_cost())
 	)
 
 

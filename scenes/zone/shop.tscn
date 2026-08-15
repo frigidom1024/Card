@@ -2,6 +2,7 @@
 
 [ext_resource type="StyleBox" uid="uid://d26o07b1e6h87" path="res://assert/ui/info_panel.tres" id="1_dlaha"]
 [ext_resource type="PackedScene" uid="uid://cv8gd4mpryvt5" path="res://scenes/zone/shop_zone.tscn" id="2_ukpqw"]
+[ext_resource type="FontFile" uid="uid://5qd1jdkfevdl" path="res://assert/font/press_start_2p/PressStart2P.ttf" id="3_bbuwu"]
 [ext_resource type="Script" uid="uid://d3kcl6c3cih7h" path="res://scripts/zone/shop.gd" id="3_shop"]
 
 [node name="Shop" type="Panel" unique_id=1350690558]
@@ -31,6 +32,8 @@ layout_mode = 2
 [node name="ShopTitle" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1671765052]
 layout_mode = 2
 theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_fonts/font = ExtResource("3_bbuwu")
+theme_override_font_sizes/font_size = 24
 text = "Shop"
 
 [node name="Space" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=805220795]
@@ -39,11 +42,13 @@ size_flags_horizontal = 3
 
 [node name="RefreshButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=844993244]
 layout_mode = 2
-text = "刷新商店"
+theme_override_fonts/font = ExtResource("3_bbuwu")
+text = "refresh"
 
 [node name="CostCoin" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1292140501]
 layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_color = Color(1, 0.84313726, 0, 1)
+theme_override_fonts/font = ExtResource("3_bbuwu")
 text = "10"
 
 [node name="IconCoin" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1829312071]

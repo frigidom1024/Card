@@ -153,7 +153,7 @@ func drag_end_target(card: Card, ok: bool) -> bool:
 		_clear_preview()
 		return false
 
-	_player.gold += reclaim_price
+	_player.add_gold(reclaim_price)
 	_clear_preview()
 	return true
 

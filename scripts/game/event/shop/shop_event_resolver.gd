@@ -45,11 +45,10 @@ func purchase_item(
 	if _progression != null and not _progression.is_card_available(item.card_data):
 		return EventResolutionResult.rejected(EventResolutionResult.Failure.CARD_LOCKED)
 	var price := int(_pricing.call("get_purchase_price", item.card_data, context))
-	if player.gold < price:
+	if not player.spend_gold(price):
 		return EventResolutionResult.rejected(EventResolutionResult.Failure.INSUFFICIENT_GOLD)
 
 	_ensure_sold_flags(state, content.items.size())
-	player.gold -= price
 	state.sold_flags[item_index] = true
 
 	var result := EventResolutionResult.new()

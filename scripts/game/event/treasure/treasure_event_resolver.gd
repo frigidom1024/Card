@@ -69,7 +69,7 @@ func claim_reward(
 	var result := EventResolutionResult.new()
 	result.success = true
 	if option.kind == TreasureRewardOption.Kind.GOLD:
-		player.gold += option.gold_amount
+		player.add_gold(option.gold_amount)
 		result.gold_delta = option.gold_amount
 	else:
 		result.granted_card = option.card_data

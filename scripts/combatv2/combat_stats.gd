@@ -1,6 +1,8 @@
 class_name CombatStats
 extends RefCounted
 
+signal vitality_changed(current_hp: int, max_hp: int)
+
 var max_hp: int
 var hp: int
 var attack: int
@@ -29,18 +31,33 @@ func reset_from_data(data: Resource) -> void:
 	defense = maxi(int(data.get("defense")), 0)
 
 
+func set_vitality(current_hp: int, maximum_hp: int) -> void:
+	var normalized_max := maxi(maximum_hp, 1)
+	var normalized_hp := clampi(current_hp, 0, normalized_max)
+	if hp == normalized_hp and max_hp == normalized_max:
+		return
+	max_hp = normalized_max
+	hp = normalized_hp
+	vitality_changed.emit(hp, max_hp)
+
+
 func take_damage(amount: int) -> int:
 	var incoming: int = maxi(amount, 0)
 	var absorbed: int = mini(defense, incoming)
 	defense -= absorbed
 	var applied: int = incoming - absorbed
+	var previous_hp := hp
 	hp = maxi(hp - applied, 0)
+	if hp != previous_hp:
+		vitality_changed.emit(hp, max_hp)
 	return applied
 
 
 func heal(amount: int) -> int:
 	var before: int = hp
 	hp = mini(hp + maxi(amount, 0), max_hp)
+	if hp != before:
+		vitality_changed.emit(hp, max_hp)
 	return hp - before
 
 

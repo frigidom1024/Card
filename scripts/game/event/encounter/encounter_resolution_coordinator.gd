@@ -30,7 +30,6 @@ var _player_stats: CombatStats
 var _player_data: PlayerData
 var _card_service: RunCardService
 var _on_boss_dismissed: Callable
-var _on_player_state_changed: Callable
 var _on_event_display_refresh: Callable
 var _reward_rng: RandomNumberGenerator
 var _reward_resolver := EncounterRewardResolver.new()
@@ -42,7 +41,6 @@ func configure(
 	player_data: PlayerData,
 	card_service: RunCardService,
 	on_boss_dismissed: Callable,
-	on_player_state_changed: Callable,
 	on_event_display_refresh: Callable,
 	reward_rng: RandomNumberGenerator
 ) -> bool:
@@ -52,7 +50,6 @@ func configure(
 		or player_data == null
 		or card_service == null
 		or not on_boss_dismissed.is_valid()
-		or not on_player_state_changed.is_valid()
 		or not on_event_display_refresh.is_valid()
 		or reward_rng == null
 	):
@@ -62,7 +59,6 @@ func configure(
 	_player_data = player_data
 	_card_service = card_service
 	_on_boss_dismissed = on_boss_dismissed
-	_on_player_state_changed = on_player_state_changed
 	_on_event_display_refresh = on_event_display_refresh
 	_reward_rng = reward_rng
 	return true
@@ -78,7 +74,6 @@ func apply(instance: EventInstance, result: CombatResult) -> bool:
 		or _player_data == null
 		or _card_service == null
 		or not _on_boss_dismissed.is_valid()
-		or not _on_player_state_changed.is_valid()
 		or not _on_event_display_refresh.is_valid()
 		or _reward_rng == null
 	):
@@ -110,14 +105,13 @@ func apply(instance: EventInstance, result: CombatResult) -> bool:
 			exploration_failed.emit(result)
 		_:
 			return false
-	_on_player_state_changed.call()
 	return true
 
 
 func _apply_player_combat_state(result_stats: CombatStats) -> void:
 	if result_stats == null:
 		return
-	_player_stats.hp = result_stats.hp
+	_player_stats.set_vitality(result_stats.hp, result_stats.max_hp)
 	_player_stats.defense = 0
 
 
@@ -128,7 +122,7 @@ func _apply_victory_rewards(instance: EventInstance) -> void:
 	if content == null:
 		return
 	var rewards := _reward_resolver.resolve(content, _reward_rng)
-	_player_data.gold += rewards.gold
+	_player_data.add_gold(rewards.gold)
 	for card_data in rewards.cards:
 		if not _card_service.grant_to_hand_temporarily(card_data):
 			push_error("VICTORY failed to grant encounter reward card")

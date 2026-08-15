@@ -86,6 +86,11 @@ func _test_shop_purchase_via_drag_preserves_exact_instance_and_restocks() -> voi
 		"Successful Shop purchase charges the purchase price"
 	)
 	_expect(
+		(manager.game_info.get_node("GoldNumber") as Label).text
+		== str(gold_before - price),
+		"Successful Shop purchase publishes the new gold balance to GameInfo"
+	)
+	_expect(
 		manager.hand_zone.get_card_count() == hand_count_before + 1,
 		"Successful Shop purchase adds one Card to HandZone"
 	)
@@ -218,6 +223,11 @@ func _test_reclaim_via_drag_unregisters_exact_instance_and_pays_value() -> void:
 		"Reclaiming a Card grants its reclaim price in gold"
 	)
 	_expect(
+		(manager.game_info.get_node("GoldNumber") as Label).text
+		== str(gold_before + reclaim_price),
+		"Reclaiming publishes the new gold balance to GameInfo"
+	)
+	_expect(
 		manager.hand_zone.get_card_count() == hand_count_before - 1,
 		"Reclaiming a Card removes it from HandZone"
 	)
@@ -269,6 +279,10 @@ func _test_refresh_shop_charges_gold_and_replaces_products() -> void:
 
 	_expect(refreshed, "Configured Shop refresh succeeds when the player can pay")
 	_expect(manager.player_data.gold == gold_before - 1, "Shop refresh charges one gold")
+	_expect(
+		(manager.game_info.get_node("GoldNumber") as Label).text == str(gold_before - 1),
+		"Shop refresh publishes the new gold balance to GameInfo"
+	)
 	_expect(
 		manager.shop.get_offers().size() == manager.shop.shop_zone.max_products,
 		"Shop refresh repopulates every offer slot"
